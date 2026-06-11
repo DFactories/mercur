@@ -19,7 +19,7 @@ export const Component = () => {
 
   const { product, isLoading: isProductLoading } = useProduct(id!, {
     fields:
-      "id,thumbnail,variants.id,variants.title,variants.sku,variants.inventory_items.variant_id,variants.inventory_items.inventory_item_id,variants.inventory_items.required_quantity,variants.inventory_items.inventory.id,variants.inventory_items.inventory.title,variants.inventory_items.inventory.sku,*variants.inventory_items.inventory.location_levels",
+      "id,thumbnail,variants.id,variants.title,variants.sku,variants.product_id,variants.product.thumbnail,variants.inventory_items.variant_id,variants.inventory_items.inventory_item_id,variants.inventory_items.required_quantity,variants.inventory_items.inventory.id,variants.inventory_items.inventory.title,variants.inventory_items.inventory.sku,*variants.inventory_items.inventory.location_levels",
   })
   const { stock_locations, isLoading: isStockLoading } = useStockLocations()
 
