@@ -27,6 +27,25 @@ export class ClientError extends Error {
     }
 }
 
+/**
+ * Optional transform applied to every backend error message before it becomes a
+ * ClientError, so consumers can localize/normalize API errors in one place
+ * instead of at every call site. Generic by design (no app coupling); an app
+ * registers its own transformer via {@link setClientErrorMessageTransformer}.
+ */
+export type ClientErrorMessageTransformer = (
+    message: string,
+    context: { status?: number; statusText?: string }
+) => string;
+
+let errorMessageTransformer: ClientErrorMessageTransformer | undefined;
+
+export function setClientErrorMessageTransformer(
+    transformer: ClientErrorMessageTransformer | undefined
+) {
+    errorMessageTransformer = transformer;
+}
+
 export function createClient(options: ClientOptions) {
     const { baseUrl, fetchOptions: defaultFetchOptions } = options;
 
@@ -95,8 +114,15 @@ export function createClient(options: ClientOptions) {
                 const jsonError = (await response.json().catch(() => ({}))) as {
                     message?: string;
                 };
+                const rawMessage = jsonError.message ?? response.statusText;
+                const message = errorMessageTransformer
+                    ? errorMessageTransformer(rawMessage, {
+                          status: response.status,
+                          statusText: response.statusText,
+                      })
+                    : rawMessage;
                 throw new ClientError(
-                    jsonError.message ?? response.statusText,
+                    message,
                     response.statusText,
                     response.status
                 );

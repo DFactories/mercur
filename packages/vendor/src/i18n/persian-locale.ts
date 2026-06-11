@@ -1,5 +1,6 @@
 import i18n from "i18next"
 
+import { installApiErrorTranslator } from "./api-error-translator"
 import { installNativeDatePatch } from "./native-date-patch"
 import { installZodErrorMap } from "./zod-error-map"
 
@@ -34,6 +35,8 @@ export const installPersianLocale = () => {
   installZodErrorMap()
   // fa-IR + Asia/Tehran on native Date.toLocale* calls that bypass date-fns.
   installNativeDatePatch()
+  // Localize backend error messages panel-wide (at the SDK error boundary).
+  installApiErrorTranslator()
   // Keep the react-aria calendar locale in sync with the active language.
   setReactAriaLocale(i18n.language || "fa")
   i18n.on("languageChanged", (lng) => setReactAriaLocale(lng))

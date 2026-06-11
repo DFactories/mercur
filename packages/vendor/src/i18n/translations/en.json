@@ -3771,5 +3771,17 @@
       "authenticationFailed": "Authentication failed",
       "cloud": "Log in with Mercur"
     }
+  },
+  "apiErrors": {
+    "unauthorized": "Your session has expired. Please sign in again.",
+    "forbidden": "You don't have permission to perform this action.",
+    "notFound": "Not found.",
+    "badRequest": "Invalid request.",
+    "conflict": "This item already exists.",
+    "unprocessable": "The submitted data is invalid.",
+    "tooManyRequests": "Too many requests. Please try again later.",
+    "serverError": "Internal server error.",
+    "serviceUnavailable": "Service unavailable.",
+    "timeout": "Request timed out."
   }
 }
