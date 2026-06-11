@@ -100,7 +100,7 @@ const OuterComponent = ({
 
   return (
     <ConditionalTooltip
-      showTooltip={localValue.disabledToggle && tooltip}
+      showTooltip={!!localValue?.disabledToggle && !!tooltip}
       content={tooltip}
     >
       <div className="absolute inset-y-0 left-4 z-[3] flex w-fit items-center justify-center">
@@ -109,8 +109,8 @@ const OuterComponent = ({
           ref={buttonRef}
           size="small"
           className="shrink-0 rtl:rotate-180"
-          checked={localValue.checked}
-          disabled={localValue.disabledToggle}
+          checked={!!localValue?.checked}
+          disabled={!!localValue?.disabledToggle}
           onCheckedChange={handleCheckedChange}
         />
       </div>
