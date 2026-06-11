@@ -1,8 +1,8 @@
 // Route: /products/:id/stock
 import { AnimatePresence } from "motion/react"
-import { Suspense, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Await, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 
 import { ColumnDef } from "@tanstack/react-table"
 import { ProgressBar } from "@components/common/progress-bar"
@@ -17,7 +17,10 @@ export const Component = () => {
 
   const { id } = useParams()
 
-  const { product, isLoading: isProductLoading } = useProduct(id!)
+  const { product, isLoading: isProductLoading } = useProduct(id!, {
+    fields:
+      "id,thumbnail,variants.id,variants.title,variants.sku,variants.inventory_items.variant_id,variants.inventory_items.inventory_item_id,variants.inventory_items.required_quantity,variants.inventory_items.inventory.id,variants.inventory_items.inventory.title,variants.inventory_items.inventory.sku,*variants.inventory_items.inventory.location_levels",
+  })
   const { stock_locations, isLoading: isStockLoading } = useStockLocations()
 
   const allVariants = product?.variants?.map((variant) => ({
@@ -66,19 +69,15 @@ export const Component = () => {
         <RouteFocusModal.Description asChild>
           <span className="sr-only">{t("products.stock.description")}</span>
         </RouteFocusModal.Description>
-        <Suspense fallback={<ProductStockFallback />}>
-          <Await resolve={{ allVariants, locations: stock_locations }}>
-            {() => {
-              return (
-                <ProductStockForm
-                  variants={allVariants || []}
-                  locations={stock_locations || []}
-                  onLoaded={onLoaded}
-                />
-              )
-            }}
-          </Await>
-        </Suspense>
+        {isProductLoading || isStockLoading || !product || !stock_locations ? (
+          <ProductStockFallback />
+        ) : (
+          <ProductStockForm
+            variants={allVariants || []}
+            locations={stock_locations || []}
+            onLoaded={onLoaded}
+          />
+        )}
       </RouteFocusModal>
     </div>
   )
