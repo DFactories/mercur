@@ -2786,7 +2786,7 @@
     "logo": "Logo",
     "banner": "Banner",
     "edit": {
-      "header": "Edit Store"
+      "websiteHint": "Must include protocol (e.g. https://)"
     },
     "editCompany": {
       "header": "Edit Company"
@@ -2895,9 +2895,6 @@
       "freePeriod": "Free period",
       "requiresOrders": "Requires orders",
       "month": "month"
-    },
-    "edit": {
-      "websiteHint": "Must include protocol (e.g. https://)"
     },
     "toast": {
       "update": "Store successfully updated",
@@ -3245,6 +3242,10 @@
       "emailRequired": "Please enter an email",
       "emailInvalid": "Please enter a valid email",
       "passwordRequired": "Please enter your password"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "identityExists": "Identity with email already exists"
     }
   },
   "register": {

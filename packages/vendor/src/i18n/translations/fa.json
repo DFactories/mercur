@@ -3149,6 +3149,10 @@
       "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
       "emailRequired": "لطفاً ایمیل را وارد کنید",
       "passwordRequired": "لطفاً رمز عبور خود را وارد کنید"
+    },
+    "errors": {
+      "invalidCredentials": "ایمیل یا رمز عبور نادرست است",
+      "identityExists": "حسابی با این ایمیل از قبل وجود دارد"
     }
   },
   "invite": {

@@ -14,6 +14,15 @@ import { useSignInWithEmailPass } from "@hooks/api";
 import { isFetchError } from "@lib/is-fetch-error";
 import config from "virtual:mercur/config";
 
+// Map raw backend auth strings (from @medusajs/auth-emailpass, which arrive with
+// no i18n key) to translation keys so the login form shows localized errors
+// instead of the verbatim English server text. Replaces the host-side DOM
+// text-swap overlay.
+const AUTH_ERROR_I18N: Record<string, string> = {
+  "Invalid email or password": "login.errors.invalidCredentials",
+  "Identity with email already exists": "login.errors.identityExists",
+};
+
 const LoginSchema = z.object({
   email: z
     .string()
@@ -64,6 +73,11 @@ const LoginForm = () => {
 
   const { mutateAsync, isPending } = useSignInWithEmailPass();
 
+  const translateAuthError = (message?: string) => {
+    const key = message ? AUTH_ERROR_I18N[message.trim()] : undefined;
+    return key ? t(key) : message;
+  };
+
   const handleSubmit = form.handleSubmit(async ({ email, password }) => {
     await mutateAsync(
       {
@@ -76,7 +90,7 @@ const LoginForm = () => {
             if (error.status === 401) {
               form.setError("email", {
                 type: "manual",
-                message: error.message,
+                message: translateAuthError(error.message),
               });
 
               return;
@@ -85,7 +99,7 @@ const LoginForm = () => {
 
           form.setError("root.serverError", {
             type: "manual",
-            message: error.message,
+            message: translateAuthError(error.message),
           });
         },
         onSuccess: () => {
@@ -171,7 +185,7 @@ const LoginFooter = () => {
           ]}
         />
       </span>
-      {config.enableSellerRegistration && (
+      {config.enableSellerRegistration !== false && (
         <span className="text-ui-fg-muted txt-small">
           <Trans
             i18nKey="login.notSellerYet"
