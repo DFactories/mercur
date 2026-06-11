@@ -2,6 +2,7 @@ import i18n from "i18next"
 
 import { installApiErrorTranslator } from "./api-error-translator"
 import { installNativeDatePatch } from "./native-date-patch"
+import { installPersianDigitInput } from "./persian-digit-input"
 import { installZodErrorMap } from "./zod-error-map"
 
 /*
@@ -37,6 +38,8 @@ export const installPersianLocale = () => {
   installNativeDatePatch()
   // Localize backend error messages panel-wide (at the SDK error boundary).
   installApiErrorTranslator()
+  // Accept Persian/Arabic-Indic digits in numeric inputs.
+  installPersianDigitInput()
   // Keep the react-aria calendar locale in sync with the active language.
   setReactAriaLocale(i18n.language || "fa")
   i18n.on("languageChanged", (lng) => setReactAriaLocale(lng))
