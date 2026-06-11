@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/vendor",
-  "version": "2.1.2-dfactories.3",
+  "version": "2.1.2-dfactories.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/mercurjs/mercur",
@@ -67,7 +67,8 @@
     "react-i18next": "13.5.0",
     "react-jwt": "^1.2.0",
     "react-router-dom": "6.30.3",
-    "zod": "3.25.76"
+    "zod": "3.25.76",
+    "@radix-ui/react-direction": "^1.1.0"
   },
   "peerDependencies": {
     "react": "^18.0.0",

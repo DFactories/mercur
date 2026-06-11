@@ -1,7 +1,7 @@
 import { customRoutes } from "virtual:mercur/routes";
 import { HelmetProvider } from "react-helmet-async";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "./providers";
+import { DirectionProvider, ThemeProvider } from "./providers";
 import { I18nProvider, Toaster, TooltipProvider } from "@medusajs/ui";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { I18n } from "./components/utilities/i18n";
@@ -25,14 +25,16 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <I18n />
-            <I18nProvider>
-              <RouterProvider
-                router={createBrowserRouter(getRouteMap(routes), {
-                  basename: __BASE__,
-                })}
-              />
-            </I18nProvider>
-            <Toaster />
+            <DirectionProvider>
+              <I18nProvider>
+                <RouterProvider
+                  router={createBrowserRouter(getRouteMap(routes), {
+                    basename: __BASE__,
+                  })}
+                />
+              </I18nProvider>
+              <Toaster />
+            </DirectionProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </HelmetProvider>
