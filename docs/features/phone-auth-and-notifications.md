@@ -120,7 +120,7 @@ OTP template id / TTL / length are config of the **otp module** (DB-seeded), not
 **New**
 - `packages/core/src/providers/smsir/client.ts` — shared transport (`sendVerify`, `send`), `X-API-KEY`.
 - `packages/core/src/providers/notification-smsir/*` — Medusa notification provider, `channel="sms"`.
-- `packages/core/src/providers/auth-phone-otp/*` — Medusa auth provider (`customer` + `member`).
+- `packages/core/src/api/utils/phone-otp.ts` + `api/{store,vendor}/auth/phone/{request-otp,verify-otp}/route.ts` — phone OTP request/verify as thin custom routes (no Medusa auth provider; see §12).
 - `packages/core/src/modules/otp/*` — OTP code store + `requestOtp`/`verifyOtp`.
 - `packages/core/src/modules/notification-settings/*` — `NotificationChannelConfig` model + service.
 - `packages/core/src/notification/catalog.ts` — hybrid catalog + `registerNotificationEvent`.
@@ -147,8 +147,8 @@ OTP template id / TTL / length are config of the **otp module** (DB-seeded), not
 UI → POST /vendor/auth/phone/request-otp { phone }
        → otp.requestOtp() → smsirClient.sendVerify(phone, otpTemplateId, [{CODE}])
 UI → POST /vendor/auth/phone/verify-otp { phone, code }
-       → otp.verifyOtp() → auth-phone-otp resolves/creates providerIdentity (entity_id = phone)
-       → returns session token → UI sets sdk.auth.session
+       → verify-otp route: otp.verifyOtp() → find/create auth identity (provider "phone-otp", entity_id = phone) → generateJwtToken
+       → returns { token } → UI sets sdk.auth.session
        → (first time) POST /vendor/sellers runs createSellerAccountWorkflow on the new auth_identity_id
 ```
 
@@ -210,3 +210,25 @@ Each phase tracked in [`feature_list.json`](../../feature_list.json); progress i
 ## 11. Reference
 
 - sms.ir Web Service: base `https://api.sms.ir/v1`, header `X-API-KEY`. OTP via `POST /send/verify` with `{ mobile, templateId, parameters: [{ name, value }] }`. Standard send endpoint for general SMS. Docs: https://sms.ir/web-service/
+
+---
+
+## 12. Implementation refinements (discovered during build)
+
+These deviations from the original plan were made for robustness and recorded here so the design stays truthful.
+
+### 12.1 No Medusa auth provider — phone OTP is handled by thin custom routes
+The plan named a `providers/auth-phone-otp` Medusa auth provider. During implementation this was dropped in favour of custom routes, because:
+- A Medusa auth provider runs inside the **Auth module's isolated container** and cannot reliably resolve the **OTP module's** service (cross-module access). Verifying the code inside the provider would therefore be fragile.
+- Medusa's generic `/auth/:actor/:provider` route returns a token only on `success && authIdentity`, so the **"request code" step can't return a clean 200** through it anyway — custom routes were already required for that half.
+
+Implementation instead:
+- `packages/core/src/api/utils/phone-otp.ts` — shared `createRequestOtpHandler(actorType)` / `createVerifyOtpHandler(actorType)`.
+- `request-otp`: `otpService.requestOtp()` → `smsirClient.sendVerify(phone, SMSIR_OTP_TEMPLATE_ID, [{name:"CODE", value:code}])`. Always 200.
+- `verify-otp`: `otpService.verifyOtp()` → find-or-create the auth identity via the **Auth module CRUD** (`listProviderIdentities` / `createAuthIdentities`, provider label `"phone-otp"`, `entity_id = phone`) → mint the session token with the public `generateJwtToken` (mirroring Medusa's internal `generateJwtTokenForAuthIdentity`, including RBAC roles when the actor already exists). Returns `{ token }`, which the frontend hands to `sdk.auth.session` exactly like the emailpass flow.
+- The emailpass flow and the standard `/auth/*` routes are completely untouched. `"phone-otp"` is only a provider-identity label.
+
+Net effect: **no `withMercur` Auth-module injection is needed**, removing that risk entirely. (The Notification-module injection from Phase 1 is still in place and unaffected.)
+
+### 12.2 OTP template id source
+`SMSIR_OTP_TEMPLATE_ID` (and `SMSIR_OTP_PARAM_NAME`, default `CODE`) are read from env as the OTP module's effective config for now. This is consistent with "OTP template lives in the OTP/auth config, not the notification template map" (§2.6) — it is intentionally NOT part of the per-event notification template table. It can later be promoted to a DB-seeded OTP config row without changing callers.

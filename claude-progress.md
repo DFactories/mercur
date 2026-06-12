@@ -175,6 +175,9 @@
 - **Phase 2 groundwork — OTP module** (feature `phone-otp-auth`):
   - `packages/types/src/modules.ts` — added `MercurModules.OTP` + `NOTIFICATION_SETTINGS`; `@mercurjs/types` rebuilt.
   - `packages/core/src/modules/otp/{models/otp-code,service,index}.ts` — `OtpCode` model (hashed, TTL, attempts) + service `requestOtp`/`verifyOtp` (HMAC, expiry, max-attempts, resend cooldown, timing-safe compare). `requestOtp` returns the plaintext to its caller so SMS delivery stays in the auth layer, not the module.
+- **Phase 2 — phone OTP auth routes** (feature `phone-otp-auth` → `in_progress`; **no Medusa auth provider** — design §12):
+  - `packages/core/src/api/utils/phone-otp.ts` (shared `createRequestOtpHandler`/`createVerifyOtpHandler`) + `api/{vendor,store}/auth/phone/{request-otp,verify-otp}/route.ts`. `request-otp` → `requestOtp` + `smsir.sendVerify(SMSIR_OTP_TEMPLATE_ID)`; `verify-otp` → `verifyOtp` + find/create auth identity (Auth-module CRUD, provider label `phone-otp`, `entity_id=phone`) + public `generateJwtToken` → `{ token }`. Vendor routes added to `api/vendor/middlewares.ts` `unauthenticatedRoutes`; store is public by default.
+  - **Refinement** (`docs/features/phone-auth-and-notifications.md` §12): dropped the planned `providers/auth-phone-otp` + `withMercur` Auth-module injection — an auth provider can't reliably resolve the OTP module (module isolation) and the request-step can't return a clean 200 through the generic auth route. emailpass untouched. This retired the main Phase-2 risk.
 
 #### Verification
 
@@ -185,7 +188,7 @@
 
 #### Next best action
 
-1. **Finish Phase 2** (the architecturally risky part): `providers/auth-phone-otp` (two-step `authenticate`: no code → `requestOtp` + `smsir.sendVerify`; with code → `verifyOtp` + resolve/create `providerIdentity` keyed on phone), thin `/store/auth/phone/*` + `/vendor/auth/phone/*` routes, and `withMercur` Auth-module registration (`emailpass` + `phone-otp`). Validate Medusa 2.13.4's auth-provider contract supports the two-step flow.
+1. **Phase 3** — add a `phone` field to the member model (migration) and make `member_email` optional in the vendor seller validators + `upsert-member` step, so phone REGISTRATION completes via `createSellerAccountWorkflow`; add customer create-with-phone on the store side. (Phase 2 auth is done above; the auth-provider risk was retired via custom routes — design §12.) Also generate the `otp` module migration.
 2. Then Phase 3 (member `phone` field + optional `member_email`), Phase 4 (catalog + settings module + pipeline + orchestrator), Phase 5/6 (admin page + vendor UI).
 3. Generate migrations (`otp`, later `notification_settings`) and add integration tests with the sms.ir client mocked.
 
