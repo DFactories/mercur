@@ -12,8 +12,6 @@ on:
   push:
     branches:
       - "dfactories/**"
-    paths:
-      - "packages/**"
   workflow_dispatch:
 
 concurrency:
