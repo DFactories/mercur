@@ -38,9 +38,28 @@ const nativeSetter = (
 }
 
 const insert = (el: HTMLInputElement | HTMLTextAreaElement, text: string) => {
-  // type="number" inputs don't expose selection APIs — append instead of
-  // splicing at the caret (fine for left-to-right numeric entry).
   const isNumber = el instanceof HTMLInputElement && el.type === "number"
+
+  // For text inputs, insert via execCommand so the browser dispatches a real
+  // beforeinput/input at the caret. Controlled formatters (e.g. the price
+  // field's react-currency-input-field, which inserts thousands separators)
+  // then reformat AND restore the caret exactly as they do for real typing —
+  // the manual splice below fights that caret management and leaves the caret a
+  // character behind once a separator is inserted.
+  if (!isNumber && el.selectionStart != null) {
+    el.focus()
+    if (
+      typeof document !== "undefined" &&
+      typeof document.execCommand === "function" &&
+      document.execCommand("insertText", false, text)
+    ) {
+      return
+    }
+  }
+
+  // type="number" inputs don't expose selection APIs (and execCommand doesn't
+  // apply) — append instead of splicing at the caret. Also the fallback if
+  // execCommand is unavailable/blocked.
   if (isNumber || el.selectionStart == null) {
     nativeSetter(el, (el.value ?? "") + text)
     return
