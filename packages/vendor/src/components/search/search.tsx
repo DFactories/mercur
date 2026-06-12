@@ -422,7 +422,7 @@ const CommandInput = forwardRef<
               variant="transparent"
               onClick={onBack}
             >
-              <ArrowUturnLeft className="text-ui-fg-muted" />
+              <ArrowUturnLeft className="text-ui-fg-muted rtl:-scale-x-100  rtl:-scale-y-100" />
             </IconButton>
           )}
           <Command.Input

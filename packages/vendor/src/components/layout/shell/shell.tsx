@@ -159,7 +159,7 @@ const Breadcrumbs = () => {
             )}
             {!isLast && (
               <span className="mx-2">
-                <TriangleRightMini className="rtl:rotate-180" />
+                <TriangleRightMini className="rtl:-scale-x-100" />
               </span>
             )}
           </li>

@@ -124,7 +124,7 @@ export const VariantMediaGallery = ({
                     })}
                   </div>
                   <IconButton size="small" variant="transparent" className="text-ui-fg-muted" type="button" onClick={next}>
-                    <TriangleRightMini />
+                    <TriangleRightMini className="rtl:-scale-x-100 "/>
                   </IconButton>
                 </div>
               )}

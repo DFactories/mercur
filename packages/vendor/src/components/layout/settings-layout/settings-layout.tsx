@@ -134,7 +134,7 @@ const Header = () => {
       >
         <div className="flex items-center gap-x-2.5 px-2 py-1">
           <div className="flex items-center justify-center">
-            <ArrowUturnLeft className="text-ui-fg-subtle" />
+            <ArrowUturnLeft className="text-ui-fg-subtle rtl:-scale-x-100 rtl:-scale-y-100" />
           </div>
           <Text leading="compact" weight="plus" size="small">
             {t("app.nav.settings.header")}

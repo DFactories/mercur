@@ -293,7 +293,7 @@ const Preview = ({
         type="button"
         onClick={next}
       >
-        <TriangleRightMini />
+        <TriangleRightMini className="rtl:-scale-x-100 "/>
       </IconButton>
     </div>
   )

@@ -46,7 +46,7 @@ export const InventoryItemVariantsSection = ({
                   </span>
                 </div>
                 <div className="size-7 flex items-center justify-center">
-                  <TriangleRightMini className="text-ui-fg-muted" />
+                  <TriangleRightMini className="text-ui-fg-muted rtl:-scale-x-100 " />
                 </div>
               </div>
             </div>

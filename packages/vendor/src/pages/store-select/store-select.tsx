@@ -100,7 +100,7 @@ const StoreSelectList = ({
               {badge ? (
                 <StatusBadge color={badge.color}>{badge.label}</StatusBadge>
               ) : null}
-              <ChevronRight className="text-ui-fg-muted" />
+              <ChevronRight className="rtl:-scale-x-100 text-ui-fg-muted" />
             </button>
           );
         })}
