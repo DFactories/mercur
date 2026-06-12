@@ -123,11 +123,51 @@
 
 - See `feature_list.json` → `drop-medusa-global-unique-constraints.evidence`.
 
+### Session 5: 2026-06-12 -- DESIGN ONLY -- phone (OTP) auth + notification pipeline
+
+> Context note: this and following sessions run on the **private fork** at
+> `/Users/aminkhademian/Desktop/AI projects/mercur-fork`, branch `dfactories/2.1.2`
+> (publishes to registry.dfactories.ir). Earlier sessions logged the upstream
+> `viktorholik/canary` checkout. No code from this feature is written yet.
+
+**Goal**: Agree and durably record the design for phone-number OTP registration/login
+(alongside email) using sms.ir, plus an admin page to pick email vs SMS per notification event.
+
+#### Completed (this session)
+
+- Locked 7 decisions with the user (5 product Q&A + 2 architecture rounds). Summary:
+  passwordless OTP via sms.ir `/send/verify`; phone login for storefront+vendor only (admin stays email);
+  phone = primary/unique identity, email optional; channel choice is global per-event;
+  ship OTP + all transactional SMS but gate each event's SMS on a DB `template_id`;
+  only `SMSIR_API_KEY` in env; OTP fully separated from the notification pipeline;
+  hybrid event catalog (static + boot registry + DB); transactional dispatch on top of `Modules.NOTIFICATION`;
+  one orchestrator subscriber → `NotificationIntent` → 5-step `sendNotificationWorkflow` (no subscriber calls notification directly).
+- Verified the relevant codebase facts: auth is pure `emailpass`; the only `createNotifications` is the seller
+  invitation step; `withMercur` injects modules (e.g. `rbac`); seller account creation runs on `auth_identity_id`.
+- Wrote the design record: **`docs/features/phone-auth-and-notifications.md`** (ADR-style: context, decisions,
+  architecture, contracts, component map, flows, extension points, phases, risks, verification).
+- Registered 4 tracked features in `feature_list.json` (`status: not_started`):
+  `smsir-transport` (p2), `phone-otp-auth` (p3), `notification-pipeline` (p4), `admin-notification-settings` (p5).
+- Compact handoff added to `session-handoff.md`.
+
+#### Verification
+
+- Documentation phase only — no build/test run. Full plan saved at
+  `~/.claude/plans/iridescent-gliding-spindle.md`.
+
+#### Next best action
+
+1. Begin **Phase 0** (see design doc §8 / feature `smsir-transport`): env wiring + `phone_auth` feature flag +
+   make `withMercur` register the Auth (`emailpass` + `phone-otp`) and Notification (email + `notification-smsir`) modules.
+2. Implement features in priority order 2→3→4→5; each must ship with integration tests (sms.ir client mocked)
+   and keep `bun run build` + `bun run lint` green per Definition of Done.
+
 ## Required Artifacts (status)
 
-- `claude-progress.md` -- this file (updated 2026-05-15, Session 4).
-- `feature_list.json` -- present at repo root. Currently tracks one feature; updated this session.
-- `session-handoff.md` -- not present; not yet needed.
+- `claude-progress.md` -- this file (updated 2026-06-12, Session 5).
+- `feature_list.json` -- present at repo root. Tracks 5 features (1 passing + 4 not_started for phone-auth/notifications).
+- `session-handoff.md` -- present at repo root; updated 2026-06-12 with the phone-auth design handoff.
+- `docs/features/phone-auth-and-notifications.md` -- design/decision record for the phone-auth + notification work.
 
 ## Definition Of Done (reminder)
 
