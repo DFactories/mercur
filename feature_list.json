@@ -108,7 +108,7 @@
             "area": "admin/notification-settings",
             "title": "Admin page: per-event channel (email/SMS) configuration",
             "user_visible_behavior": "In the admin panel, an operator sees every notification event grouped by audience and, per event, toggles Email and SMS and enters the approved sms.ir template_id. SMS stays disabled with a hint until a template_id is provided. The OTP row is shown read-only/system.",
-            "status": "not_started",
+            "status": "in_progress",
             "verification": [
                 "1. GET /admin/notification-settings returns the merged effective catalog (RBAC-protected).",
                 "2. POST persists per (event_key, channel): enabled + template_id; SMS cannot be enabled without a template_id.",
@@ -116,7 +116,10 @@
                 "4. Setting a template_id and enabling SMS routes a triggered event over SMS (feed/log evidence); disabling it does not affect OTP.",
                 "5. `bun run lint` + `bun run build` green; client route map regenerated via mercurjs codegen."
             ],
-            "evidence": {},
+            "evidence": {
+                "admin_api_2026-06-12": "packages/core/src/api/admin/notification-settings/{route,validators,middlewares}.ts. GET returns getEffectiveCatalog(); POST validates + filters updates to non-system event×available-channel combos + upsertChannelConfigs, returns refreshed catalog. Wired into api/admin/middlewares.ts. Admin-authenticated by framework default. SMS stays effectively off without template_id (enforced in getEffectiveCatalog/getDeliveryConfig). typecheck: core tsc --noEmit = 0 errors.",
+                "pending": "Admin UI page packages/admin/src/pages/notification-settings (5b) using admin-page-ui/admin-form-ui skills; client codegen + types; migration (Phase 9); integration tests (Phase 8)."
+            },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §5, §7. Model after packages/admin/src/pages/commission-rates. Persian/RTL copy must respect the تامین‌کننده terminology (see memory vendor-terminology). Depends on notification-pipeline (catalog + settings module)."
         }
     ]
