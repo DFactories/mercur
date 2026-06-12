@@ -162,6 +162,33 @@
 2. Implement features in priority order 2→3→4→5; each must ship with integration tests (sms.ir client mocked)
    and keep `bun run build` + `bun run lint` green per Definition of Done.
 
+### Session 6: 2026-06-12 -- IMPLEMENTATION -- Phase 1 (sms.ir transport + SMS provider) + OTP module
+
+**Goal**: Begin implementing the approved design — start with the lowest-risk, self-contained layers.
+
+#### Completed (uncommitted)
+
+- **Phase 1 — sms.ir transport + SMS notification provider** (feature `smsir-transport` → `in_progress`):
+  - `packages/core/src/providers/smsir/client.ts` — sole HTTP transport to sms.ir. `sendVerify(mobile, templateId, params)` (`POST /send/verify`, `X-API-KEY`); no-op + log when `SMSIR_API_KEY` unset (dev/test safe). Shared by both the OTP path and the notification provider.
+  - `packages/core/src/providers/notification-smsir/{service,index}.ts` — `AbstractNotificationProviderService`, `channel: "sms"`, `ModuleProvider(Modules.NOTIFICATION)`. Reads `data.template_id` + `data.parameters` and forwards to the client (intentionally "dumb"; the pipeline decides routing).
+  - `packages/core/src/with-mercur.ts` — injects `@medusajs/medusa/notification` (local for email/feed/seller_feed/vendor_feed + smsir for sms) **only if** the consumer hasn't declared their own; added `phone_auth` feature-flag default.
+- **Phase 2 groundwork — OTP module** (feature `phone-otp-auth`):
+  - `packages/types/src/modules.ts` — added `MercurModules.OTP` + `NOTIFICATION_SETTINGS`; `@mercurjs/types` rebuilt.
+  - `packages/core/src/modules/otp/{models/otp-code,service,index}.ts` — `OtpCode` model (hashed, TTL, attempts) + service `requestOtp`/`verifyOtp` (HMAC, expiry, max-attempts, resend cooldown, timing-safe compare). `requestOtp` returns the plaintext to its caller so SMS delivery stays in the auth layer, not the module.
+
+#### Verification
+
+- `@mercurjs/types`: `tsc` build clean.
+- `packages/core`: `tsc --noEmit` = **0 errors** (whole package).
+- Resolve paths confirmed at runtime: `@medusajs/medusa/notification`, `@medusajs/medusa/notification-local`, `@medusajs/medusa/auth`, `@medusajs/medusa/auth-emailpass`.
+- Not yet run: full medusa boot + integration tests (need Postgres/Redis; planned Phase 8). No DB migrations generated yet for the `otp` module.
+
+#### Next best action
+
+1. **Finish Phase 2** (the architecturally risky part): `providers/auth-phone-otp` (two-step `authenticate`: no code → `requestOtp` + `smsir.sendVerify`; with code → `verifyOtp` + resolve/create `providerIdentity` keyed on phone), thin `/store/auth/phone/*` + `/vendor/auth/phone/*` routes, and `withMercur` Auth-module registration (`emailpass` + `phone-otp`). Validate Medusa 2.13.4's auth-provider contract supports the two-step flow.
+2. Then Phase 3 (member `phone` field + optional `member_email`), Phase 4 (catalog + settings module + pipeline + orchestrator), Phase 5/6 (admin page + vendor UI).
+3. Generate migrations (`otp`, later `notification_settings`) and add integration tests with the sms.ir client mocked.
+
 ## Required Artifacts (status)
 
 - `claude-progress.md` -- this file (updated 2026-06-12, Session 5).

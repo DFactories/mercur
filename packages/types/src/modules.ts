@@ -9,4 +9,6 @@ export enum MercurModules {
     CODEGEN = "codegen",
     ATTRIBUTE = "attribute",
     VENDOR_PRODUCT_ATTRIBUTE = "vendor_product_attribute",
+    OTP = "otp",
+    NOTIFICATION_SETTINGS = "notification_settings",
 }

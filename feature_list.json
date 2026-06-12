@@ -36,14 +36,20 @@
             "area": "core/providers",
             "title": "sms.ir transport client + Medusa SMS notification provider",
             "user_visible_behavior": "The platform can deliver SMS through sms.ir: high-priority OTP messages via POST /v1/send/verify, and general transactional messages via the standard send endpoint. With no SMSIR_API_KEY set, sends are logged in dev instead of failing.",
-            "status": "not_started",
+            "status": "in_progress",
             "verification": [
                 "1. Set SMSIR_API_KEY (+ optional SMSIR_BASE_URL). Without it, `send`/`sendVerify` log a dev payload and no-op.",
                 "2. Unit test smsirClient: X-API-KEY header, correct base URL, verify body shape { mobile, templateId, parameters:[{name,value}] }.",
                 "3. Notification provider registered on channel 'sms' via withMercur; createNotifications({channel:'sms', data:{templateId, params}}) reaches smsirClient (mock transport).",
                 "4. `bun run build` green."
             ],
-            "evidence": {},
+            "evidence": {
+                "implemented_at": "2026-06-12",
+                "source": "packages/core/src/providers/smsir/client.ts (transport, X-API-KEY, sendVerify, dev no-op when no key); packages/core/src/providers/notification-smsir/{service,index}.ts (AbstractNotificationProviderService, channel sms, ModuleProvider(Modules.NOTIFICATION)).",
+                "registration": "withMercur (packages/core/src/with-mercur.ts) injects @medusajs/medusa/notification with providers local(email/feed/seller_feed/vendor_feed)+smsir(sms) only if the consumer hasn't declared a notification module. Added phone_auth feature flag default.",
+                "typecheck": "packages/core `tsc --noEmit` = 0 errors. Resolve paths verified at runtime: @medusajs/medusa/notification, @medusajs/medusa/notification-local, @mercurjs/core/providers/notification-smsir.",
+                "pending": "Runtime boot + integration test with the sms.ir client mocked (Phase 8)."
+            },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §3-§5. Shared transport at packages/core/src/providers/smsir/client.ts is used by BOTH the notification provider (transactional) and the OTP path (auth) — but only the transport is shared; the pathways are separate. Provider structure mirrors packages/providers/payout-stripe-connect/src. Only SMSIR_API_KEY lives in env; all template ids live in DB."
         },
         {
@@ -62,7 +68,9 @@
                 "6. OTP isolation: changing notification-settings does NOT affect OTP delivery.",
                 "7. Integration tests under integration-tests/http/auth/... with sms.ir client mocked; `bun run build` green."
             ],
-            "evidence": {},
+            "evidence": {
+                "groundwork_2026-06-12": "OTP module built and type-clean: packages/core/src/modules/otp/{models/otp-code,service,index}.ts — HMAC-hashed codes, TTL, max-attempts, resend cooldown, requestOtp returns plaintext to caller (kept separate from transport). MercurModules.OTP + NOTIFICATION_SETTINGS added to packages/types/src/modules.ts (types rebuilt). Remaining: providers/auth-phone-otp (two-step authenticate), /store|/vendor auth/phone request-otp+verify-otp routes, withMercur Auth-module registration (emailpass + phone-otp), member phone field."
+            },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §2(1,3,7), §4 (OtpCode), §6. OTP path is fully separate from the notification pipeline/settings. Two-step logic inside auth provider `authenticate` (no code → send; with code → verify). Validate Medusa 2.13.4 auth-provider contract supports the two-step flow in this phase. Requires member model `phone` field + migration; member_email becomes optional in vendor seller validators + upsert-member step."
         },
         {
