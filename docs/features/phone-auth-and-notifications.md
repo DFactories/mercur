@@ -232,3 +232,10 @@ Net effect: **no `withMercur` Auth-module injection is needed**, removing that r
 
 ### 12.2 OTP template id source
 `SMSIR_OTP_TEMPLATE_ID` (and `SMSIR_OTP_PARAM_NAME`, default `CODE`) are read from env as the OTP module's effective config for now. This is consistent with "OTP template lives in the OTP/auth config, not the notification template map" (§2.6) — it is intentionally NOT part of the per-event notification template table. It can later be promoted to a DB-seeded OTP config row without changing callers.
+
+### 12.3 Phase 3 identity scope (member/seller)
+- **Member** (`modules/seller/models/member.ts`): added a nullable `phone` (unique where not null) and made `email` nullable (unique where not null). `MemberDTO`/`CreateMemberDTO`/`UpdateMemberDTO` updated; `upsertMembers` now keys on email **or** phone.
+- **Registration** (`POST /vendor/sellers`): `member_email` is now optional, `member_phone` added; the route requires at least one. `createSellerAccountWorkflow` carries `member_phone` through to `upsertMembers`. `member_phone` is frontend-supplied (same trust model as `member_email`; the member is still linked to the caller's verified `auth_identity_id`).
+- **Seller `email` kept required** (store contact). A phone-registering vendor still provides a store contact email; making `seller.email` optional has a wide blast radius (`SellerDTO.email`, admin/store views, seller-email notifications) and is a deferred follow-up, not required for phone login/registration.
+- **Customer (store) entity** create-with-phone is deferred to Phase 7: Medusa's core customer requires a unique `email`, so a phone-only customer needs a custom `/store/customers` route. Phone **auth** for customers already works (store `verify-otp` issues a customer token).
+- **Migrations** for the new `otp` table and the member `phone` column/indexes are generated/run together in Phase 9.

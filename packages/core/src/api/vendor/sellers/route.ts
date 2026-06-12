@@ -53,10 +53,18 @@ export const POST = async (
     professional_details,
     payment_details,
     member_email,
+    member_phone,
     first_name,
     last_name,
     ...sellerData
   } = req.validatedBody
+
+  if (!member_email && !member_phone) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Either member_email or member_phone is required to create a seller account."
+    )
+  }
 
   const { result: seller } = await createSellerAccountWorkflow(req.scope).run({
     input: {
@@ -64,6 +72,7 @@ export const POST = async (
       member_id: req.auth_context.actor_id || undefined,
       seller: sellerData,
       member_email,
+      member_phone: member_phone ?? undefined,
       first_name: first_name ?? undefined,
       last_name: last_name ?? undefined,
       address,

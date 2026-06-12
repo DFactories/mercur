@@ -123,7 +123,8 @@ export interface UpdateSellerAddressDTO {
 
 export interface MemberDTO {
   id: string
-  email: string
+  email: string | null
+  phone: string | null
   first_name: string | null
   last_name: string | null
   locale: string | null
@@ -135,14 +136,20 @@ export interface MemberDTO {
 }
 
 export interface CreateMemberDTO {
-  email: string
+  email?: string | null
+  phone?: string | null
+  first_name?: string | null
+  last_name?: string | null
   locale?: string | null
   is_active?: boolean
   metadata?: Record<string, unknown> | null
 }
 
 export interface UpdateMemberDTO {
-  email?: string
+  email?: string | null
+  phone?: string | null
+  first_name?: string | null
+  last_name?: string | null
   locale?: string | null
   is_active?: boolean
   metadata?: Record<string, unknown> | null

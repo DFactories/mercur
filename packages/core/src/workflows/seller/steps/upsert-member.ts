@@ -7,7 +7,8 @@ export const upsertMembersStep = createStep(
   "upsert-members",
   async (
     data: {
-      email: string
+      email?: string | null
+      phone?: string | null
       first_name?: string | null
       last_name?: string | null
     }[],
