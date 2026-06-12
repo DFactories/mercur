@@ -84,7 +84,7 @@
             "area": "core/notification",
             "title": "Notification pipeline: hybrid event catalog + settings module + sendNotificationWorkflow + orchestrator",
             "user_visible_behavior": "Domain events (order placed, payout, return, seller approved, ...) are delivered to recipients over the channel(s) the operator configured, with retry/idempotency. No subscriber calls the notification module directly.",
-            "status": "not_started",
+            "status": "in_progress",
             "verification": [
                 "1. registerNotificationEvent() builds a hybrid catalog; effective catalog = static registry left-joined with DB NotificationChannelConfig (defaults created on first read).",
                 "2. Single orchestrator subscriber binds config.event = catalog.eventKeys(), builds a NotificationIntent, runs sendNotificationWorkflow.",
@@ -92,7 +92,14 @@
                 "4. Tests: event with channel=email → only email; channel=sms → only sms; recipient without phone → sms dropped (fallback/skip); duplicate dedupe_key → no resend; sms without template_id → not sent.",
                 "5. `bun run build` + integration suites green."
             ],
-            "evidence": {},
+            "evidence": {
+                "catalog_2026-06-12": "packages/core/src/notification/catalog.ts — hybrid registry (registerNotificationEvent) + lazy default seeding (order.placed, seller.approved, seller.suspended with query.graph resolvers; read-only auth.otp system row). notificationEventKeys() returns routable (non-system) keys.",
+                "settings_module_2026-06-12": "packages/core/src/modules/notification-settings/* — NotificationChannelConfig model (event×channel unique) + service: getEffectiveCatalog (static ⋈ DB for admin), getDeliveryConfig (policy stage; email default-on, sms gated on template_id), upsertChannelConfigs.",
+                "pipeline_2026-06-12": "packages/core/src/workflows/notification/send-notification.ts — 4 steps (resolve recipients fan-out / plan deliveries with capability+template gating / build messages: email render + sms param-map / dispatch via Modules.NOTIFICATION with idempotency_key). packages/core/src/subscribers/notification-orchestrator.ts binds config.event = notificationEventKeys(), builds NotificationIntent, runs the workflow. No subscriber calls createNotifications directly.",
+                "types_2026-06-12": "packages/types/src/notification/* — NotificationChannel/Audience, NotificationRecipient, NotificationIntent, NotificationChannelConfigDTO, NotificationEventConfigDTO.",
+                "typecheck": "packages/core tsc --noEmit = 0 errors; @mercurjs/types builds clean.",
+                "pending": "Admin settings API+UI (feature admin-notification-settings); notification_channel_config migration (Phase 9); integration tests for routing/idempotency/fallback (Phase 8); real email templates per event (currently a generic builder)."
+            },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §3, §4, §6, §7. Dispatch sits on top of Modules.NOTIFICATION (gives feed channel free). Policy is a thin pure function — quiet-hours/rate/per-user prefs intentionally out of v1 scope but attach here. Catalog includes a read-only `system` row for OTP (display only; not routed)."
         },
         {

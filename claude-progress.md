@@ -183,6 +183,13 @@
   - `SellerModuleService.upsertMembers`: rewritten to key on email **or** phone (find-or-create by either).
   - `POST /vendor/sellers`: `member_email` optional + `member_phone` added; route requires at least one; `createSellerAccountWorkflow` + `upsertMembersStep` carry `member_phone`.
   - Scoping (design §12.3): `seller.email` kept required (store contact); customer create-with-phone deferred to Phase 7 (Medusa customer requires email); migrations deferred to Phase 9. Core `tsc --noEmit` = 0 errors.
+- **Phase 4 — notification platform** (feature `notification-pipeline` → `in_progress`; 5 sub-parts, 2 commits):
+  - 4.1 types: `@mercurjs/types` notification types (NotificationChannel/Audience, NotificationRecipient, NotificationIntent, NotificationChannelConfigDTO, NotificationEventConfigDTO).
+  - 4.2 catalog (`notification/catalog.ts`): hybrid registry + `registerNotificationEvent` + lazy default seeding (order.placed, seller.approved/suspended with `query.graph` resolvers; read-only `auth.otp` system row). `notificationEventKeys()` = routable keys.
+  - 4.3 `modules/notification-settings`: `NotificationChannelConfig` (event×channel) + service (`getEffectiveCatalog` merge, `getDeliveryConfig` policy input, `upsertChannelConfigs`).
+  - 4.4 `workflows/notification/send-notification.ts`: 4 steps — resolve (fan-out) / plan (capability + template gating) / build (email render, sms param-map) / dispatch via `Modules.NOTIFICATION` with `idempotency_key`.
+  - 4.5 `subscribers/notification-orchestrator.ts`: one subscriber bound to `config.event = notificationEventKeys()` → `NotificationIntent` → workflow. No subscriber calls `createNotifications` directly.
+  - Commits: foundation `b6943c5` (4.1-4.3); pipeline (4.4-4.5) this session. Core `tsc --noEmit` = 0 errors.
 
 #### Verification
 
@@ -193,7 +200,7 @@
 
 #### Next best action
 
-1. **Phase 4** — the notification platform: `notification/catalog.ts` (hybrid static + `registerNotificationEvent` registry), `modules/notification-settings` (`NotificationChannelConfig` event×channel), `workflows/notification/send-notification.ts` (5 steps: resolve/policy/template/route/dispatch on `Modules.NOTIFICATION`), and a single `subscribers/notification-orchestrator.ts` that binds `config.event = catalog.eventKeys()` and runs the workflow. (Phase 3 member-side identity is done above; customer-with-phone is Phase 7.)
+1. **Phase 5 — admin notification-settings page**: `api/admin/notification-settings/` GET (effective catalog via `NotificationSettingsModuleService.getEffectiveCatalog`) + POST (bulk `upsertChannelConfigs`, RBAC-protected, SMS un-enableable without `template_id`) + validators/query-config + middleware. `packages/admin/src/pages/notification-settings/` UI (model after `commission-rates`; per-event Email/SMS toggles + `template_id`; OTP row read-only) wired via `get-route-map.tsx`; follow admin-page-ui/admin-form-ui/admin-ui-review skills. Then Phase 6 (vendor phone login/register UI).
 2. Then Phase 3 (member `phone` field + optional `member_email`), Phase 4 (catalog + settings module + pipeline + orchestrator), Phase 5/6 (admin page + vendor UI).
 3. Generate migrations (`otp`, later `notification_settings`) and add integration tests with the sms.ir client mocked.
 
