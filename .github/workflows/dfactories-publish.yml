@@ -1,0 +1,84 @@
+name: Publish to Dfactories registry
+
+# Builds the forked @mercurjs/* packages and publishes any `-dfactories.*`
+# prerelease that isn't on the private Verdaccio registry yet. This runs from a
+# GitHub runner (good connectivity to the VPS), so the 1.4 MB vendor tarball is
+# never uploaded over the flaky local link.
+#
+# Requires repo secret VERDACCIO_TOKEN (the `_authToken` for the `dfactories`
+# user on https://registry.dfactories.ir:4873).
+
+on:
+  push:
+    branches:
+      - "dfactories/**"
+    paths:
+      - "packages/**"
+  workflow_dispatch:
+
+concurrency:
+  group: dfactories-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: https://registry.dfactories.ir:4873
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+
+      - name: Configure registry auth
+        run: |
+          {
+            echo "@mercurjs:registry=${REGISTRY}/"
+            echo "//registry.dfactories.ir:4873/:_authToken=${VERDACCIO_TOKEN}"
+          } >> "$HOME/.npmrc"
+        env:
+          VERDACCIO_TOKEN: ${{ secrets.VERDACCIO_TOKEN }}
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Publish changed -dfactories.* packages
+        run: |
+          set -euo pipefail
+          published=0
+          for dir in packages/*/ packages/providers/*/; do
+            pkg="$dir/package.json"
+            [ -f "$pkg" ] || continue
+            grep -q '"private": *true' "$pkg" && continue
+
+            name=$(node -p "require('./$pkg').name")
+            ver=$(node -p "require('./$pkg').version")
+
+            # only the forked prereleases belong on this registry
+            case "$ver" in
+              *-dfactories.*) ;;
+              *) echo "skip $name@$ver (not a -dfactories prerelease)"; continue ;;
+            esac
+
+            if npm view "$name@$ver" version --registry "$REGISTRY" >/dev/null 2>&1; then
+              echo "skip $name@$ver (already published)"
+              continue
+            fi
+
+            echo "publishing $name@$ver"
+            ( cd "$dir" && npm publish \
+                --registry "$REGISTRY" \
+                --tag dfactories \
+                --no-git-checks \
+                --fetch-timeout 600000 )
+            published=$((published+1))
+          done
+          echo "published $published package(s)"
