@@ -291,7 +291,7 @@
     },
     "packages/core": {
       "name": "@mercurjs/core",
-      "version": "2.1.2",
+      "version": "2.1.2-dfactories.12",
       "devDependencies": {
         "@medusajs/cli": "^2.13.4",
         "@medusajs/core-flows": "^2.13.4",
@@ -464,7 +464,7 @@
     },
     "packages/types": {
       "name": "@mercurjs/types",
-      "version": "2.1.2",
+      "version": "2.1.2-dfactories.12",
       "dependencies": {
         "@medusajs/types": "2.13.4",
       },
