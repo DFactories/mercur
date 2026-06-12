@@ -27,6 +27,9 @@ export * from "./modules"
 // Custom fields types
 export * from "./custom-fields"
 
+// Notification types
+export * from "./notification"
+
 // UI types
 export * from "./dashboard"
 
