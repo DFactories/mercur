@@ -48,7 +48,8 @@
                 "source": "packages/core/src/providers/smsir/client.ts (transport, X-API-KEY, sendVerify, dev no-op when no key); packages/core/src/providers/notification-smsir/{service,index}.ts (AbstractNotificationProviderService, channel sms, ModuleProvider(Modules.NOTIFICATION)).",
                 "registration": "withMercur (packages/core/src/with-mercur.ts) injects @medusajs/medusa/notification with providers local(email/feed/seller_feed/vendor_feed)+smsir(sms) only if the consumer hasn't declared a notification module. Added phone_auth feature flag default.",
                 "typecheck": "packages/core `tsc --noEmit` = 0 errors. Resolve paths verified at runtime: @medusajs/medusa/notification, @medusajs/medusa/notification-local, @mercurjs/core/providers/notification-smsir.",
-                "pending": "Runtime boot + integration test with the sms.ir client mocked (Phase 8)."
+                "runtime_2026-06-12": "Server boots clean (medusa develop :9000) with the injected Notification module + smsir provider loaded; sms.ir client dev no-op exercised end-to-end via the OTP request path (logged template 100000 + code).",
+                "pending": "Formal Jest integration test with the sms.ir client mocked (Phase 8); real sms.ir send requires an API key + approved template."
             },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §3-§5. Shared transport at packages/core/src/providers/smsir/client.ts is used by BOTH the notification provider (transactional) and the OTP path (auth) — but only the transport is shared; the pathways are separate. Provider structure mirrors packages/providers/payout-stripe-connect/src. Only SMSIR_API_KEY lives in env; all template ids live in DB."
         },
@@ -74,7 +75,8 @@
                 "design_refinement": "No Medusa auth provider and no withMercur Auth-module injection — see docs/features/phone-auth-and-notifications.md §12 (cross-module isolation + the request-step 200 problem). emailpass untouched.",
                 "phase3_member_2026-06-12": "Member model: nullable phone (unique where not null) + email made nullable; MemberDTO/Create/Update updated; SellerModuleService.upsertMembers now keys on email OR phone. POST /vendor/sellers: member_email optional + member_phone added (route requires at least one); createSellerAccountWorkflow carries member_phone. Seller.email kept required (store contact) — see design §12.3.",
                 "typecheck": "packages/core tsc --noEmit = 0 errors (incl. Phase 3).",
-                "pending": "Customer (store) create-with-phone route (Phase 7; Medusa customer requires email); migrations for otp table + member phone column/indexes (Phase 9); integration tests with sms.ir mocked + a real medusa boot."
+                "runtime_e2e_2026-06-12": "Verified against a booted server (medusa develop, :9000) + Postgres scratch DB after `bun run build` (9/9) + db:migrate. POST /vendor/auth/phone/request-otp {phone} -> {success:true}; otp_code row stored (hashed); sms.ir client dev-logged the code (no API key). POST /vendor/auth/phone/verify-otp {phone,code} -> { token } (valid JWT, actor_type member, auth_identity_id set, actor_id empty pre-registration); provider_identity (phone-otp, entity_id=phone) created; otp_code consumed (not reusable). Migrations Migration20260612090001 (otp_code) + 090003 (member phone/email nullable + indexes) confirmed in DB.",
+                "pending": "Customer (store) create-with-phone route (Phase 7; Medusa customer requires email); formal Jest integration tests with sms.ir mocked (Phase 8). Migrations done (hand-written, applied to scratch DB)."
             },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §2(1,3,7), §4 (OtpCode), §6. OTP path is fully separate from the notification pipeline/settings. Two-step logic inside auth provider `authenticate` (no code → send; with code → verify). Validate Medusa 2.13.4 auth-provider contract supports the two-step flow in this phase. Requires member model `phone` field + migration; member_email becomes optional in vendor seller validators + upsert-member step."
         },
@@ -98,7 +100,8 @@
                 "pipeline_2026-06-12": "packages/core/src/workflows/notification/send-notification.ts — 4 steps (resolve recipients fan-out / plan deliveries with capability+template gating / build messages: email render + sms param-map / dispatch via Modules.NOTIFICATION with idempotency_key). packages/core/src/subscribers/notification-orchestrator.ts binds config.event = notificationEventKeys(), builds NotificationIntent, runs the workflow. No subscriber calls createNotifications directly.",
                 "types_2026-06-12": "packages/types/src/notification/* — NotificationChannel/Audience, NotificationRecipient, NotificationIntent, NotificationChannelConfigDTO, NotificationEventConfigDTO.",
                 "typecheck": "packages/core tsc --noEmit = 0 errors; @mercurjs/types builds clean.",
-                "pending": "Admin settings API+UI (feature admin-notification-settings); notification_channel_config migration (Phase 9); integration tests for routing/idempotency/fallback (Phase 8); real email templates per event (currently a generic builder)."
+                "runtime_2026-06-12": "Server boots clean with the notification_settings + otp modules and the notification-orchestrator subscriber loaded (config.event = notificationEventKeys()); notification_channel_config table created via Migration20260612090002 and confirmed in DB.",
+                "pending": "Admin UI page (feature admin-notification-settings, 5b); integration tests for routing/idempotency/fallback (Phase 8); real email templates per event (currently a generic builder)."
             },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §3, §4, §6, §7. Dispatch sits on top of Modules.NOTIFICATION (gives feed channel free). Policy is a thin pure function — quiet-hours/rate/per-user prefs intentionally out of v1 scope but attach here. Catalog includes a read-only `system` row for OTP (display only; not routed)."
         },
@@ -118,6 +121,7 @@
             ],
             "evidence": {
                 "admin_api_2026-06-12": "packages/core/src/api/admin/notification-settings/{route,validators,middlewares}.ts. GET returns getEffectiveCatalog(); POST validates + filters updates to non-system event×available-channel combos + upsertChannelConfigs, returns refreshed catalog. Wired into api/admin/middlewares.ts. Admin-authenticated by framework default. SMS stays effectively off without template_id (enforced in getEffectiveCatalog/getDeliveryConfig). typecheck: core tsc --noEmit = 0 errors.",
+                "runtime_2026-06-12": "GET /admin/notification-settings on the booted server returns HTTP 401 without an admin session — confirms the route is mounted and admin-protected.",
                 "pending": "Admin UI page packages/admin/src/pages/notification-settings (5b) using admin-page-ui/admin-form-ui skills; client codegen + types; migration (Phase 9); integration tests (Phase 8)."
             },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §5, §7. Model after packages/admin/src/pages/commission-rates. Persian/RTL copy must respect the تامین‌کننده terminology (see memory vendor-terminology). Depends on notification-pipeline (catalog + settings module)."

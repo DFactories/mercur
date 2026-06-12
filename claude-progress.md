@@ -200,9 +200,26 @@
 
 #### Next best action
 
-1. **Phase 5 — admin notification-settings page**: `api/admin/notification-settings/` GET (effective catalog via `NotificationSettingsModuleService.getEffectiveCatalog`) + POST (bulk `upsertChannelConfigs`, RBAC-protected, SMS un-enableable without `template_id`) + validators/query-config + middleware. `packages/admin/src/pages/notification-settings/` UI (model after `commission-rates`; per-event Email/SMS toggles + `template_id`; OTP row read-only) wired via `get-route-map.tsx`; follow admin-page-ui/admin-form-ui/admin-ui-review skills. Then Phase 6 (vendor phone login/register UI).
+Backend of the whole feature is done (Phases 1-4 + 5a, type-clean, 7 commits). Remaining is frontend + tooling/DB:
+
+1. **Make it runnable / verifiable** (recommended before the UIs, which depend on it): run `mercurjs codegen` (so `@mercurjs/client` types include `/admin/notification-settings` + `/vendor|store/auth/phone/*`), generate migrations (`otp`, member `phone`, `notification_channel_config`), and one real `bun run build` + a smoke boot. This unblocks typed dashboard pages and lets us verify end-to-end.
+2. **Phase 5b — admin UI**: `packages/admin/src/pages/notification-settings/` (model after `commission-rates`; per-event Email/SMS toggles + `template_id`; OTP row read-only), wired via `get-route-map.tsx`; admin-page-ui/admin-form-ui/admin-ui-review skills. Needs codegen types from step 1.
+3. **Phase 6 — vendor UI**: phone tab in `pages/login` + `pages/register` + `useRequestOtp`/`useVerifyOtp` hooks; fa/RTL (تامین‌کننده terminology).
+4. **Phase 7** store customer create-with-phone; **Phase 8** integration tests (mock sms.ir) + build; **Phase 9** run migrations.
 2. Then Phase 3 (member `phone` field + optional `member_email`), Phase 4 (catalog + settings module + pipeline + orchestrator), Phase 5/6 (admin page + vendor UI).
 3. Generate migrations (`otp`, later `notification_settings`) and add integration tests with the sms.ir client mocked.
+
+### Runnable validation: 2026-06-12 (full backend proven end-to-end)
+
+After Phases 1-5a, ran the "make it runnable" step against a local Postgres scratch DB (`mercur_phaseval`, passwordless) + a temporary `apps/api/.env` (gitignored):
+
+- **`bun run build`** = green, **9/9 packages** (incl. core codegen). The regenerated `@mercurjs/client` route map now types the new routes (`notificationSettings`, `auth/phone/{requestOtp,verifyOtp}`) — unblocks the dashboard UIs.
+- **Migrations** (hand-written, MikroORM): `Migration20260612090001` (otp_code), `090002` (notification_channel_config), `090003` (member: add `phone`, `email` nullable, scoped unique indexes). `medusa db:migrate` succeeded; all three tables/columns/indexes verified in the DB. NOTE: module `.snapshot` files were NOT updated (a future `medusa db:generate` would re-diff) — acceptable; runtime runs the migration files, not snapshots.
+- **Boot**: `medusa develop` → "Server is ready on port: 9000" with the `otp` + `notification_settings` modules, the injected Notification module + `notification-smsir` provider, and the `notification-orchestrator` subscriber all loaded cleanly.
+- **End-to-end phone OTP (vendor)**: `request-otp` → `{success:true}` + hashed `otp_code` row + sms.ir client dev-logged the code; `verify-otp` with that code → valid JWT `{ token }` (actor_type member, auth_identity_id set), `provider_identity (phone-otp, entity_id=phone)` created, `otp_code` consumed (not reusable).
+- **Endpoints mounted**: `GET /admin/notification-settings` → 401 (mounted + admin-protected); `/store/auth/phone/request-otp` → 400 (Medusa publishable-key gate, i.e. mounted).
+
+Net: the entire feature backend (auth + notification platform) is runtime-verified. Remaining = dashboard UIs (5b admin, 6 vendor), store customer-with-phone (7), and formal Jest integration tests (8). The scratch DB + `apps/api/.env` are local-only (gitignored); the migration files are committed.
 
 ## Required Artifacts (status)
 
