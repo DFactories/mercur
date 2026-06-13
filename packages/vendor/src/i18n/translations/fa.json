@@ -3154,6 +3154,12 @@
       "verify": "تأیید و ورود",
       "codeLabel": "کد تأیید",
       "changeNumber": "تغییر شماره",
+      "resend": "ارسال مجدد کد",
+      "resendIn": "ارسال مجدد تا {{seconds}} ثانیه",
+      "errors": {
+        "notRegistered": "این شماره ثبت‌نام نشده است. لطفاً ثبت‌نام کنید.",
+        "alreadyRegistered": "این شماره قبلاً ثبت شده است. لطفاً وارد شوید."
+      },
       "validation": {
         "phoneRequired": "شماره موبایل الزامی است",
         "codeRequired": "کد تأیید الزامی است"

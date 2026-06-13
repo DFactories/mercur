@@ -50,9 +50,11 @@ const StoreSelectHeader = () => {
 const StoreSelectList = ({
   seller_members,
   email,
+  phone,
 }: {
   seller_members: SellerMemberDTO[];
   email: string;
+  phone: string;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -105,7 +107,7 @@ const StoreSelectList = ({
           );
         })}
       <button
-        onClick={() => navigate("/onboarding", { state: { email } })}
+        onClick={() => navigate("/onboarding", { state: { email, phone } })}
         className="hover:bg-ui-bg-base-hover transition-fg flex items-center justify-center gap-x-2 rounded-b-lg px-4 py-3"
       >
         <Plus className="text-ui-fg-muted" />
@@ -123,7 +125,9 @@ const StoreSelectFooter = () => {
 
 const Root = ({ children }: { children?: ReactNode }) => {
   const location = useLocation();
-  const email = (location.state as { email?: string })?.email ?? "";
+  const state = location.state as { email?: string; phone?: string } | null;
+  const email = state?.email ?? "";
+  const phone = state?.phone ?? "";
   const { seller_members, isLoading } = useSellers();
 
   if (isLoading) {
@@ -148,6 +152,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
             <StoreSelectList
               seller_members={seller_members ?? []}
               email={email}
+              phone={phone}
             />
           </div>
           <StoreSelectFooter />

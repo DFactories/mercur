@@ -194,10 +194,14 @@ export const useUpdateProviderForEmailPass = (
 // --- Phone (OTP) authentication --------------------------------------------
 
 export const useRequestOtp = (
-  options?: UseMutationOptions<unknown, ClientError, { phone: string }>,
+  options?: UseMutationOptions<
+    unknown,
+    ClientError,
+    { phone: string; mode?: "login" | "register" }
+  >,
 ) => {
   return useMutation({
-    mutationFn: (payload: { phone: string }) =>
+    mutationFn: (payload: { phone: string; mode?: "login" | "register" }) =>
       sdk.vendor.auth.phone.requestOtp.mutate(payload),
     ...options,
   });

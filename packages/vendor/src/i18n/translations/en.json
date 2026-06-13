@@ -3245,6 +3245,12 @@
       "verify": "Verify & sign in",
       "codeLabel": "Verification code",
       "changeNumber": "Change number",
+      "resend": "Resend code",
+      "resendIn": "Resend in {{seconds}}s",
+      "errors": {
+        "notRegistered": "This phone number is not registered. Please sign up.",
+        "alreadyRegistered": "This phone number is already registered. Please log in."
+      },
       "validation": {
         "phoneRequired": "Phone number is required",
         "codeRequired": "Verification code is required"

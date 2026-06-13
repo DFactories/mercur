@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 
 import { Alert, Button, Input, Text } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
@@ -11,37 +11,90 @@ type PhoneAuthFormProps = {
   onVerified: (phone: string) => void
   /** Label for the final verify button (defaults to a generic "verify"). */
   submitLabel?: string
+  /**
+   * "login" requires the phone to already have an account; "register" requires
+   * it not to. Drives the backend pre-send check.
+   */
+  mode?: "login" | "register"
 }
+
+const RESEND_SECONDS = 60
 
 /**
  * Two-step phone (OTP) authentication used by both login and register.
  * Step 1: enter phone -> request a code. Step 2: enter the code -> verify,
- * which sets the session and calls `onVerified`.
+ * which sets the session and calls `onVerified`. Includes a resend-with-cooldown.
  */
-export const PhoneAuthForm = ({ onVerified, submitLabel }: PhoneAuthFormProps) => {
+export const PhoneAuthForm = ({
+  onVerified,
+  submitLabel,
+  mode,
+}: PhoneAuthFormProps) => {
   const { t } = useTranslation()
 
   const [step, setStep] = useState<"phone" | "code">("phone")
   const [phone, setPhone] = useState("")
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [resendIn, setResendIn] = useState(0)
 
   const { mutateAsync: requestOtp, isPending: isRequesting } = useRequestOtp()
   const { mutateAsync: verifyOtp, isPending: isVerifying } = useVerifyOtp()
 
+  // Countdown for the resend button.
+  useEffect(() => {
+    if (resendIn <= 0) {
+      return
+    }
+    const id = setTimeout(() => setResendIn(resendIn - 1), 1000)
+    return () => clearTimeout(id)
+  }, [resendIn])
+
+  const mapError = (msg?: string): string | undefined => {
+    if (!msg) {
+      return msg
+    }
+    if (msg.includes("PHONE_NOT_REGISTERED")) {
+      return t("login.phone.errors.notRegistered")
+    }
+    if (msg.includes("PHONE_ALREADY_REGISTERED")) {
+      return t("login.phone.errors.alreadyRegistered")
+    }
+    return msg
+  }
+
   const toError = (e: unknown) =>
-    isFetchError(e) || e instanceof Error ? (e as Error).message : String(e)
+    mapError(
+      isFetchError(e) || e instanceof Error ? (e as Error).message : String(e)
+    ) ?? null
+
+  const sendCode = async () => {
+    await requestOtp({ phone: phone.trim(), mode })
+    setResendIn(RESEND_SECONDS)
+  }
 
   const handleRequest = async () => {
     setError(null)
-    const value = phone.trim()
-    if (!value) {
+    if (!phone.trim()) {
       setError(t("login.phone.validation.phoneRequired"))
       return
     }
     try {
-      await requestOtp({ phone: value })
+      await sendCode()
       setStep("code")
+    } catch (e) {
+      setError(toError(e))
+    }
+  }
+
+  const handleResend = async () => {
+    if (resendIn > 0) {
+      return
+    }
+    setError(null)
+    setCode("")
+    try {
+      await sendCode()
     } catch (e) {
       setError(toError(e))
     }
@@ -49,13 +102,12 @@ export const PhoneAuthForm = ({ onVerified, submitLabel }: PhoneAuthFormProps) =
 
   const handleVerify = async () => {
     setError(null)
-    const value = code.trim()
-    if (!value) {
+    if (!code.trim()) {
       setError(t("login.phone.validation.codeRequired"))
       return
     }
     try {
-      await verifyOtp({ phone: phone.trim(), code: value })
+      await verifyOtp({ phone: phone.trim(), code: code.trim() })
       onVerified(phone.trim())
     } catch (e) {
       setError(toError(e))
@@ -104,17 +156,35 @@ export const PhoneAuthForm = ({ onVerified, submitLabel }: PhoneAuthFormProps) =
               onChange={(e) => setCode(e.target.value)}
               data-testid="otp-input"
             />
-            <button
-              type="button"
-              onClick={() => {
-                setStep("phone")
-                setCode("")
-                setError(null)
-              }}
-              className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover self-start text-left text-xs font-medium outline-none transition-fg"
-            >
-              {t("login.phone.changeNumber")}
-            </button>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("phone")
+                  setCode("")
+                  setError(null)
+                  setResendIn(0)
+                }}
+                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-left text-xs font-medium outline-none transition-fg"
+              >
+                {t("login.phone.changeNumber")}
+              </button>
+              {resendIn > 0 ? (
+                <Text size="xsmall" className="text-ui-fg-muted">
+                  {t("login.phone.resendIn", { seconds: resendIn })}
+                </Text>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={isRequesting}
+                  className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-xs font-medium outline-none transition-fg disabled:opacity-50"
+                  data-testid="resend-code"
+                >
+                  {t("login.phone.resend")}
+                </button>
+              )}
+            </div>
           </div>
         )}
 

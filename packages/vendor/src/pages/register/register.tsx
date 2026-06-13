@@ -170,41 +170,20 @@ const RegisterFooter = () => {
 const RegisterContent = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [method, setMethod] = useState<"email" | "phone">("email")
 
+  // Phone (OTP) is the only sign-up method. The email RegisterForm is kept
+  // (exported) but no longer rendered.
   return (
     <div className="mt-6">
       <RegisterHeader />
-      <div className="mb-6 grid grid-cols-2 gap-x-2">
-        <Button
-          type="button"
-          variant={method === "email" ? "primary" : "secondary"}
-          onClick={() => setMethod("email")}
-        >
-          {t("login.method.email")}
-        </Button>
-        <Button
-          type="button"
-          variant={method === "phone" ? "primary" : "secondary"}
-          onClick={() => setMethod("phone")}
-        >
-          {t("login.method.phone")}
-        </Button>
-      </div>
-      {method === "email" ? (
-        <RegisterForm />
-      ) : (
-        <PhoneAuthForm
-          submitLabel={t("actions.continue")}
-          onVerified={(phone) => {
-            sessionStorage.setItem(
-              REGISTER_DRAFT_KEY,
-              JSON.stringify({ phone }),
-            )
-            navigate("/onboarding", { state: { phone } })
-          }}
-        />
-      )}
+      <PhoneAuthForm
+        mode="register"
+        submitLabel={t("actions.continue")}
+        onVerified={(phone) => {
+          sessionStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify({ phone }))
+          navigate("/onboarding", { state: { phone } })
+        }}
+      />
     </div>
   )
 }

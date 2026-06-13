@@ -1,4 +1,4 @@
-import { Children, ReactNode, useState } from "react";
+import { Children, ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
 import { Alert, Button, Heading, Input, Text } from "@medusajs/ui";
@@ -174,18 +174,6 @@ const LoginForm = () => {
 const LoginFooter = () => {
   return (
     <div className="mt-auto flex flex-col gap-y-2">
-      <span className="text-ui-fg-muted txt-small">
-        <Trans
-          i18nKey="login.forgotPassword"
-          components={[
-            <Link
-              key="reset-password-link"
-              to="/reset-password"
-              className="text-ui-fg-interactive transition-fg hover:text-ui-fg-interactive-hover focus-visible:text-ui-fg-interactive-hover font-medium outline-none"
-            />,
-          ]}
-        />
-      </span>
       {config.enableSellerRegistration !== false && (
         <span className="text-ui-fg-muted txt-small">
           <Trans
@@ -207,39 +195,21 @@ const LoginFooter = () => {
 const LoginContent = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [method, setMethod] = useState<"email" | "phone">("email");
 
+  // Phone (OTP) is the only sign-in method. The email/password LoginForm is
+  // kept (exported) but no longer rendered.
   return (
     <div className="mt-6">
       <LoginHeader />
-      <div className="mb-6 grid grid-cols-2 gap-x-2">
-        <Button
-          type="button"
-          variant={method === "email" ? "primary" : "secondary"}
-          onClick={() => setMethod("email")}
-        >
-          {t("login.method.email")}
-        </Button>
-        <Button
-          type="button"
-          variant={method === "phone" ? "primary" : "secondary"}
-          onClick={() => setMethod("phone")}
-        >
-          {t("login.method.phone")}
-        </Button>
-      </div>
-      {method === "email" ? (
-        <LoginForm />
-      ) : (
-        <PhoneAuthForm
-          submitLabel={t("login.submit")}
-          onVerified={() => {
-            setTimeout(() => {
-              navigate("/store-select", { replace: true });
-            }, 800);
-          }}
-        />
-      )}
+      <PhoneAuthForm
+        mode="login"
+        submitLabel={t("login.submit")}
+        onVerified={(phone) => {
+          setTimeout(() => {
+            navigate("/store-select", { replace: true, state: { phone } });
+          }, 800);
+        }}
+      />
     </div>
   );
 };
