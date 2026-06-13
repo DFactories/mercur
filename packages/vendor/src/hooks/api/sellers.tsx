@@ -203,3 +203,54 @@ export const useCreateSellerAccount = (
     ...options,
   });
 };
+
+// --- Store phone (OTP) verification ----------------------------------------
+
+type SellerPhoneOtpResult = { success?: boolean; verified?: boolean };
+
+/**
+ * Start verification of the selected store's phone. The backend auto-verifies
+ * (returns `{ verified: true }`, no SMS) when the store phone is the owner's own
+ * login phone; otherwise it sends a code (`{ success: true }`).
+ */
+export const useRequestSellerPhoneOtp = (
+  options?: UseMutationOptions<SellerPhoneOtpResult, ClientError, void>,
+) => {
+  return useMutation({
+    mutationFn: async () =>
+      (await sdk.vendor.sellers.me.phone.requestOtp.mutate(
+        {},
+      )) as SellerPhoneOtpResult,
+    onSuccess: (data, variables, context) => {
+      // Auto-verify path updates the seller — refresh so the badge flips.
+      if (data?.verified) {
+        queryClient.invalidateQueries({ queryKey: membersQueryKeys.me() });
+        queryClient.invalidateQueries({ queryKey: sellersQueryKeys.all });
+      }
+      options?.onSuccess?.(data, variables, context);
+    },
+    ...options,
+  });
+};
+
+/** Confirm the store phone with the OTP code. */
+export const useVerifySellerPhoneOtp = (
+  options?: UseMutationOptions<
+    { verified: boolean },
+    ClientError,
+    { code: string }
+  >,
+) => {
+  return useMutation({
+    mutationFn: async (payload: { code: string }) =>
+      (await sdk.vendor.sellers.me.phone.verifyOtp.mutate(payload)) as {
+        verified: boolean;
+      },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: membersQueryKeys.me() });
+      queryClient.invalidateQueries({ queryKey: sellersQueryKeys.all });
+      options?.onSuccess?.(data, variables, context);
+    },
+    ...options,
+  });
+};

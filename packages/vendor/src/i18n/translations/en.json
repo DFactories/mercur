@@ -2724,6 +2724,28 @@
     }
   },
   "store": {
+    "phoneVerification": {
+      "verified": "Verified",
+      "unverified": "Not verified",
+      "verify": "Verify",
+      "title": "Verify store phone",
+      "description": "A verification code was sent to {{phone}}. Enter it below.",
+      "codeLabel": "Verification code",
+      "submit": "Verify",
+      "resend": "Resend code",
+      "resendIn": "Resend in {{seconds}}s",
+      "toast": {
+        "sent": "Verification code sent",
+        "verified": "Store phone verified"
+      },
+      "errors": {
+        "alreadyRegistered": "This number is already registered",
+        "invalidCode": "Invalid verification code",
+        "phoneInvalid": "Invalid number (must start with 09 and be 11 digits)",
+        "notSet": "Set and save the store phone first",
+        "generic": "Something went wrong. Please try again"
+      }
+    },
     "domain": "Seller",
     "manageYourStoresDetails": "Manage your seller's details",
     "editStore": "Edit seller",

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { HttpTypes } from "@mercurjs/types";
 
 import { StoreDetailHeader } from "./store-detail-header";
+import { StorePhoneVerification } from "./store-phone-verification";
 import { currencies } from "@/lib/data/currencies";
 
 type StoreGeneralSectionProps = {
@@ -75,9 +76,13 @@ export const StoreGeneralSection = ({
             <Text size="small" leading="compact" weight="plus">
               {t("fields.phone")}
             </Text>
-            <Text size="small" leading="compact">
-              {seller.phone || "-"}
-            </Text>
+            <StorePhoneVerification
+              phone={seller.phone ?? null}
+              verified={
+                !!(seller as { phone_verified_at?: string | Date | null })
+                  .phone_verified_at
+              }
+            />
           </div>
           <div className="text-ui-fg-subtle grid grid-cols-2 px-6 py-4">
             <Text size="small" leading="compact" weight="plus">
