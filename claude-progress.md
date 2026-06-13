@@ -293,9 +293,27 @@ verified *contact*, never a login credential. DB is clean, so no legacy/backfill
   auto-verify when == login phone; PHONE_ALREADY_REGISTERED when owned by another.
 - `bun run build` (types→core→client→vendor) green.
 
+## Session 7 — Register name + phone-first store contact (2026-06-14)
+
+#### Completed
+
+- **Register collects first/last name again**: `PhoneAuthForm` gained optional
+  `extraFields` (ReactNode shown on step 1) + `beforeRequest` (gate) props;
+  register renders name inputs there, validates, and stores them in the register
+  draft → onboarding lands them on the seller member (member already had the
+  fields; no backend change for this part).
+- **Phone-first store contact**: `seller.email` is now **nullable**
+  (`Migration20260614120000`); `SellerDTO`/`CreateSellerDTO.email` optional;
+  `CreateSellerAccount` validator email optional. Store info forms (onboarding
+  `store-step` + settings `edit-store-form`) now require **phone** and make
+  **email optional**; `useOnboarding` sends `email || undefined`. fa+en
+  `*.validation.phoneRequired` added.
+- `bun run build` (types→core→client→vendor) green; `auth/vendor` tests 14/14.
+- Released `@mercurjs/{core,vendor}@2.1.2-dfactories.16`.
+
 ## Required Artifacts (status)
 
-- `claude-progress.md` -- this file (updated 2026-06-14, Session 6).
+- `claude-progress.md` -- this file (updated 2026-06-14, Session 7).
 - `feature_list.json` -- present at repo root. Tracks 5 features (1 passing + 4 not_started for phone-auth/notifications).
 - `session-handoff.md` -- present at repo root; updated 2026-06-12 with the phone-auth design handoff.
 - `docs/features/phone-auth-and-notifications.md` -- design/decision record for the phone-auth + notification work.
