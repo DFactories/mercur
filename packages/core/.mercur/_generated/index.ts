@@ -457,6 +457,7 @@ export type Routes = {
             };
         };
         members: typeof import("../../src/api/admin/members/route");
+        notificationSettings: typeof import("../../src/api/admin/notification-settings/route");
         subscriptionPlans: typeof import("../../src/api/admin/subscription-plans/route") & {
             $id: typeof import("../../src/api/admin/subscription-plans/[id]/route") & {
                 overrides: typeof import("../../src/api/admin/subscription-plans/[id]/overrides/route") & {
@@ -554,6 +555,12 @@ export type Routes = {
         };
         sellers: typeof import("../../src/api/store/sellers/route") & {
             $id: typeof import("../../src/api/store/sellers/[id]/route");
+        };
+        auth: {
+            phone: {
+                requestOtp: typeof import("../../src/api/store/auth/phone/request-otp/route");
+                verifyOtp: typeof import("../../src/api/store/auth/phone/verify-otp/route");
+            };
         };
     };
     vendor: {
@@ -751,6 +758,12 @@ export type Routes = {
         };
         uploads: typeof import("../../src/api/vendor/uploads/route");
         attributes: typeof import("../../src/api/vendor/attributes/route");
+        auth: {
+            phone: {
+                requestOtp: typeof import("../../src/api/vendor/auth/phone/request-otp/route");
+                verifyOtp: typeof import("../../src/api/vendor/auth/phone/verify-otp/route");
+            };
+        };
         featureFlags: typeof import("../../src/api/vendor/feature-flags/route");
         fulfillmentProviders: typeof import("../../src/api/vendor/fulfillment-providers/route");
         members: {
