@@ -1,6 +1,7 @@
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import { MedusaContainer } from "@medusajs/framework/types"
 import { MercurModules } from "@mercurjs/types"
+import { createSellerUser } from "../../../helpers/create-seller-user"
 
 jest.setTimeout(50000)
 
@@ -15,6 +16,7 @@ type SellerService = {
   createMembers: (
     data: Array<{ phone?: string | null; email?: string | null }>
   ) => Promise<Array<{ id: string }>>
+  updateSellers: (data: { id: string; phone?: string }) => Promise<unknown>
 }
 
 const decodeJwt = (token: string): { actor_id?: string } =>
@@ -137,6 +139,38 @@ medusaIntegrationTestRunner({
         expect(res.status).toEqual(200)
         // The minted token's actor is the pre-existing member (bug-1 fix).
         expect(decodeJwt(res.data.token).actor_id).toEqual(member.id)
+      })
+
+      it("register mode errors when the phone is on the store (seller), not the member", async () => {
+        const phone = "09120000094"
+        const { seller } = await createSellerUser(container, {
+          email: "store-phone@test.com",
+          name: "Store Phone",
+        })
+        const sellerSvc = container.resolve(
+          MercurModules.SELLER
+        ) as unknown as SellerService
+        await sellerSvc.updateSellers({
+          id: (seller as { id: string }).id,
+          phone,
+        })
+
+        const err = await api
+          .post("/vendor/auth/phone/request-otp", { phone, mode: "register" })
+          .catch((e: { response: { status: number; data: unknown } }) => e)
+
+        expect(JSON.stringify(err.response.data)).toContain(
+          "PHONE_ALREADY_REGISTERED"
+        )
+      })
+
+      it("rejects an invalid phone format (must be 09 + 11 digits)", async () => {
+        const err = await api
+          .post("/vendor/auth/phone/request-otp", { phone: "1234567890" })
+          .catch((e: { response: { status: number; data: unknown } }) => e)
+
+        expect(err.response.status).toEqual(400)
+        expect(JSON.stringify(err.response.data)).toContain("INVALID_PHONE")
       })
     })
   },

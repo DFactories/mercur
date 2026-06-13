@@ -65,6 +65,19 @@ export function normalizeIranPhone(input: string): string {
 
 type SellerModuleLike = {
   listMembers: (filters: Record<string, unknown>) => Promise<{ id: string }[]>
+  listSellers: (
+    filters: Record<string, unknown>,
+    config?: Record<string, unknown>
+  ) => Promise<Array<{ id: string; members?: { id: string }[] }>>
+}
+
+/** Iranian mobile in canonical local form: 09 + 9 digits = 11 digits. */
+const IRAN_MOBILE_RE = /^09\d{9}$/
+
+function assertValidPhone(phone: string): void {
+  if (!IRAN_MOBILE_RE.test(phone)) {
+    throw new MedusaError(MedusaError.Types.INVALID_DATA, "INVALID_PHONE")
+  }
 }
 
 /** Common stored formats for an Iranian phone, so we match legacy/profile values. */
@@ -85,9 +98,22 @@ async function findMemberIdByPhone(
   req: MedusaRequest,
   phone: string
 ): Promise<string | undefined> {
+  const variants = phoneVariants(phone)
   const seller = req.scope.resolve<SellerModuleLike>(MercurModules.SELLER)
-  const members = await seller.listMembers({ phone: phoneVariants(phone) })
-  return members[0]?.id
+
+  // 1) Phone saved on the member (phone sign-ups).
+  const members = await seller.listMembers({ phone: variants })
+  if (members[0]?.id) {
+    return members[0].id
+  }
+
+  // 2) Phone saved on the seller/store (e.g. an email-created account that set
+  // the store phone in the vendor panel) -> return that store's member.
+  const sellers = await seller.listSellers(
+    { phone: variants },
+    { relations: ["members"] }
+  )
+  return sellers[0]?.members?.[0]?.id
 }
 
 /** Find an existing customer whose phone matches, in any common format. */
@@ -208,6 +234,7 @@ export function createRequestOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
     const { phone: rawPhone, mode } = RequestOtpSchema.parse(req.body)
     const phone = normalizeIranPhone(rawPhone)
+    assertValidPhone(phone)
 
     // Enforce login/register separation before spending an SMS.
     if (mode) {
@@ -252,6 +279,7 @@ export function createVerifyOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
     const { phone: rawPhone, code } = VerifyOtpSchema.parse(req.body)
     const phone = normalizeIranPhone(rawPhone)
+    assertValidPhone(phone)
 
     const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
     await otp.verifyOtp({ identifier: phone, actor_type: actorType, code })
