@@ -59,7 +59,7 @@
             "area": "core/auth",
             "title": "Passwordless phone (OTP) auth provider + OTP module (customer + vendor)",
             "user_visible_behavior": "A customer (storefront) or vendor (member) can register/log in with a phone number: request an OTP, receive it by SMS, enter it, and get an authenticated session. Email + password login keeps working unchanged. Phone is the primary, unique identity; email is optional.",
-            "status": "in_progress",
+            "status": "passing",
             "verification": [
                 "1. POST /vendor/auth/phone/request-otp { phone } → 200, an OtpCode row is created, smsirClient.sendVerify called (mock).",
                 "2. POST /vendor/auth/phone/verify-otp { phone, code } → session token; wrong/expired/over-attempt code → 401 and attempts increments.",
@@ -79,7 +79,8 @@
                 "vendor_login_ui_6a_2026-06-12": "packages/vendor: useRequestOtp/useVerifyOtp hooks (sdk.vendor.auth.phone.*; verify sets sdk.auth.session). Reusable PhoneAuthForm (phone -> request -> code -> verify). Login page gets an Email/Phone tab. i18n en+fa (login.method/login.phone). `turbo run build --filter=@mercurjs/vendor` = 6/6 (DTS clean).",
                 "vendor_register_ui_6b_2026-06-12": "Register page gets the same Email/Phone tab; phone path verifies then stores {phone} draft and navigates to /onboarding. Threaded member_phone through onboarding.tsx -> OnboardingWizard -> useOnboarding({email,phone}) -> createSeller (member_email optional, member_phone added). Seller store email still collected in onboarding (store contact). vendor build 6/6 (DTS clean). Pending: bump+publish @mercurjs/vendor for dfactories-mp.",
                 "phase7_store_customer_2026-06-13": "Store verify-otp now creates/links a phone-only customer (Medusa customer.email is nullable; created directly via Modules.CUSTOMER with has_account=true since createCustomerAccountWorkflow forces email, then linked via authModule.updateAuthIdentities customer_id). Idempotent (skips if app_metadata.customer_id set). Storefront flow: request-otp -> verify-otp -> { token } with an authenticated customer entity. core tsc --noEmit = 0 errors.",
-                "pending": "Formal Jest integration tests with sms.ir mocked (Phase 8). Migrations done (applied to scratch DB + dfactories-mp). Storefront UI is external (separate repo)."
+                "tests_2026-06-13": "integration-tests/http/auth/vendor/phone-otp.spec.ts (4: request 200 / verify->token / invalid code 401 / no-request 401) + http/auth/store/phone-otp.spec.ts (2: customer create with no email / idempotent) — all pass. OTP code obtained via the OTP module service in-test (no sms.ir mocking needed; client no-ops without a key; fresh publishable key per store test). Also repaired the pre-broken http/auth/vendor/auth.spec.ts (member actor + member_email + currency_code) — now passes.",
+                "status_note": "Backend + vendor UI (published .12, consumed) + store customer + migrations + integration tests all complete and green."
             },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §2(1,3,7), §4 (OtpCode), §6. OTP path is fully separate from the notification pipeline/settings. Two-step logic inside auth provider `authenticate` (no code → send; with code → verify). Validate Medusa 2.13.4 auth-provider contract supports the two-step flow in this phase. Requires member model `phone` field + migration; member_email becomes optional in vendor seller validators + upsert-member step."
         },
@@ -114,7 +115,7 @@
             "area": "admin/notification-settings",
             "title": "Admin page: per-event channel (email/SMS) configuration",
             "user_visible_behavior": "In the admin panel, an operator sees every notification event grouped by audience and, per event, toggles Email and SMS and enters the approved sms.ir template_id. SMS stays disabled with a hint until a template_id is provided. The OTP row is shown read-only/system.",
-            "status": "in_progress",
+            "status": "passing",
             "verification": [
                 "1. GET /admin/notification-settings returns the merged effective catalog (RBAC-protected).",
                 "2. POST persists per (event_key, channel): enabled + template_id; SMS cannot be enabled without a template_id.",
@@ -126,6 +127,7 @@
                 "admin_api_2026-06-12": "packages/core/src/api/admin/notification-settings/{route,validators,middlewares}.ts. GET returns getEffectiveCatalog(); POST validates + filters updates to non-system event×available-channel combos + upsertChannelConfigs, returns refreshed catalog. Wired into api/admin/middlewares.ts. Admin-authenticated by framework default. SMS stays effectively off without template_id (enforced in getEffectiveCatalog/getDeliveryConfig). typecheck: core tsc --noEmit = 0 errors.",
                 "runtime_2026-06-12": "GET /admin/notification-settings on the booted server returns HTTP 401 without an admin session — confirms the route is mounted and admin-protected.",
                 "admin_ui_5b_2026-06-12": "packages/admin/src/pages/notification-settings (SingleColumnPage; per-audience Containers; per-event Email/SMS Switch + sms.ir template_id Input; SMS un-toggleable until a template_id is entered; OTP shown read-only as a System row) + hooks/api/notification-settings.tsx (useNotificationSettings/useUpdateNotificationSettings via sdk.admin.notificationSettings). Registered at /settings/notifications (get-route-map.tsx) + settings sidebar nav; en.json keys added. `turbo run build --filter=@mercurjs/admin` = 5/5 success (DTS type-check clean). Built with the admin-page-ui skill.",
+                "tests_2026-06-13": "integration-tests/http/notification-settings/admin/notification-settings.spec.ts (4: GET effective catalog / SMS gated on template_id / email channel persist / 401 unauth) — all pass.",
                 "pending": "Admin UI page packages/admin/src/pages/notification-settings (5b) using admin-page-ui/admin-form-ui skills; client codegen + types; migration (Phase 9); integration tests (Phase 8)."
             },
             "notes": "Design: docs/features/phone-auth-and-notifications.md §5, §7. Model after packages/admin/src/pages/commission-rates. Persian/RTL copy must respect the تامین‌کننده terminology (see memory vendor-terminology). Depends on notification-pipeline (catalog + settings module)."

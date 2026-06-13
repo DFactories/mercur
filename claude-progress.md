@@ -221,6 +221,29 @@ After Phases 1-5a, ran the "make it runnable" step against a local Postgres scra
 
 Net: the entire feature backend (auth + notification platform) is runtime-verified. Remaining = dashboard UIs (5b admin, 6 vendor), store customer-with-phone (7), and formal Jest integration tests (8). The scratch DB + `apps/api/.env` are local-only (gitignored); the migration files are committed.
 
+### Session 7: 2026-06-13 -- Phases 5-8 (admin UI, vendor UI, store customer, tests) + release to dfactories-mp
+
+**Goal**: Finish the dashboards + storefront backend + tests, publish the fork packages, and deploy into dfactories-mp.
+
+#### Completed
+
+- **Phase 5 — admin notification-settings**: API (`api/admin/notification-settings/*`, commit `19affe3`) + UI page (`packages/admin/src/pages/notification-settings`, route + settings nav + en i18n, commit `c406feb`). Built with the admin-page-ui skill; `turbo build --filter=@mercurjs/admin` 5/5.
+- **Phase 6 — vendor phone UI**: `PhoneAuthForm` + `useRequestOtp`/`useVerifyOtp`; Email/Phone tabs on login (`bb3483e`) and register (`324c57d`); register→onboarding threads `member_phone` through `useOnboarding`. fa+en i18n. vendor build 6/6.
+- **Phase 7 — store customer**: store `verify-otp` creates/links a phone-only customer (customer.email is nullable; created via Modules.CUSTOMER since createCustomerAccountWorkflow forces email) (`64a427a`).
+- **Phase 8 — integration tests**: `http/auth/vendor/phone-otp.spec.ts` (4), `http/auth/store/phone-otp.spec.ts` (2), `http/notification-settings/admin/notification-settings.spec.ts` (4) — all green. OTP code obtained via the OTP module service in-test (no sms.ir mock needed). Repaired the pre-broken `http/auth/vendor/auth.spec.ts` (wrong actor + missing member_email/currency_code) — now passes. 11/11.
+- **Release + consumption**: published `@mercurjs/{core,types}@2.1.2-dfactories.12` (`ba3be46`), `@mercurjs/admin@…12` (`65fc8b9`), `@mercurjs/vendor@…12` (`3fc55a1`) via CI. Consumed in dfactories-mp on `develop`: api (`3de64b0`, + db:migrate), admin (`a2f157f`), vendor (`e7b3b54`); Vite caches cleared. SMSIR_API_KEY + SMSIR_OTP_TEMPLATE_ID already set in dfactories-mp/packages/api/.env.
+
+#### Verification
+
+- All new integration suites pass (11 tests). Per-package builds green (admin 5/5, vendor 6/6, core 0 tsc errors).
+- Whole feature is deployed in dfactories-mp (backend live + migrated; admin/vendor bundles consumed — restart the dev servers to view).
+
+#### Remaining / notes
+
+- `smsir-transport` + `notification-pipeline` left `in_progress`: real sms.ir send (needs an approved template) and the full event→dispatch flow aren't e2e-tested (only the no-op path + the settings API are).
+- sms.ir OTP template parameter name must match `SMSIR_OTP_PARAM_NAME` (default `CODE`).
+- dfactories-mp commits are on `develop`, not pushed.
+
 ## Required Artifacts (status)
 
 - `claude-progress.md` -- this file (updated 2026-06-12, Session 5).
