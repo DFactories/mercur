@@ -11,6 +11,15 @@ type OtpService = {
   }) => Promise<{ code: string }>
 }
 
+type SellerService = {
+  createMembers: (
+    data: Array<{ phone?: string | null; email?: string | null }>
+  ) => Promise<Array<{ id: string }>>
+}
+
+const decodeJwt = (token: string): { actor_id?: string } =>
+  JSON.parse(Buffer.from(token.split(".")[1], "base64").toString())
+
 medusaIntegrationTestRunner({
   testSuite: ({ getContainer, api }) => {
     describe("Vendor - Phone (OTP) auth", () => {
@@ -68,6 +77,66 @@ medusaIntegrationTestRunner({
           .catch((e: { response: { status: number } }) => e)
 
         expect(err.response.status).toEqual(401)
+      })
+
+      it("login mode errors (before sending a code) for an unregistered phone", async () => {
+        const err = await api
+          .post("/vendor/auth/phone/request-otp", {
+            phone: "09120000091",
+            mode: "login",
+          })
+          .catch(
+            (e: { response: { status: number; data: unknown } }) => e
+          )
+
+        expect(err.response.status).toEqual(404)
+        expect(JSON.stringify(err.response.data)).toContain(
+          "PHONE_NOT_REGISTERED"
+        )
+      })
+
+      it("register mode errors for an already-registered phone", async () => {
+        const phone = "09120000092"
+        const seller = container.resolve(
+          MercurModules.SELLER
+        ) as unknown as SellerService
+        await seller.createMembers([{ phone }])
+
+        const err = await api
+          .post("/vendor/auth/phone/request-otp", {
+            phone,
+            mode: "register",
+          })
+          .catch(
+            (e: { response: { status: number; data: unknown } }) => e
+          )
+
+        expect(JSON.stringify(err.response.data)).toContain(
+          "PHONE_ALREADY_REGISTERED"
+        )
+      })
+
+      it("verify-otp links an existing member that has this phone", async () => {
+        const phone = "09120000093"
+        const seller = container.resolve(
+          MercurModules.SELLER
+        ) as unknown as SellerService
+        const [member] = await seller.createMembers([{ phone }])
+
+        const otp = container.resolve(MercurModules.OTP) as unknown as OtpService
+        const { code } = await otp.requestOtp({
+          identifier: phone,
+          actor_type: "member",
+        })
+
+        const res = await api.post("/vendor/auth/phone/verify-otp", {
+          phone,
+          code,
+        })
+
+        expect(res.status).toEqual(200)
+        // The minted token's actor is the pre-existing member (bug-1 fix).
+        expect(decodeJwt(res.data.token).actor_id).toEqual(member.id)
       })
     })
   },

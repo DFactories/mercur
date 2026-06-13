@@ -244,6 +244,24 @@ Net: the entire feature backend (auth + notification platform) is runtime-verifi
 - sms.ir OTP template parameter name must match `SMSIR_OTP_PARAM_NAME` (default `CODE`).
 - dfactories-mp commits are on `develop`, not pushed.
 
+### Session 8: 2026-06-13 -- phone-auth UX fixes + bug fixes (release .13)
+
+**Goal**: Address review feedback on the vendor phone flow.
+
+#### Completed
+
+- **Login/register separation** (`mode` on request-otp, checked before sending an SMS): login + no account -> 404 `PHONE_NOT_REGISTERED`; register + existing account -> `PHONE_ALREADY_REGISTERED`. Omitting `mode` keeps the unified behavior (storefront).
+- **Bug 1 fix** (account first created by email, phone saved in profile): verify-otp now links a pre-existing member that already has the phone to the new phone-otp auth identity (member-by-phone, multi-format match `09…/+98…/98…/9…`), so phone login reaches their existing seller(s). store `ensureCustomerForAuthIdentity` likewise reuses an existing customer by phone.
+- **"Create store" no longer bounces to login**: login passes the phone to `/store-select`, which forwards it to `/onboarding` (the guard needs email OR phone).
+- **Resend code** with a 60s countdown (login + register).
+- **Phone-only UI**: login + register render only `PhoneAuthForm` (email forms kept in code, not shown). **Forgot-password link removed** (reset-password page/route untouched).
+- **Tests**: added vendor mode tests (login-unregistered 404, register-existing error, verify links existing member via decoded JWT `actor_id`). Existing phone-otp suites still green (6/6 regression).
+- **Release**: `@mercurjs/{core,vendor}@2.1.2-dfactories.13` (commit `4739489`) published via CI; consumed in dfactories-mp (`86737be` on develop) — api core.13, apps/vendor + override vendor.13, Vite caches cleared, no new migration. core.13 also carries Phase 7. Restart packages/api + apps/vendor to view.
+
+#### Notes
+
+- If an existing `member.phone` is stored in a format outside the 4 matched variants, bug-1 linking won't match — surface the stored value to extend `phoneVariants`.
+
 ## Required Artifacts (status)
 
 - `claude-progress.md` -- this file (updated 2026-06-12, Session 5).
