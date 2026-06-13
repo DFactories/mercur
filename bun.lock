@@ -291,7 +291,7 @@
     },
     "packages/core": {
       "name": "@mercurjs/core",
-      "version": "2.1.2-dfactories.13",
+      "version": "2.1.2-dfactories.14",
       "devDependencies": {
         "@medusajs/cli": "^2.13.4",
         "@medusajs/core-flows": "^2.13.4",
@@ -474,7 +474,7 @@
     },
     "packages/vendor": {
       "name": "@mercurjs/vendor",
-      "version": "2.1.2-dfactories.13",
+      "version": "2.1.2-dfactories.14",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
