@@ -16,7 +16,20 @@ type SellerService = {
   createMembers: (
     data: Array<{ phone?: string | null; email?: string | null }>
   ) => Promise<Array<{ id: string }>>
-  updateSellers: (data: { id: string; phone?: string }) => Promise<unknown>
+  updateMembers: (data: {
+    id: string
+    phone?: string | null
+  }) => Promise<unknown>
+  updateSellers: (data: {
+    id: string
+    phone?: string
+    phone_verified_at?: Date | null
+  }) => Promise<unknown>
+  retrieveSeller: (id: string) => Promise<{
+    id: string
+    phone?: string | null
+    phone_verified_at?: Date | null
+  }>
 }
 
 const decodeJwt = (token: string): { actor_id?: string } =>
@@ -141,7 +154,7 @@ medusaIntegrationTestRunner({
         expect(decodeJwt(res.data.token).actor_id).toEqual(member.id)
       })
 
-      it("register mode errors when the phone is on the store (seller), not the member", async () => {
+      it("register mode errors when the phone is a VERIFIED store phone", async () => {
         const phone = "09120000094"
         const { seller } = await createSellerUser(container, {
           email: "store-phone@test.com",
@@ -150,9 +163,11 @@ medusaIntegrationTestRunner({
         const sellerSvc = container.resolve(
           MercurModules.SELLER
         ) as unknown as SellerService
+        // A verified store phone is "owned" — locks registration.
         await sellerSvc.updateSellers({
           id: (seller as { id: string }).id,
           phone,
+          phone_verified_at: new Date(),
         })
 
         const err = await api
@@ -164,6 +179,30 @@ medusaIntegrationTestRunner({
         )
       })
 
+      it("register mode is ALLOWED when the store phone is unverified", async () => {
+        const phone = "09120000095"
+        const { seller } = await createSellerUser(container, {
+          email: "store-phone-unverified@test.com",
+          name: "Store Phone Unverified",
+        })
+        const sellerSvc = container.resolve(
+          MercurModules.SELLER
+        ) as unknown as SellerService
+        // Unverified store phone does not lock anything.
+        await sellerSvc.updateSellers({
+          id: (seller as { id: string }).id,
+          phone,
+        })
+
+        const res = await api.post("/vendor/auth/phone/request-otp", {
+          phone,
+          mode: "register",
+        })
+
+        expect(res.status).toEqual(200)
+        expect(res.data.success).toBe(true)
+      })
+
       it("rejects an invalid phone format (must be 09 + 11 digits)", async () => {
         const err = await api
           .post("/vendor/auth/phone/request-otp", { phone: "1234567890" })
@@ -171,6 +210,103 @@ medusaIntegrationTestRunner({
 
         expect(err.response.status).toEqual(400)
         expect(JSON.stringify(err.response.data)).toContain("INVALID_PHONE")
+      })
+
+      describe("Store phone verification", () => {
+        it("verify-otp marks the store phone verified", async () => {
+          const phone = "09120000201"
+          const { seller, headers } = await createSellerUser(container, {
+            email: "sp-verify@test.com",
+            name: "SP Verify",
+          })
+          const sellerSvc = container.resolve(
+            MercurModules.SELLER
+          ) as unknown as SellerService
+          await sellerSvc.updateSellers({
+            id: (seller as { id: string }).id,
+            phone,
+          })
+
+          const otp = container.resolve(
+            MercurModules.OTP
+          ) as unknown as OtpService
+          const { code } = await otp.requestOtp({
+            identifier: phone,
+            actor_type: "seller_phone",
+          })
+
+          const res = await api.post(
+            "/vendor/sellers/me/phone/verify-otp",
+            { code },
+            headers
+          )
+
+          expect(res.status).toEqual(200)
+          expect(res.data.verified).toBe(true)
+
+          const updated = await sellerSvc.retrieveSeller(
+            (seller as { id: string }).id
+          )
+          expect(updated.phone_verified_at).toBeTruthy()
+        })
+
+        it("request-otp auto-verifies when it is the owner's login phone", async () => {
+          const phone = "09120000202"
+          const { seller, member, headers } = await createSellerUser(
+            container,
+            { email: "sp-auto@test.com", name: "SP Auto" }
+          )
+          const sellerSvc = container.resolve(
+            MercurModules.SELLER
+          ) as unknown as SellerService
+          await sellerSvc.updateMembers({
+            id: (member as { id: string }).id,
+            phone,
+          })
+          await sellerSvc.updateSellers({
+            id: (seller as { id: string }).id,
+            phone,
+          })
+
+          const res = await api.post(
+            "/vendor/sellers/me/phone/request-otp",
+            {},
+            headers
+          )
+
+          expect(res.status).toEqual(200)
+          expect(res.data.verified).toBe(true)
+
+          const updated = await sellerSvc.retrieveSeller(
+            (seller as { id: string }).id
+          )
+          expect(updated.phone_verified_at).toBeTruthy()
+        })
+
+        it("request-otp errors when the number is owned by another account", async () => {
+          const phone = "09120000203"
+          const { seller, headers } = await createSellerUser(container, {
+            email: "sp-taken@test.com",
+            name: "SP Taken",
+          })
+          const sellerSvc = container.resolve(
+            MercurModules.SELLER
+          ) as unknown as SellerService
+          // Another account already owns this number as a login phone.
+          await sellerSvc.createMembers([{ phone }])
+          await sellerSvc.updateSellers({
+            id: (seller as { id: string }).id,
+            phone,
+          })
+
+          const err = await api
+            .post("/vendor/sellers/me/phone/request-otp", {}, headers)
+            .catch((e: { response: { status: number; data: unknown } }) => e)
+
+          expect(JSON.stringify(err.response.data)).toContain(
+            "PHONE_ALREADY_REGISTERED"
+          )
+        })
       })
     })
   },
