@@ -1238,6 +1238,14 @@ export function getRouteMap({
                 ],
               },
               {
+                path: "notifications",
+                errorElement: <ErrorBoundary />,
+                handle: {
+                  breadcrumb: () => t("notificationSettings.domain"),
+                },
+                lazy: () => import("./pages/notification-settings"),
+              },
+              {
                 path: "users",
                 errorElement: <ErrorBoundary />,
                 element: <Outlet />,

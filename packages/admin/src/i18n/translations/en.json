@@ -3590,6 +3590,25 @@
   "commissionLines": {
     "domain": "Commission Lines"
   },
+  "notificationSettings": {
+    "domain": "Notification Settings",
+    "subtitle": "Choose how each event notifies users — email, SMS, or both.",
+    "systemManaged": "System",
+    "templateIdPlaceholder": "sms.ir template id",
+    "audience": {
+      "customer": "Customer",
+      "vendor": "Vendor",
+      "admin": "Admin"
+    },
+    "channel": {
+      "email": "Email",
+      "sms": "SMS",
+      "feed": "Feed"
+    },
+    "toast": {
+      "saved": "Notification settings saved"
+    }
+  },
   "commissionRates": {
     "domain": "Commission Rates",
     "description": "Manage commission rates and rules for your marketplace.",
