@@ -192,7 +192,7 @@ export interface SellerDTO {
   id: string
   name: string
   handle: string
-  email: string
+  email: string | null
   phone: string | null
   phone_verified_at: Date | null
   description: string | null

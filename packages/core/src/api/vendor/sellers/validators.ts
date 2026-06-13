@@ -20,7 +20,7 @@ export type VendorCreateSellerAccountType = z.infer<typeof CreateSellerAccount> 
 export const CreateSellerAccount = z.object({
   name: z.string(),
   handle: z.string().optional(),
-  email: z.string().email(),
+  email: z.string().email().optional(),
   phone: z.string().nullable().optional(),
   member_email: z.string().email().optional(),
   member_phone: z.string().nullable().optional(),
