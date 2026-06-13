@@ -13,10 +13,14 @@ import { CompanyStep } from "./steps/company-step";
 import { PaymentStep } from "./steps/payment-step";
 
 type OnboardingWizardProps = {
-  memberEmail: string;
+  memberEmail?: string;
+  memberPhone?: string;
 };
 
-export const OnboardingWizard = ({ memberEmail }: OnboardingWizardProps) => {
+export const OnboardingWizard = ({
+  memberEmail,
+  memberPhone,
+}: OnboardingWizardProps) => {
   const navigate = useNavigate();
   const { mutateAsync: logoutMutation } = useLogout();
   const { seller_members } = useSellers();
@@ -34,7 +38,7 @@ export const OnboardingWizard = ({ memberEmail }: OnboardingWizardProps) => {
     skipCompanyStep,
     submitPaymentStep,
     skipPaymentStep,
-  } = useOnboarding(memberEmail);
+  } = useOnboarding({ email: memberEmail, phone: memberPhone });
 
   const handleBack = async () => {
     if (currentStep === 0) {

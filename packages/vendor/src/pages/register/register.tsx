@@ -12,6 +12,7 @@ import * as z from "zod"
 
 import { Form } from "@components/common/form"
 import AvatarBox from "@components/common/logo-box/avatar-box"
+import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form"
 import { AuthLayout } from "@components/layout/auth-layout"
 import { useFeatureFlags, useSignUpWithEmailPass } from "@hooks/api"
 
@@ -166,6 +167,48 @@ const RegisterFooter = () => {
   )
 }
 
+const RegisterContent = () => {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [method, setMethod] = useState<"email" | "phone">("email")
+
+  return (
+    <div className="mt-6">
+      <RegisterHeader />
+      <div className="mb-6 grid grid-cols-2 gap-x-2">
+        <Button
+          type="button"
+          variant={method === "email" ? "primary" : "secondary"}
+          onClick={() => setMethod("email")}
+        >
+          {t("login.method.email")}
+        </Button>
+        <Button
+          type="button"
+          variant={method === "phone" ? "primary" : "secondary"}
+          onClick={() => setMethod("phone")}
+        >
+          {t("login.method.phone")}
+        </Button>
+      </div>
+      {method === "email" ? (
+        <RegisterForm />
+      ) : (
+        <PhoneAuthForm
+          submitLabel={t("actions.continue")}
+          onVerified={(phone) => {
+            sessionStorage.setItem(
+              REGISTER_DRAFT_KEY,
+              JSON.stringify({ phone }),
+            )
+            navigate("/onboarding", { state: { phone } })
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
 const Root = ({ children }: { children?: ReactNode }) => {
   const { feature_flags, isLoading } = useFeatureFlags()
 
@@ -188,10 +231,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
       ) : (
         <>
           <RegisterLogo />
-          <div className="mt-6">
-            <RegisterHeader />
-            <RegisterForm />
-          </div>
+          <RegisterContent />
           <RegisterFooter />
         </>
       )}

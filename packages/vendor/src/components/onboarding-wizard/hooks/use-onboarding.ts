@@ -40,7 +40,13 @@ type PaymentData = {
   account_number?: string;
 };
 
-export const useOnboarding = (memberEmail: string) => {
+export const useOnboarding = ({
+  email,
+  phone,
+}: {
+  email?: string;
+  phone?: string;
+}) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -138,7 +144,8 @@ export const useOnboarding = (memberEmail: string) => {
           handle: storeData.handle || undefined,
           email: storeData.email,
           phone: storeData.phone || undefined,
-          member_email: memberEmail,
+          member_email: email || undefined,
+          member_phone: phone || undefined,
           first_name: registerDraft.first_name,
           last_name: registerDraft.last_name,
           currency_code: storeData.currency_code.toLowerCase(),
@@ -187,6 +194,7 @@ export const useOnboarding = (memberEmail: string) => {
         }
         queryClient.clear();
         sessionStorage.removeItem("mercur_onboarding_email");
+        sessionStorage.removeItem("mercur_onboarding_phone");
         sessionStorage.removeItem("mercur_register_draft");
 
         navigate("/login", { replace: true });
@@ -196,7 +204,7 @@ export const useOnboarding = (memberEmail: string) => {
         setIsSubmitting(false);
       }
     },
-    [createSeller, logout, memberEmail, navigate],
+    [createSeller, logout, email, phone, navigate],
   );
 
   // Step 4: Payment — create seller with everything and finish
