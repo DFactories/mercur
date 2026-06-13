@@ -20,6 +20,7 @@ export const retrieveVendorSellerQueryConfig = {
     "handle",
     "email",
     "phone",
+    "phone_verified_at",
     "description",
     "logo",
     "banner",

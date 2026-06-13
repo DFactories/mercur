@@ -723,7 +723,12 @@ export type Routes = {
             };
         };
         sellers: typeof import("../../src/api/vendor/sellers/route") & {
-            me: typeof import("../../src/api/vendor/sellers/me/route");
+            me: typeof import("../../src/api/vendor/sellers/me/route") & {
+                phone: {
+                    requestOtp: typeof import("../../src/api/vendor/sellers/me/phone/request-otp/route");
+                    verifyOtp: typeof import("../../src/api/vendor/sellers/me/phone/verify-otp/route");
+                };
+            };
             $id: typeof import("../../src/api/vendor/sellers/[id]/route") & {
                 address: typeof import("../../src/api/vendor/sellers/[id]/address/route");
                 members: typeof import("../../src/api/vendor/sellers/[id]/members/route") & {

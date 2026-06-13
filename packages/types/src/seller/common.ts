@@ -194,6 +194,7 @@ export interface SellerDTO {
   handle: string
   email: string
   phone: string | null
+  phone_verified_at: Date | null
   description: string | null
   logo: string | null
   banner: string | null

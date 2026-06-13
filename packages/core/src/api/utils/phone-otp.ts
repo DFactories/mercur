@@ -1,4 +1,8 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import {
+  AuthenticatedMedusaRequest,
+  MedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
 import {
   AuthIdentityDTO,
   IAuthModuleService,
@@ -32,6 +36,8 @@ import { createSmsIrClient } from "../../providers/smsir/client"
 type ActorType = "member" | "customer"
 
 const PHONE_OTP_PROVIDER = "phone-otp"
+/** Distinct OTP namespace so store-phone codes never collide with login codes. */
+const SELLER_PHONE_ACTOR = "seller_phone"
 const OTP_TEMPLATE_ID = Number(process.env.SMSIR_OTP_TEMPLATE_ID ?? 0)
 const OTP_PARAM_NAME = process.env.SMSIR_OTP_PARAM_NAME ?? "CODE"
 
@@ -64,11 +70,33 @@ export function normalizeIranPhone(input: string): string {
 }
 
 type SellerModuleLike = {
-  listMembers: (filters: Record<string, unknown>) => Promise<{ id: string }[]>
+  listMembers: (
+    filters: Record<string, unknown>
+  ) => Promise<Array<{ id: string; phone?: string | null }>>
   listSellers: (
     filters: Record<string, unknown>,
     config?: Record<string, unknown>
-  ) => Promise<Array<{ id: string; members?: { id: string }[] }>>
+  ) => Promise<
+    Array<{
+      id: string
+      phone?: string | null
+      phone_verified_at?: Date | null
+      members?: { id: string }[]
+    }>
+  >
+}
+
+/** Seller module surface used by the store-phone verification flow. */
+type SellerServiceLike = SellerModuleLike & {
+  retrieveSeller: (id: string) => Promise<{
+    id: string
+    phone?: string | null
+    phone_verified_at?: Date | null
+  }>
+  updateSellers: (data: {
+    id: string
+    phone_verified_at?: Date | null
+  }) => Promise<unknown>
 }
 
 /** Iranian mobile in canonical local form: 09 + 9 digits = 11 digits. */
@@ -93,27 +121,36 @@ function phoneVariants(normalized: string): string[] {
   return Array.from(variants)
 }
 
-/** Find an existing member (vendor user) whose phone matches, in any common format. */
+/**
+ * Find an existing member (vendor user) by their *login* phone. Login identity is
+ * the member phone only — the store phone (seller.phone) is a separate verified
+ * contact, never a login credential.
+ */
 async function findMemberIdByPhone(
   req: MedusaRequest,
   phone: string
 ): Promise<string | undefined> {
-  const variants = phoneVariants(phone)
   const seller = req.scope.resolve<SellerModuleLike>(MercurModules.SELLER)
+  const members = await seller.listMembers({ phone: phoneVariants(phone) })
+  return members[0]?.id
+}
 
-  // 1) Phone saved on the member (phone sign-ups).
-  const members = await seller.listMembers({ phone: variants })
-  if (members[0]?.id) {
-    return members[0].id
+/**
+ * A phone is "taken" (owned) when it's a member's login phone OR a *verified*
+ * store phone. Unverified store phones don't lock anything — multiple stores may
+ * hold the same unverified number, and the first to verify it wins. Used to gate
+ * registration and store-phone verification.
+ */
+async function isPhoneTaken(
+  req: MedusaRequest,
+  phone: string
+): Promise<boolean> {
+  if (await findMemberIdByPhone(req, phone)) {
+    return true
   }
-
-  // 2) Phone saved on the seller/store (e.g. an email-created account that set
-  // the store phone in the vendor panel) -> return that store's member.
-  const sellers = await seller.listSellers(
-    { phone: variants },
-    { relations: ["members"] }
-  )
-  return sellers[0]?.members?.[0]?.id
+  const seller = req.scope.resolve<SellerModuleLike>(MercurModules.SELLER)
+  const sellers = await seller.listSellers({ phone: phoneVariants(phone) })
+  return sellers.some((s) => !!s.phone_verified_at)
 }
 
 /** Find an existing customer whose phone matches, in any common format. */
@@ -237,10 +274,14 @@ export function createRequestOtpHandler(actorType: ActorType) {
     assertValidPhone(phone)
 
     // Enforce login/register separation before spending an SMS.
+    // - login checks the *login identity* exists (member phone / customer phone)
+    // - register checks the number isn't *owned* (member phone or verified store phone)
     if (mode) {
       const exists =
         actorType === "member"
-          ? !!(await findMemberIdByPhone(req, phone))
+          ? mode === "register"
+            ? await isPhoneTaken(req, phone)
+            : !!(await findMemberIdByPhone(req, phone))
           : !!(await findCustomerIdByPhone(
               req.scope.resolve<ICustomerModuleService>(Modules.CUSTOMER),
               phone
@@ -318,10 +359,8 @@ export function createVerifyOtpHandler(actorType: ActorType) {
       // Customers have no onboarding step: create (or reuse) the customer here.
       authIdentity = await ensureCustomerForAuthIdentity(req, authIdentity, phone)
     } else if (!authIdentity.app_metadata?.member_id) {
-      // Link an existing member that already has this phone — e.g. an account
-      // originally created by email with the phone saved in the profile — so
-      // phone login reaches their existing seller(s). If none exists, they go
-      // through onboarding to create one.
+      // Link an existing member whose login phone matches, so phone login reaches
+      // their existing seller(s). If none exists, they go through onboarding.
       const memberId = await findMemberIdByPhone(req, phone)
       if (memberId) {
         await authModule.updateAuthIdentities({
@@ -339,5 +378,132 @@ export function createVerifyOtpHandler(actorType: ActorType) {
 
     const token = await mintSessionToken(req, authIdentity, actorType)
     res.status(200).json({ token })
+  }
+}
+
+export const SellerPhoneVerifySchema = z.object({
+  code: z.string().min(4).max(10),
+})
+
+/** Resolve the current seller + its (validated) phone for the store-phone flow. */
+async function resolveSellerPhoneContext(req: MedusaRequest): Promise<{
+  sellerModule: SellerServiceLike
+  sellerId: string
+  memberId: string | undefined
+  seller: { id: string; phone?: string | null; phone_verified_at?: Date | null }
+  phone: string
+}> {
+  const sellerContext = (req as AuthenticatedMedusaRequest).seller_context
+  const sellerId = sellerContext?.seller_id
+  if (!sellerId) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "No seller selected for this request."
+    )
+  }
+
+  const sellerModule = req.scope.resolve<SellerServiceLike>(
+    MercurModules.SELLER
+  )
+  const seller = await sellerModule.retrieveSeller(sellerId)
+  if (!seller.phone) {
+    throw new MedusaError(MedusaError.Types.INVALID_DATA, "PHONE_NOT_SET")
+  }
+  const phone = normalizeIranPhone(seller.phone)
+  assertValidPhone(phone)
+
+  return {
+    sellerModule,
+    sellerId,
+    memberId: sellerContext?.seller_member?.member_id,
+    seller,
+    phone,
+  }
+}
+
+/**
+ * POST /vendor/sellers/me/phone/request-otp — start verification of the selected
+ * store's phone. Auto-verifies (no SMS) when the store phone is the owner's own
+ * verified login phone; errors if the number is already owned by another account.
+ */
+export function createSellerPhoneRequestOtpHandler() {
+  return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
+    const { sellerModule, sellerId, memberId, seller, phone } =
+      await resolveSellerPhoneContext(req)
+
+    if (seller.phone_verified_at) {
+      res.status(200).json({ verified: true })
+      return
+    }
+
+    // Auto-verify when the store phone is the owner's own login phone (already
+    // OTP-proven at registration) — no second code needed.
+    if (memberId) {
+      const [member] = await sellerModule.listMembers({ id: [memberId] })
+      if (member?.phone && normalizeIranPhone(member.phone) === phone) {
+        await sellerModule.updateSellers({
+          id: sellerId,
+          phone_verified_at: new Date(),
+        })
+        res.status(200).json({ verified: true })
+        return
+      }
+    }
+
+    // Owned by someone else (a member's login phone, or another store's verified
+    // phone) — refuse before spending an SMS.
+    if (await isPhoneTaken(req, phone)) {
+      throw new MedusaError(
+        MedusaError.Types.DUPLICATE_ERROR,
+        "PHONE_ALREADY_REGISTERED"
+      )
+    }
+
+    const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
+    const { code } = await otp.requestOtp({
+      identifier: phone,
+      actor_type: SELLER_PHONE_ACTOR,
+    })
+
+    const client = createSmsIrClient()
+    await client.sendVerify(phone, OTP_TEMPLATE_ID, [
+      { name: OTP_PARAM_NAME, value: code },
+    ])
+
+    res.status(200).json({ success: true })
+  }
+}
+
+/**
+ * POST /vendor/sellers/me/phone/verify-otp — confirm the store phone with the
+ * code. Re-checks ownership (race: another account may have verified the same
+ * number meanwhile) before marking the store phone verified.
+ */
+export function createSellerPhoneVerifyOtpHandler() {
+  return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
+    const { code } = SellerPhoneVerifySchema.parse(req.body)
+    const { sellerModule, sellerId, phone } =
+      await resolveSellerPhoneContext(req)
+
+    const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
+    await otp.verifyOtp({
+      identifier: phone,
+      actor_type: SELLER_PHONE_ACTOR,
+      code,
+    })
+
+    if (await isPhoneTaken(req, phone)) {
+      throw new MedusaError(
+        MedusaError.Types.DUPLICATE_ERROR,
+        "PHONE_ALREADY_REGISTERED"
+      )
+    }
+
+    await sellerModule.updateSellers({
+      id: sellerId,
+      phone_verified_at: new Date(),
+    })
+
+    res.status(200).json({ verified: true })
   }
 }
