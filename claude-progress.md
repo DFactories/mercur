@@ -262,9 +262,40 @@ Net: the entire feature backend (auth + notification platform) is runtime-verifi
 
 - If an existing `member.phone` is stored in a format outside the 4 matched variants, bug-1 linking won't match — surface the stored value to extend `phoneVariants`.
 
+## Session 6 — Store phone OTP verification (2026-06-14)
+
+Decision model (from 5 clarifying questions): a phone is **owned** when it's a
+member's *login* phone OR a **verified** store phone. Unverified store phones
+lock nothing (multiple stores may hold the same one; first to verify wins).
+Login identity stays **member.phone only** — a verified store phone is a
+verified *contact*, never a login credential. DB is clean, so no legacy/backfill.
+
+#### Completed
+
+- **seller.phone_verified_at** (`model.dateTime().nullable()`) + migration
+  `Migration20260613120000` + `SellerDTO`/`UpdateSellerDTO` types + query-config.
+- **phone-otp.ts refactor**: `findMemberIdByPhone` is now member-only (login);
+  new `isPhoneTaken` = member phone OR verified store phone (registration lock).
+  request-otp `register` mode uses `isPhoneTaken`; `login` uses member-only.
+- **Store-phone verify routes** (authenticated, seller-scoped via `seller_context`):
+  `POST /vendor/sellers/me/phone/{request-otp,verify-otp}`. request-otp
+  auto-verifies (no SMS) when the store phone == owner's login phone; errors
+  `PHONE_ALREADY_REGISTERED` if owned by another; otherwise sends a code
+  (actor_type `seller_phone`). verify-otp re-checks ownership (race) then sets
+  `phone_verified_at`.
+- **Reset on change**: `POST /vendor/sellers/:id` nulls `phone_verified_at` when
+  the store phone changes (server-side; not a client-settable field).
+- **Vendor UI**: `store-phone-verification.tsx` — verified/unverified badge +
+  verify button + OTP FocusModal (resend + 60s). Wired into store general
+  section. Hooks `useRequestSellerPhoneOtp` / `useVerifySellerPhoneOtp`. fa+en i18n.
+- **Tests**: `auth/vendor/phone-otp.spec.ts` now **13/13 green** — verified store
+  phone locks registration; **unverified does NOT**; store-phone verify with code;
+  auto-verify when == login phone; PHONE_ALREADY_REGISTERED when owned by another.
+- `bun run build` (types→core→client→vendor) green.
+
 ## Required Artifacts (status)
 
-- `claude-progress.md` -- this file (updated 2026-06-12, Session 5).
+- `claude-progress.md` -- this file (updated 2026-06-14, Session 6).
 - `feature_list.json` -- present at repo root. Tracks 5 features (1 passing + 4 not_started for phone-auth/notifications).
 - `session-handoff.md` -- present at repo root; updated 2026-06-12 with the phone-auth design handoff.
 - `docs/features/phone-auth-and-notifications.md` -- design/decision record for the phone-auth + notification work.
