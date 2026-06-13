@@ -37,6 +37,12 @@ const OTP_PARAM_NAME = process.env.SMSIR_OTP_PARAM_NAME ?? "CODE"
 
 export const RequestOtpSchema = z.object({
   phone: z.string().min(8).max(20),
+  /**
+   * "login" requires an existing account for the phone; "register" requires
+   * none. Omitted (e.g. external storefront) keeps the unified login=register
+   * behavior with no existence check.
+   */
+  mode: z.enum(["login", "register"]).optional(),
 })
 
 export const VerifyOtpSchema = z.object({
@@ -55,6 +61,46 @@ export function normalizeIranPhone(input: string): string {
     p = "0" + p.slice(2)
   }
   return p
+}
+
+type SellerModuleLike = {
+  listMembers: (filters: Record<string, unknown>) => Promise<{ id: string }[]>
+}
+
+/** Common stored formats for an Iranian phone, so we match legacy/profile values. */
+function phoneVariants(normalized: string): string[] {
+  const variants = new Set<string>([normalized])
+  if (normalized.startsWith("0")) {
+    const local = normalized.slice(1)
+    variants.add(local)
+    variants.add("98" + local)
+    variants.add("+98" + local)
+    variants.add("0098" + local)
+  }
+  return Array.from(variants)
+}
+
+/** Find an existing member (vendor user) whose phone matches, in any common format. */
+async function findMemberIdByPhone(
+  req: MedusaRequest,
+  phone: string
+): Promise<string | undefined> {
+  const seller = req.scope.resolve<SellerModuleLike>(MercurModules.SELLER)
+  const members = await seller.listMembers({ phone: phoneVariants(phone) })
+  return members[0]?.id
+}
+
+/** Find an existing customer whose phone matches, in any common format. */
+async function findCustomerIdByPhone(
+  customerService: ICustomerModuleService,
+  phone: string
+): Promise<string | undefined> {
+  // `phone` is a real customer column but isn't in the typed filter props.
+  const filters = { phone: phoneVariants(phone) } as Parameters<
+    ICustomerModuleService["listCustomers"]
+  >[0]
+  const customers = await customerService.listCustomers(filters)
+  return customers[0]?.id
 }
 
 type HttpConfig = {
@@ -132,16 +178,23 @@ async function ensureCustomerForAuthIdentity(
   const customerService = req.scope.resolve<ICustomerModuleService>(
     Modules.CUSTOMER
   )
-  const [customer] = await customerService.createCustomers([
-    { phone, has_account: true },
-  ])
+
+  // Reuse an existing customer with this phone (e.g. created earlier by email);
+  // otherwise create a phone-only one.
+  let customerId = await findCustomerIdByPhone(customerService, phone)
+  if (!customerId) {
+    const [customer] = await customerService.createCustomers([
+      { phone, has_account: true },
+    ])
+    customerId = customer.id
+  }
 
   const authModule = req.scope.resolve<IAuthModuleService>(Modules.AUTH)
   await authModule.updateAuthIdentities({
     id: authIdentity.id,
     app_metadata: {
       ...(authIdentity.app_metadata ?? {}),
-      customer_id: customer.id,
+      customer_id: customerId,
     },
   })
 
@@ -153,8 +206,31 @@ async function ensureCustomerForAuthIdentity(
 /** POST handler: generate an OTP and deliver it via sms.ir. Always 200 (never leaks whether the number exists). */
 export function createRequestOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
-    const { phone: rawPhone } = RequestOtpSchema.parse(req.body)
+    const { phone: rawPhone, mode } = RequestOtpSchema.parse(req.body)
     const phone = normalizeIranPhone(rawPhone)
+
+    // Enforce login/register separation before spending an SMS.
+    if (mode) {
+      const exists =
+        actorType === "member"
+          ? !!(await findMemberIdByPhone(req, phone))
+          : !!(await findCustomerIdByPhone(
+              req.scope.resolve<ICustomerModuleService>(Modules.CUSTOMER),
+              phone
+            ))
+      if (mode === "login" && !exists) {
+        throw new MedusaError(
+          MedusaError.Types.NOT_FOUND,
+          "PHONE_NOT_REGISTERED"
+        )
+      }
+      if (mode === "register" && exists) {
+        throw new MedusaError(
+          MedusaError.Types.DUPLICATE_ERROR,
+          "PHONE_ALREADY_REGISTERED"
+        )
+      }
+    }
 
     const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
     const { code } = await otp.requestOtp({
@@ -210,11 +286,27 @@ export function createVerifyOtpHandler(actorType: ActorType) {
       )
     }
 
-    // Customers have no onboarding step, so create (or reuse) the customer here
-    // and link it, mirroring login=register for phone OTP. Members (vendors)
-    // are created later by the seller-account onboarding flow.
     if (actorType === "customer") {
+      // Customers have no onboarding step: create (or reuse) the customer here.
       authIdentity = await ensureCustomerForAuthIdentity(req, authIdentity, phone)
+    } else if (!authIdentity.app_metadata?.member_id) {
+      // Link an existing member that already has this phone — e.g. an account
+      // originally created by email with the phone saved in the profile — so
+      // phone login reaches their existing seller(s). If none exists, they go
+      // through onboarding to create one.
+      const memberId = await findMemberIdByPhone(req, phone)
+      if (memberId) {
+        await authModule.updateAuthIdentities({
+          id: authIdentity.id,
+          app_metadata: {
+            ...(authIdentity.app_metadata ?? {}),
+            member_id: memberId,
+          },
+        })
+        authIdentity = await authModule.retrieveAuthIdentity(authIdentity.id, {
+          relations: ["provider_identities"],
+        })
+      }
     }
 
     const token = await mintSessionToken(req, authIdentity, actorType)
