@@ -239,3 +239,35 @@ Net effect: **no `withMercur` Auth-module injection is needed**, removing that r
 - **Seller `email` kept required** (store contact). A phone-registering vendor still provides a store contact email; making `seller.email` optional has a wide blast radius (`SellerDTO.email`, admin/store views, seller-email notifications) and is a deferred follow-up, not required for phone login/registration.
 - **Customer (store) entity** create-with-phone is deferred to Phase 7: Medusa's core customer requires a unique `email`, so a phone-only customer needs a custom `/store/customers` route. Phone **auth** for customers already works (store `verify-otp` issues a customer token).
 - **Migrations** for the new `otp` table and the member `phone` column/indexes are generated/run together in Phase 9.
+
+### 12.4 Store phone OTP verification (Session 6)
+The store phone (`seller.phone`) is now a *verifiable contact*. Decision model
+(from 5 clarifying questions):
+
+- **Ownership** = a phone is "owned" when it is a member's **login** phone OR a
+  **verified** store phone. Ownership is what locks registration.
+- **Unverified store phones lock nothing** — several stores may hold the same
+  unverified number; the **first to verify it wins**. Verification errors
+  (`PHONE_ALREADY_REGISTERED`) only at verify time if another account got it first.
+- **Login identity is `member.phone` only** — a verified store phone is a
+  verified contact, never a login credential. `findMemberIdByPhone` is therefore
+  member-only; a new `isPhoneTaken` (member phone OR verified store phone) gates
+  registration and store-phone verification.
+- **Auto-verify** when the store phone equals the owner's own (already
+  OTP-proven) login phone — no second code.
+- DB was clean at rollout, so no legacy/backfill path was needed.
+
+Implementation:
+- `seller.phone_verified_at` (`model.dateTime().nullable()`), migration
+  `Migration20260613120000`, `SellerDTO`/`UpdateSellerDTO`, retrieve query-config.
+  `phone_verified_at` is **server-managed** — never in the vendor update validator.
+- `POST /vendor/sellers/me/phone/request-otp` and `.../verify-otp` (authenticated,
+  seller-scoped via `seller_context`; OTP `actor_type = "seller_phone"`, a
+  namespace distinct from login codes). request-otp checks ownership before
+  spending an SMS; verify-otp re-checks (race) then sets `phone_verified_at`.
+- `POST /vendor/sellers/:id` nulls `phone_verified_at` when the store phone changes.
+- Vendor UI: `store-phone-verification.tsx` (verified/unverified badge, verify
+  button, OTP `FocusModal` with resend + 60s) + `useRequestSellerPhoneOtp` /
+  `useVerifySellerPhoneOtp`.
+- Tests: `auth/vendor/phone-otp.spec.ts` (13/13) — verified store phone locks
+  registration, unverified does not, verify-with-code, auto-verify, owned-by-another.
