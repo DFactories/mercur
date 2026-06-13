@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 
 import { Alert, Button, Input, Text } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
@@ -16,6 +16,10 @@ type PhoneAuthFormProps = {
    * it not to. Drives the backend pre-send check.
    */
   mode?: "login" | "register"
+  /** Extra fields rendered above the phone input on step 1 (e.g. name on register). */
+  extraFields?: ReactNode
+  /** Gate run before requesting a code; return false to abort (extra-field validation). */
+  beforeRequest?: () => boolean
 }
 
 const RESEND_SECONDS = 60
@@ -45,6 +49,8 @@ export const PhoneAuthForm = ({
   onVerified,
   submitLabel,
   mode,
+  extraFields,
+  beforeRequest,
 }: PhoneAuthFormProps) => {
   const { t } = useTranslation()
 
@@ -94,6 +100,9 @@ export const PhoneAuthForm = ({
 
   const handleRequest = async () => {
     setError(null)
+    if (beforeRequest && !beforeRequest()) {
+      return
+    }
     const normalized = normalizePhone(phone)
     if (!normalized) {
       setError(t("login.phone.validation.phoneRequired"))
@@ -150,6 +159,7 @@ export const PhoneAuthForm = ({
   return (
     <form onSubmit={onSubmit} className="flex w-full flex-col gap-y-6">
       <div className="flex flex-col gap-y-4">
+        {step === "phone" && extraFields}
         <div className="flex flex-col gap-y-2">
           <Text size="small" weight="plus">
             {t("fields.phone")}

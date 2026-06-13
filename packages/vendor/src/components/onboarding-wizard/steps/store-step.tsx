@@ -13,8 +13,12 @@ import { onboardingLoader } from "../../../pages/onboarding/loader";
 
 const StoreStepSchema = z.object({
   name: z.string().min(1, i18n.t("onboarding.wizard.validation.nameRequired")),
-  email: z.string().email(i18n.t("onboarding.wizard.validation.emailInvalid")),
-  phone: z.string().optional(),
+  email: z
+    .string()
+    .email(i18n.t("onboarding.wizard.validation.emailInvalid"))
+    .optional()
+    .or(z.literal("")),
+  phone: z.string().min(1, i18n.t("onboarding.wizard.validation.phoneRequired")),
   currency_code: z.string().min(1, i18n.t("onboarding.wizard.validation.currencyRequired")),
   description: z.string().optional(),
   handle: z.string().optional(),
@@ -77,7 +81,7 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
               name="email"
               render={({ field }) => (
                 <Form.Item>
-                  <Form.Label>{t("onboarding.wizard.store.email")}</Form.Label>
+                  <Form.Label optional>{t("onboarding.wizard.store.email")}</Form.Label>
                   <Form.Control>
                     <Input type="email" autoComplete="email" {...field} />
                   </Form.Control>
@@ -90,7 +94,7 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
               name="phone"
               render={({ field }) => (
                 <Form.Item>
-                  <Form.Label optional>{t("fields.phone")}</Form.Label>
+                  <Form.Label>{t("fields.phone")}</Form.Label>
                   <Form.Control>
                     <Input type="tel" autoComplete="tel" {...field} />
                   </Form.Control>

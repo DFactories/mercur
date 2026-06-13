@@ -2752,7 +2752,8 @@
     "validation": {
       "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
       "nameRequired": "لطفاً یک نام وارد کنید",
-      "nameTooLong": "نام باید حداکثر ۱۰۰ کاراکتر باشد"
+      "nameTooLong": "نام باید حداکثر ۱۰۰ کاراکتر باشد",
+      "phoneRequired": "لطفاً شماره موبایل را وارد کنید"
     },
     "address": {
       "header": "آدرس",
@@ -3393,7 +3394,7 @@
     "category": "دسته‌بندی",
     "collection": "مجموعه",
     "discountable": "قابل تخفیف",
-    "handle": "مدیریت",
+    "handle": "شناسه فروشگاه",
     "subtitle": "زیرعنوان",
     "by": "توسط",
     "item": "آیتم",
@@ -3740,6 +3741,7 @@
         "accountNameRequired": "لطفاً نام صاحب حساب را وارد کنید",
         "countryRequired": "لطفاً یک کشور انتخاب کنید",
         "currencyRequired": "لطفاً یک واحد پول انتخاب کنید",
+        "phoneRequired": "لطفاً شماره موبایل را وارد کنید",
         "emailInvalid": "لطفاً یک ایمیل وارد کنید",
         "nameRequired": "لطفاً یک نام وارد کنید"
       }

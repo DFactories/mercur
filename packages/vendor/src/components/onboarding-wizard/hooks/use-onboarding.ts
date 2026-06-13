@@ -8,8 +8,8 @@ import { TOTAL_STEPS } from "../constants";
 
 type StoreData = {
   name: string;
-  email: string;
-  phone?: string;
+  email?: string;
+  phone: string;
   currency_code: string;
   description?: string;
   handle?: string;
@@ -142,7 +142,7 @@ export const useOnboarding = ({
         const result = await createSeller({
           name: storeData.name,
           handle: storeData.handle || undefined,
-          email: storeData.email,
+          email: storeData.email || undefined,
           phone: storeData.phone || undefined,
           member_email: email || undefined,
           member_phone: phone || undefined,

@@ -39,7 +39,10 @@ const EditStoreSchema = zod.object({
     .email({ message: i18n.t("store.validation.emailInvalid") })
     .optional()
     .or(zod.literal("")),
-  phone: zod.string().optional().or(zod.literal("")),
+  phone: zod
+    .string()
+    .trim()
+    .min(1, { message: i18n.t("store.validation.phoneRequired") }),
   description: zod.string().optional().or(zod.literal("")),
   website_url: zod.string().optional().or(zod.literal("")),
   media: zod.array(MediaSchema).optional(),
@@ -259,7 +262,7 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
               name="email"
               render={({ field }) => (
                 <Form.Item>
-                  <Form.Label>{t("fields.email")}</Form.Label>
+                  <Form.Label optional>{t("fields.email")}</Form.Label>
                   <Form.Control>
                     <Input type="email" {...field} />
                   </Form.Control>
@@ -272,7 +275,7 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
               name="phone"
               render={({ field }) => (
                 <Form.Item>
-                  <Form.Label optional>{t("fields.phone")}</Form.Label>
+                  <Form.Label>{t("fields.phone")}</Form.Label>
                   <Form.Control>
                     <Input type="tel" {...field} />
                   </Form.Control>

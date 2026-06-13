@@ -170,6 +170,24 @@ const RegisterFooter = () => {
 const RegisterContent = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [nameError, setNameError] = useState<string | null>(null)
+
+  // First/last name are collected here and carried (via the register draft +
+  // navigation state) to onboarding, which lands them on the seller member.
+  const validateNames = () => {
+    if (!firstName.trim()) {
+      setNameError(t("register.validation.firstNameRequired"))
+      return false
+    }
+    if (!lastName.trim()) {
+      setNameError(t("register.validation.lastNameRequired"))
+      return false
+    }
+    setNameError(null)
+    return true
+  }
 
   // Phone (OTP) is the only sign-up method. The email RegisterForm is kept
   // (exported) but no longer rendered.
@@ -179,9 +197,60 @@ const RegisterContent = () => {
       <PhoneAuthForm
         mode="register"
         submitLabel={t("actions.continue")}
+        beforeRequest={validateNames}
+        extraFields={
+          <div className="flex flex-col gap-y-4">
+            <div className="flex flex-col gap-y-2">
+              <Text size="small" weight="plus">
+                {t("register.firstName")}
+              </Text>
+              <Input
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value)
+                  setNameError(null)
+                }}
+                data-testid="register-first-name"
+              />
+            </div>
+            <div className="flex flex-col gap-y-2">
+              <Text size="small" weight="plus">
+                {t("register.lastName")}
+              </Text>
+              <Input
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value)
+                  setNameError(null)
+                }}
+                data-testid="register-last-name"
+              />
+            </div>
+            {nameError && (
+              <Text size="small" className="text-ui-fg-error">
+                {nameError}
+              </Text>
+            )}
+          </div>
+        }
         onVerified={(phone) => {
-          sessionStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify({ phone }))
-          navigate("/onboarding", { state: { phone } })
+          sessionStorage.setItem(
+            REGISTER_DRAFT_KEY,
+            JSON.stringify({
+              phone,
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+            }),
+          )
+          navigate("/onboarding", {
+            state: {
+              phone,
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+            },
+          })
         }}
       />
     </div>
