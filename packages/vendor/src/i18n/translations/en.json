@@ -3253,6 +3253,7 @@
       },
       "validation": {
         "phoneRequired": "Phone number is required",
+        "phoneInvalid": "Invalid phone number. It must start with 09 and be 11 digits.",
         "codeRequired": "Verification code is required"
       }
     },

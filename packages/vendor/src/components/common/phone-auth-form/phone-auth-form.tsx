@@ -20,6 +20,22 @@ type PhoneAuthFormProps = {
 
 const RESEND_SECONDS = 60
 
+/** Iranian mobile: 09 + 9 digits = 11 digits. */
+const IRAN_MOBILE_RE = /^09\d{9}$/
+
+/** Mirror the backend normalization so client validation matches. */
+const normalizePhone = (input: string): string => {
+  let p = input.replace(/[\s-]/g, "")
+  if (p.startsWith("+98")) {
+    p = "0" + p.slice(3)
+  } else if (p.startsWith("0098")) {
+    p = "0" + p.slice(4)
+  } else if (p.startsWith("98") && p.length === 12) {
+    p = "0" + p.slice(2)
+  }
+  return p
+}
+
 /**
  * Two-step phone (OTP) authentication used by both login and register.
  * Step 1: enter phone -> request a code. Step 2: enter the code -> verify,
@@ -60,6 +76,9 @@ export const PhoneAuthForm = ({
     if (msg.includes("PHONE_ALREADY_REGISTERED")) {
       return t("login.phone.errors.alreadyRegistered")
     }
+    if (msg.includes("INVALID_PHONE")) {
+      return t("login.phone.validation.phoneInvalid")
+    }
     return msg
   }
 
@@ -69,14 +88,19 @@ export const PhoneAuthForm = ({
     ) ?? null
 
   const sendCode = async () => {
-    await requestOtp({ phone: phone.trim(), mode })
+    await requestOtp({ phone: normalizePhone(phone), mode })
     setResendIn(RESEND_SECONDS)
   }
 
   const handleRequest = async () => {
     setError(null)
-    if (!phone.trim()) {
+    const normalized = normalizePhone(phone)
+    if (!normalized) {
       setError(t("login.phone.validation.phoneRequired"))
+      return
+    }
+    if (!IRAN_MOBILE_RE.test(normalized)) {
+      setError(t("login.phone.validation.phoneInvalid"))
       return
     }
     try {
@@ -107,8 +131,8 @@ export const PhoneAuthForm = ({
       return
     }
     try {
-      await verifyOtp({ phone: phone.trim(), code: code.trim() })
-      onVerified(phone.trim())
+      await verifyOtp({ phone: normalizePhone(phone), code: code.trim() })
+      onVerified(normalizePhone(phone))
     } catch (e) {
       setError(toError(e))
     }
