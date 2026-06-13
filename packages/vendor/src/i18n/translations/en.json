@@ -3236,6 +3236,20 @@
     "title": "Welcome back!",
     "hint": "Log in to your vendor account.",
     "submit": "Log in",
+    "method": {
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "phone": {
+      "sendCode": "Send code",
+      "verify": "Verify & sign in",
+      "codeLabel": "Verification code",
+      "changeNumber": "Change number",
+      "validation": {
+        "phoneRequired": "Phone number is required",
+        "codeRequired": "Verification code is required"
+      }
+    },
     "sessionExpired": "Session expired",
     "notSellerYet": "Not a seller yet? <0>Create an account</0>",
     "validation": {

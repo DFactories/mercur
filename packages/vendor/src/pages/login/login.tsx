@@ -1,4 +1,4 @@
-import { Children, ReactNode } from "react";
+import { Children, ReactNode, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
 import { Alert, Button, Heading, Input, Text } from "@medusajs/ui";
@@ -9,6 +9,7 @@ import * as z from "zod";
 
 import { Form } from "@components/common/form";
 import AvatarBox from "@components/common/logo-box/avatar-box";
+import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form";
 import { AuthLayout } from "@components/layout/auth-layout";
 import { useSignInWithEmailPass } from "@hooks/api";
 import { isFetchError } from "@lib/is-fetch-error";
@@ -203,6 +204,46 @@ const LoginFooter = () => {
   );
 };
 
+const LoginContent = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [method, setMethod] = useState<"email" | "phone">("email");
+
+  return (
+    <div className="mt-6">
+      <LoginHeader />
+      <div className="mb-6 grid grid-cols-2 gap-x-2">
+        <Button
+          type="button"
+          variant={method === "email" ? "primary" : "secondary"}
+          onClick={() => setMethod("email")}
+        >
+          {t("login.method.email")}
+        </Button>
+        <Button
+          type="button"
+          variant={method === "phone" ? "primary" : "secondary"}
+          onClick={() => setMethod("phone")}
+        >
+          {t("login.method.phone")}
+        </Button>
+      </div>
+      {method === "email" ? (
+        <LoginForm />
+      ) : (
+        <PhoneAuthForm
+          submitLabel={t("login.submit")}
+          onVerified={() => {
+            setTimeout(() => {
+              navigate("/store-select", { replace: true });
+            }, 800);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
 const Root = ({ children }: { children?: ReactNode }) => {
   return (
     <AuthLayout>
@@ -211,10 +252,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
       ) : (
         <>
           <LoginLogo />
-          <div className="mt-6">
-            <LoginHeader />
-            <LoginForm />
-          </div>
+          <LoginContent />
           <LoginFooter />
         </>
       )}

@@ -3145,6 +3145,20 @@
     "notSellerYet": "حساب کاربری ندارید؟ <0>یک حساب بسازید</0>",
     "sessionExpired": "نشست منقضی شد",
     "submit": "ورود",
+    "method": {
+      "email": "ایمیل",
+      "phone": "موبایل"
+    },
+    "phone": {
+      "sendCode": "ارسال کد",
+      "verify": "تأیید و ورود",
+      "codeLabel": "کد تأیید",
+      "changeNumber": "تغییر شماره",
+      "validation": {
+        "phoneRequired": "شماره موبایل الزامی است",
+        "codeRequired": "کد تأیید الزامی است"
+      }
+    },
     "validation": {
       "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
       "emailRequired": "لطفاً ایمیل را وارد کنید",
