@@ -2,6 +2,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import {
   AuthIdentityDTO,
   IAuthModuleService,
+  ICustomerModuleService,
 } from "@medusajs/framework/types"
 import {
   ContainerRegistrationKeys,
@@ -112,6 +113,43 @@ async function mintSessionToken(
   )
 }
 
+/**
+ * Ensure a customer entity exists and is linked to the verified phone auth
+ * identity. Phone-only customers are allowed (Medusa's customer.email is
+ * nullable) — but createCustomerAccountWorkflow requires an email, so we create
+ * the customer directly via the module and link it ourselves. Idempotent: skips
+ * when the auth identity already points at a customer.
+ */
+async function ensureCustomerForAuthIdentity(
+  req: MedusaRequest,
+  authIdentity: AuthIdentityDTO,
+  phone: string
+): Promise<AuthIdentityDTO> {
+  if (authIdentity.app_metadata?.customer_id) {
+    return authIdentity
+  }
+
+  const customerService = req.scope.resolve<ICustomerModuleService>(
+    Modules.CUSTOMER
+  )
+  const [customer] = await customerService.createCustomers([
+    { phone, has_account: true },
+  ])
+
+  const authModule = req.scope.resolve<IAuthModuleService>(Modules.AUTH)
+  await authModule.updateAuthIdentities({
+    id: authIdentity.id,
+    app_metadata: {
+      ...(authIdentity.app_metadata ?? {}),
+      customer_id: customer.id,
+    },
+  })
+
+  return authModule.retrieveAuthIdentity(authIdentity.id, {
+    relations: ["provider_identities"],
+  })
+}
+
 /** POST handler: generate an OTP and deliver it via sms.ir. Always 200 (never leaks whether the number exists). */
 export function createRequestOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
@@ -170,6 +208,13 @@ export function createVerifyOtpHandler(actorType: ActorType) {
         MedusaError.Types.UNEXPECTED_STATE,
         "Could not resolve an auth identity for the verified phone number."
       )
+    }
+
+    // Customers have no onboarding step, so create (or reuse) the customer here
+    // and link it, mirroring login=register for phone OTP. Members (vendors)
+    // are created later by the seller-account onboarding flow.
+    if (actorType === "customer") {
+      authIdentity = await ensureCustomerForAuthIdentity(req, authIdentity, phone)
     }
 
     const token = await mintSessionToken(req, authIdentity, actorType)
