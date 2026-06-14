@@ -2632,7 +2632,10 @@
     "documents": {
       "businessLicense": "Business license",
       "healthPermit": "Health permit",
-      "adminUrlHint": "Document file URL (uploaded by the vendor)"
+      "adminUrlHint": "Document file URL (uploaded by the vendor)",
+      "header": "Store documents",
+      "view": "View",
+      "notProvided": "Not provided"
     }
   },
   "regions": {

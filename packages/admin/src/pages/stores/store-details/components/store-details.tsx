@@ -14,6 +14,7 @@ import { StoreConfigurationSection } from "./store-configuration-section";
 import { StoreAddressSection } from "./store-address-section";
 import { StoreSubscriptionSection } from "./store-subscription-section";
 import { StoreMembersSection } from "./store-members-section";
+import { StoreDocumentsSection } from "./store-documents-section";
 import { StoreRequestSection } from "./store-request-section";
 import { StoreOrdersSection } from "./store-orders-section";
 import { StoreProductsSection } from "./store-products-section";
@@ -151,6 +152,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
         <StoreAddressSection seller={seller} />
         <StoreCompanyDetailsSection seller={seller} />
         <StorePaymentDetailsSection seller={seller} />
+        <StoreDocumentsSection seller={seller} />
         <StoreSubscriptionSection seller={seller} />
       </TwoColumnPage.Sidebar>
     </TwoColumnPage>

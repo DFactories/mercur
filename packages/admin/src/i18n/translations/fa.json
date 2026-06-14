@@ -2339,7 +2339,10 @@
     "documents": {
       "businessLicense": "جواز فعالیت",
       "healthPermit": "جواز بهداشت",
-      "adminUrlHint": "نشانی فایل مدرک (بارگذاری‌شده توسط فروشنده)"
+      "adminUrlHint": "نشانی فایل مدرک (بارگذاری‌شده توسط فروشنده)",
+      "header": "مدارک فروشگاه",
+      "view": "مشاهده",
+      "notProvided": "ثبت نشده"
     }
   },
   "regions": {
