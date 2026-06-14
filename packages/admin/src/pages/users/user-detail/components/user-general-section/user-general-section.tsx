@@ -82,6 +82,14 @@ export const UserGeneralSection = ({ user }: UserGeneralSectionProps) => {
           {name ?? "-"}
         </Text>
       </div>
+      <div className="text-ui-fg-subtle grid grid-cols-2 items-center px-6 py-4" data-testid="user-general-section-phone">
+        <Text size="small" leading="compact" weight="plus">
+          {t("fields.phone")}
+        </Text>
+        <Text size="small" leading="compact" dir="ltr">
+          {(user.metadata as { phone?: string } | null)?.phone || "-"}
+        </Text>
+      </div>
     </Container>
   )
 }

@@ -24,6 +24,8 @@ export const UserListDataTable = () => {
   const { users, count, isPending, isError, error } = useUsers(
     {
       ...searchParams,
+      // ensure metadata (where the phone lives) is returned
+      fields: "+metadata",
     },
     {
       placeholderData: keepPreviousData,
@@ -89,6 +91,26 @@ const useColumns = () => {
           return (
             <div className="flex size-full items-center overflow-hidden">
               <span className="truncate">{row.original.email}</span>
+            </div>
+          )
+        },
+      }),
+      columnHelper.display({
+        id: "phone",
+        header: () => (
+          <div className="flex h-full w-full items-center">
+            <span>{t("fields.phone")}</span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const phone = (row.original.metadata as { phone?: string } | null)
+            ?.phone
+          return (
+            <div
+              className="flex size-full items-center overflow-hidden"
+              dir="ltr"
+            >
+              <span className="truncate">{phone || "-"}</span>
             </div>
           )
         },
