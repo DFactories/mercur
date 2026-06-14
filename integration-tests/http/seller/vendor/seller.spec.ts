@@ -259,7 +259,7 @@ medusaIntegrationTestRunner({
           expect(response.status).toEqual(400)
         })
 
-        it("should fail for missing email", async () => {
+        it("should create a store without email (phone-first store contact)", async () => {
           const { headers } = await createUnregisteredToken()
 
           const response = await api
@@ -274,7 +274,7 @@ medusaIntegrationTestRunner({
             )
             .catch((e) => e.response)
 
-          expect(response.status).toEqual(400)
+          expect(response.status).toEqual(201)
         })
 
         it("should fail for missing currency_code", async () => {
@@ -969,11 +969,11 @@ medusaIntegrationTestRunner({
       })
 
       describe("POST /vendor/sellers/:id/members", () => {
-        it("should create invitation with email and role_id", async () => {
+        it("should create invitation with phone and role_id", async () => {
           const response = await api.post(
             `/vendor/sellers/${sellerA.id}/members`,
             {
-              email: "invite@test.com",
+              phone: "09120000301",
               role_id: SellerRole.SELLER_ADMINISTRATION,
             },
             headersA
@@ -981,7 +981,7 @@ medusaIntegrationTestRunner({
 
           expect(response.status).toEqual(201)
           expect(response.data.member_invite).toBeDefined()
-          expect(response.data.member_invite.email).toEqual("invite@test.com")
+          expect(response.data.member_invite.phone).toEqual("09120000301")
           expect(response.data.member_invite.role_id).toEqual(SellerRole.SELLER_ADMINISTRATION)
         })
 

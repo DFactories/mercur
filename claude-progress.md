@@ -311,9 +311,44 @@ verified *contact*, never a login credential. DB is clean, so no legacy/backfill
 - `bun run build` (types→core→client→vendor) green; `auth/vendor` tests 14/14.
 - Released `@mercurjs/{core,vendor}@2.1.2-dfactories.16`.
 
+## Session 8 — Vendor/admin batch: invites by phone, docs, avatar, polish (2026-06-14)
+
+Ten-item batch (all built; `bun run build` 7/7 green). Released
+`@mercurjs/{core,vendor,admin}@2.1.2-dfactories.17`.
+
+#### Completed
+
+- **#1+#10 Invite by phone (OTP-native)**: `MemberInvite` gained `phone` (email
+  nullable) + migration; invite forms (vendor + admin) collect phone+role;
+  `VendorInviteMember`/`AdminInviteSellerMember` require phone. On phone OTP
+  **verify**, pending invites for that phone are auto-accepted (member created +
+  joined seller(s) with role); request-otp `login` passes if a pending invite
+  exists. `member_invite.created` registered in the notification catalog (SMS
+  only) with an array-payload resolver → routes the invite SMS (params:
+  seller_name, role). Orchestrator now try/catches (a notification failure never
+  breaks the domain op).
+- **#6 Avatar**: `member.photo` (+migration, DTOs, upsert, `VendorUpdateMember`)
+  + FileUpload in vendor edit-profile.
+- **#7 Store documents**: `professional_details.business_license` +
+  `health_permit` (+migration, DTOs, validators vendor+admin). Vendor sidebar
+  `StoreDocumentsSection` (below payment) → `documents` RouteDrawer upload
+  (image+PDF). Admin professional-details form gained the two URL fields.
+- **#2** team list: name + phone columns. **#8** admin members box shows phone.
+- **#3** media tip i18n. **#4** handle slug regex (edit-store + onboarding).
+  **#5** currency hint reused with IRR guidance. **#9** onboarding success screen
+  (+ login button) instead of silent redirect.
+- Migrations: `Migration20260614130000` (member.photo, prof-details docs,
+  member_invite.phone + index).
+- **Fixed a pre-existing route bug**: an already-registered member can create a
+  second store without member_email/member_phone.
+- Tests: `auth/vendor` 14/14, `notification-settings` 4/4, `seller/vendor` 53/58
+  (the 5 failures are **pre-existing** payment-details, red at .16 baseline too —
+  verified by stash). Updated 2 seller specs for the new email-optional / phone
+  invite behavior.
+
 ## Required Artifacts (status)
 
-- `claude-progress.md` -- this file (updated 2026-06-14, Session 7).
+- `claude-progress.md` -- this file (updated 2026-06-14, Session 8).
 - `feature_list.json` -- present at repo root. Tracks 5 features (1 passing + 4 not_started for phone-auth/notifications).
 - `session-handoff.md` -- present at repo root; updated 2026-06-12 with the phone-auth design handoff.
 - `docs/features/phone-auth-and-notifications.md` -- design/decision record for the phone-auth + notification work.
