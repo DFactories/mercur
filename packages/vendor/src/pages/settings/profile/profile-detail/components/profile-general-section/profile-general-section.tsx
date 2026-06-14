@@ -1,5 +1,5 @@
 import { PencilSquare } from "@medusajs/icons"
-import { Container, Heading, Text } from "@medusajs/ui"
+import { Avatar, Container, Heading, Text } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 import { ActionMenu } from "../../../../../../components/common/action-menu"
 import { useMe } from "../../../../../../hooks/api"
@@ -10,14 +10,27 @@ export const ProfileGeneralSection = () => {
   const { seller_member } = useMe()
   const member = seller_member?.member
 
+  const fullName = [member?.first_name, member?.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim()
+  const fallback = (fullName || member?.email || "U").charAt(0).toUpperCase()
+
   return (
     <Container className="divide-y p-0">
       <div className="flex items-center justify-between px-6 py-4">
-        <div>
-          <Heading>{t("profile.domain")}</Heading>
-          <Text className="text-ui-fg-subtle" size="small">
-            {t("profile.manageYourProfileDetails")}
-          </Text>
+        <div className="flex items-center gap-x-3">
+          <Avatar
+            size="large"
+            src={member?.photo ?? undefined}
+            fallback={fallback}
+          />
+          <div>
+            <Heading>{t("profile.domain")}</Heading>
+            <Text className="text-ui-fg-subtle" size="small">
+              {t("profile.manageYourProfileDetails")}
+            </Text>
+          </div>
         </div>
         <ActionMenu
           groups={[
