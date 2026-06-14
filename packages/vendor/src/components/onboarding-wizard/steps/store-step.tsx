@@ -21,7 +21,14 @@ const StoreStepSchema = z.object({
   phone: z.string().min(1, i18n.t("onboarding.wizard.validation.phoneRequired")),
   currency_code: z.string().min(1, i18n.t("onboarding.wizard.validation.currencyRequired")),
   description: z.string().optional(),
-  handle: z.string().optional(),
+  handle: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+      message: i18n.t("onboarding.wizard.validation.handleInvalid"),
+    })
+    .optional()
+    .or(z.literal("")),
 });
 
 type StoreStepValues = z.infer<typeof StoreStepSchema>;
@@ -162,6 +169,9 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
                       </Select.Content>
                     </Select>
                   </Form.Control>
+                  <Form.Hint>
+                    {t("onboarding.wizard.store.currencyHint")}
+                  </Form.Hint>
                   <Form.ErrorMessage />
                 </Form.Item>
               )}

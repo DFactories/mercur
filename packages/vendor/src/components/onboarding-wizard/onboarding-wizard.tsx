@@ -1,4 +1,6 @@
 import { AnimatePresence } from "motion/react";
+import { Button, Heading, Text } from "@medusajs/ui";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { useLogout, useSellers } from "@hooks/api";
@@ -21,6 +23,7 @@ export const OnboardingWizard = ({
   memberEmail,
   memberPhone,
 }: OnboardingWizardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { mutateAsync: logoutMutation } = useLogout();
   const { seller_members } = useSellers();
@@ -29,6 +32,8 @@ export const OnboardingWizard = ({
   const {
     currentStep,
     sellerId,
+    isComplete,
+    goToLogin,
     isPending,
     goBack,
     submitStoreStep,
@@ -98,6 +103,20 @@ export const OnboardingWizard = ({
         return null;
     }
   };
+
+  if (isComplete) {
+    return (
+      <div className="flex h-dvh w-dvw flex-col items-center justify-center gap-y-6 px-6 text-center">
+        <div className="flex max-w-md flex-col gap-y-2">
+          <Heading level="h1">{t("onboarding.success.title")}</Heading>
+          <Text size="small" className="text-ui-fg-subtle">
+            {t("onboarding.success.description")}
+          </Text>
+        </div>
+        <Button onClick={goToLogin}>{t("onboarding.success.login")}</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-dvh w-dvw overflow-hidden">

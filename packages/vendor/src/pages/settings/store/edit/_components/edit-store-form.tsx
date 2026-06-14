@@ -33,7 +33,14 @@ const EditStoreSchema = zod.object({
     .trim()
     .min(1, { message: i18n.t("store.validation.nameRequired") })
     .max(100, { message: i18n.t("store.validation.nameTooLong") }),
-  handle: zod.string().optional().or(zod.literal("")),
+  handle: zod
+    .string()
+    .trim()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+      message: i18n.t("store.validation.handleInvalid"),
+    })
+    .optional()
+    .or(zod.literal("")),
   email: zod
     .string()
     .email({ message: i18n.t("store.validation.emailInvalid") })

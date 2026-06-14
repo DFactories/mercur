@@ -50,6 +50,7 @@ export const useOnboarding = ({
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
 
   const sellerIdRef = useRef<string | null>(null);
   const [sellerIdState, setSellerIdState] = useState<string | null>(null);
@@ -197,7 +198,9 @@ export const useOnboarding = ({
         sessionStorage.removeItem("mercur_onboarding_phone");
         sessionStorage.removeItem("mercur_register_draft");
 
-        navigate("/login", { replace: true });
+        // Show a success screen (with a login button) instead of bouncing the
+        // user to /login with no feedback.
+        setIsComplete(true);
       } catch (error: any) {
         toast.error(error.message);
       } finally {
@@ -226,10 +229,16 @@ export const useOnboarding = ({
     }
   }, [currentStep]);
 
+  const goToLogin = useCallback(() => {
+    navigate("/login", { replace: true });
+  }, [navigate]);
+
   return {
     currentStep,
     totalSteps: TOTAL_STEPS,
     sellerId: sellerIdState,
+    isComplete,
+    goToLogin,
     isPending,
     canGoBack: currentStep > 0,
     goBack,

@@ -949,6 +949,11 @@ export function getRouteMap({
                           import("./pages/settings/store/professional-details"),
                       },
                       {
+                        path: "documents",
+                        lazy: () =>
+                          import("./pages/settings/store/documents"),
+                      },
+                      {
                         path: "store-closure",
                         lazy: () =>
                           import("./pages/settings/store/store-closure"),

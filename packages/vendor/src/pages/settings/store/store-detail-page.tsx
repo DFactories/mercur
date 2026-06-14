@@ -14,6 +14,7 @@ import { StoreGeneralSection } from "./_components/store-general-section";
 import { StoreSubscriptionSection } from "./_components/store-subscription-section";
 import { StorePaymentDetailsSection } from "./_components/store-payment-details-section";
 import { StoreProfessionalDetailsSection } from "./_components/store-professional-details-section";
+import { StoreDocumentsSection } from "./_components/store-documents-section";
 import {
   StoreDetailHeader,
   StoreDetailTitle,
@@ -93,6 +94,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
         <StoreAddressSection seller={seller} />
         <StoreProfessionalDetailsSection seller={seller} />
         <StorePaymentDetailsSection seller={seller} />
+        <StoreDocumentsSection seller={seller} />
         <StoreSubscriptionSection
           subscription_plan={subscription_plan}
           subscription_override={subscription_override}

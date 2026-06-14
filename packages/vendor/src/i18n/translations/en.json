@@ -2623,7 +2623,8 @@
       "firstName": "First name",
       "lastName": "Last name",
       "languageLabel": "Language",
-      "usageInsightsLabel": "Usage insights"
+      "usageInsightsLabel": "Usage insights",
+      "photo": "Photo"
     },
     "edit": {
       "header": "Edit Profile",
@@ -2680,7 +2681,8 @@
     "inviteForm": {
       "validation": {
         "emailInvalid": "Please enter a valid email",
-        "roleRequired": "Please select a role"
+        "roleRequired": "Please select a role",
+        "phoneInvalid": "Enter a valid mobile number (09 + 11 digits)"
       }
     }
   },
@@ -2754,7 +2756,8 @@
       "nameRequired": "Please enter a name",
       "nameTooLong": "Name must be at most 100 characters",
       "phoneRequired": "Please enter a phone number",
-      "emailInvalid": "Please enter a valid email"
+      "emailInvalid": "Please enter a valid email",
+      "handleInvalid": "Use lowercase letters, numbers and hyphens only (e.g. my-store)"
     },
     "profileCompletion": {
       "title": "Complete store profile",
@@ -2926,6 +2929,25 @@
       "currenciesRemoved": "Removed currencies from the store successfully",
       "localesRemoved": "Removed locales from the store successfully",
       "updatedTaxInclusivitySuccessfully": "Tax inclusive pricing updated successfully"
+    },
+    "mediaTip": {
+      "label": "Tip:",
+      "message": "This media will be visible on the storefront."
+    },
+    "documents": {
+      "header": "Store documents",
+      "businessLicense": "Business license",
+      "healthPermit": "Health permit",
+      "view": "View",
+      "notProvided": "Not provided",
+      "upload": "Upload",
+      "uploadHint": "Image or PDF",
+      "invalidFileType": "Only images or PDF files are allowed",
+      "successToast": "Store documents updated",
+      "edit": {
+        "header": "Store documents",
+        "description": "Upload your store business license and health permit"
+      }
     }
   },
   "regions": {
@@ -3373,7 +3395,7 @@
         "handlePlaceholder": "my-store",
         "currency": "Currency",
         "selectCurrency": "Select",
-        "currencyHint": "Cannot be changed after store is created"
+        "currencyHint": "Cannot be changed after the store is created — choose carefully. To sell in the Iran market, select IRR."
       },
       "skip": "Skip",
       "address": {
@@ -3409,13 +3431,19 @@
         "currencyRequired": "Please select a currency",
         "phoneRequired": "Please enter a phone number",
         "countryRequired": "Please select a country",
-        "accountNameRequired": "Please enter an account name"
+        "accountNameRequired": "Please enter an account name",
+        "handleInvalid": "Use lowercase letters, numbers and hyphens only (e.g. my-store)"
       },
       "preview": {
         "title": "Welcome to Mercur",
         "description": "Your all-in-one vendor portal for managing your store, products, orders, and payouts.",
         "placeholder": "App preview"
       }
+    },
+    "success": {
+      "title": "Your store is ready!",
+      "description": "Your store was created. Sign in to start managing it.",
+      "login": "Sign in"
     }
   },
   "invite": {
