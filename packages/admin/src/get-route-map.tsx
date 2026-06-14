@@ -856,6 +856,11 @@ export function getRouteMap({
                               ),
                           },
                           {
+                            path: "documents",
+                            lazy: () =>
+                              import("./pages/stores/store-documents-edit"),
+                          },
+                          {
                             path: "payment-details",
                             lazy: () =>
                               import(

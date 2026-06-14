@@ -13,30 +13,29 @@ import { useUpdateSellerProfessionalDetails } from "@hooks/api/sellers";
 
 type Seller = InferClientOutput<typeof sdk.admin.sellers.$id.query>["seller"];
 
-type StoreProfessionalDetailsFormProps = {
+type StoreDocumentsFormProps = {
   seller: Seller;
 };
 
-const StoreProfessionalDetailsSchema = zod.object({
-  corporate_name: zod.string().optional().or(zod.literal("")),
-  registration_number: zod.string().optional().or(zod.literal("")),
-  tax_id: zod.string().optional().or(zod.literal("")),
+const StoreDocumentsSchema = zod.object({
+  business_license: zod.string().optional().or(zod.literal("")),
+  health_permit: zod.string().optional().or(zod.literal("")),
 });
 
-export const StoreProfessionalDetailsForm = ({
-  seller,
-}: StoreProfessionalDetailsFormProps) => {
+export const StoreDocumentsForm = ({ seller }: StoreDocumentsFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
-  const details = seller.professional_details;
+  const details = seller.professional_details as
+    | { business_license?: string | null; health_permit?: string | null }
+    | null
+    | undefined;
 
-  const form = useForm<zod.infer<typeof StoreProfessionalDetailsSchema>>({
+  const form = useForm<zod.infer<typeof StoreDocumentsSchema>>({
     defaultValues: {
-      corporate_name: details?.corporate_name ?? "",
-      registration_number: details?.registration_number ?? "",
-      tax_id: details?.tax_id ?? "",
+      business_license: details?.business_license ?? "",
+      health_permit: details?.health_permit ?? "",
     },
-    resolver: zodResolver(StoreProfessionalDetailsSchema),
+    resolver: zodResolver(StoreDocumentsSchema),
   });
 
   const { mutateAsync, isPending } = useUpdateSellerProfessionalDetails(
@@ -46,15 +45,12 @@ export const StoreProfessionalDetailsForm = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     await mutateAsync(
       {
-        corporate_name: values.corporate_name || null,
-        registration_number: values.registration_number || null,
-        tax_id: values.tax_id || null,
+        business_license: values.business_license || null,
+        health_permit: values.health_permit || null,
       },
       {
         onSuccess: () => {
-          toast.success(
-            t("store.professionalDetails.edit.successToast"),
-          );
+          toast.success(t("store.documents.successToast"));
           handleSuccess();
         },
         onError: (error: Error) => {
@@ -73,45 +69,32 @@ export const StoreProfessionalDetailsForm = ({
         <RouteDrawer.Body className="flex flex-col gap-y-4 overflow-y-auto">
           <Form.Field
             control={form.control}
-            name="corporate_name"
+            name="business_license"
             render={({ field }) => (
               <Form.Item>
                 <Form.Label optional>
-                  {t("store.professionalDetails.fields.corporateName")}
+                  {t("store.documents.businessLicense")}
                 </Form.Label>
                 <Form.Control>
-                  <Input size="small" {...field} />
+                  <Input size="small" dir="ltr" {...field} />
                 </Form.Control>
+                <Form.Hint>{t("store.documents.adminUrlHint")}</Form.Hint>
                 <Form.ErrorMessage />
               </Form.Item>
             )}
           />
           <Form.Field
             control={form.control}
-            name="registration_number"
+            name="health_permit"
             render={({ field }) => (
               <Form.Item>
                 <Form.Label optional>
-                  {t("store.professionalDetails.fields.registrationNumber")}
+                  {t("store.documents.healthPermit")}
                 </Form.Label>
                 <Form.Control>
-                  <Input size="small" {...field} />
+                  <Input size="small" dir="ltr" {...field} />
                 </Form.Control>
-                <Form.ErrorMessage />
-              </Form.Item>
-            )}
-          />
-          <Form.Field
-            control={form.control}
-            name="tax_id"
-            render={({ field }) => (
-              <Form.Item>
-                <Form.Label optional>
-                  {t("store.professionalDetails.fields.taxId")}
-                </Form.Label>
-                <Form.Control>
-                  <Input size="small" {...field} />
-                </Form.Control>
+                <Form.Hint>{t("store.documents.adminUrlHint")}</Form.Hint>
                 <Form.ErrorMessage />
               </Form.Item>
             )}

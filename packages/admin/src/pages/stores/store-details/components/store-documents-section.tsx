@@ -56,7 +56,7 @@ export const StoreDocumentsSection = ({
                 {
                   label: t("actions.edit"),
                   icon: <PencilSquare />,
-                  to: `/stores/${seller.id}/professional-details`,
+                  to: `/stores/${seller.id}/documents`,
                 },
               ],
             },
