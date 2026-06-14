@@ -21,6 +21,8 @@ const StoreProfessionalDetailsSchema = zod.object({
   corporate_name: zod.string().optional().or(zod.literal("")),
   registration_number: zod.string().optional().or(zod.literal("")),
   tax_id: zod.string().optional().or(zod.literal("")),
+  business_license: zod.string().optional().or(zod.literal("")),
+  health_permit: zod.string().optional().or(zod.literal("")),
 });
 
 export const StoreProfessionalDetailsForm = ({
@@ -28,13 +30,24 @@ export const StoreProfessionalDetailsForm = ({
 }: StoreProfessionalDetailsFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
-  const details = seller.professional_details;
+  const details = seller.professional_details as
+    | {
+        corporate_name?: string | null;
+        registration_number?: string | null;
+        tax_id?: string | null;
+        business_license?: string | null;
+        health_permit?: string | null;
+      }
+    | null
+    | undefined;
 
   const form = useForm<zod.infer<typeof StoreProfessionalDetailsSchema>>({
     defaultValues: {
       corporate_name: details?.corporate_name ?? "",
       registration_number: details?.registration_number ?? "",
       tax_id: details?.tax_id ?? "",
+      business_license: details?.business_license ?? "",
+      health_permit: details?.health_permit ?? "",
     },
     resolver: zodResolver(StoreProfessionalDetailsSchema),
   });
@@ -49,6 +62,8 @@ export const StoreProfessionalDetailsForm = ({
         corporate_name: values.corporate_name || null,
         registration_number: values.registration_number || null,
         tax_id: values.tax_id || null,
+        business_license: values.business_license || null,
+        health_permit: values.health_permit || null,
       },
       {
         onSuccess: () => {
@@ -112,6 +127,38 @@ export const StoreProfessionalDetailsForm = ({
                 <Form.Control>
                   <Input size="small" {...field} />
                 </Form.Control>
+                <Form.ErrorMessage />
+              </Form.Item>
+            )}
+          />
+          <Form.Field
+            control={form.control}
+            name="business_license"
+            render={({ field }) => (
+              <Form.Item>
+                <Form.Label optional>
+                  {t("store.documents.businessLicense")}
+                </Form.Label>
+                <Form.Control>
+                  <Input size="small" dir="ltr" {...field} />
+                </Form.Control>
+                <Form.Hint>{t("store.documents.adminUrlHint")}</Form.Hint>
+                <Form.ErrorMessage />
+              </Form.Item>
+            )}
+          />
+          <Form.Field
+            control={form.control}
+            name="health_permit"
+            render={({ field }) => (
+              <Form.Item>
+                <Form.Label optional>
+                  {t("store.documents.healthPermit")}
+                </Form.Label>
+                <Form.Control>
+                  <Input size="small" dir="ltr" {...field} />
+                </Form.Control>
+                <Form.Hint>{t("store.documents.adminUrlHint")}</Form.Hint>
                 <Form.ErrorMessage />
               </Form.Item>
             )}

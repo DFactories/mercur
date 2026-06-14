@@ -2335,6 +2335,11 @@
       "currenciesUpdated": "ارزها با موفقیت به‌روزرسانی شدند",
       "currenciesRemoved": "ارزها با موفقیت از فروشگاه حذف شدند",
       "updatedTaxInclusivitySuccessfully": "قیمت‌گذاری شامل مالیات با موفقیت به‌روزرسانی شد"
+    },
+    "documents": {
+      "businessLicense": "جواز فعالیت",
+      "healthPermit": "جواز بهداشت",
+      "adminUrlHint": "نشانی فایل مدرک (بارگذاری‌شده توسط فروشنده)"
     }
   },
   "regions": {
@@ -2800,7 +2805,7 @@
     "category": "دسته‌بندی",
     "collection": "مجموعه",
     "discountable": "قابل تخفیف",
-    "handle": "مدیریت",
+    "handle": "شناسه فروشگاه",
     "subtitle": "زیرعنوان",
     "by": "توسط",
     "item": "آیتم",
@@ -2945,5 +2950,14 @@
     "minutes_other": "دقیقه",
     "seconds_one": "ثانیه",
     "seconds_other": "ثانیه"
+  },
+  "stores": {
+    "members": {
+      "addUser": {
+        "validation": {
+          "phoneInvalid": "یک شماره موبایل معتبر وارد کنید (۰۹ و ۱۱ رقم)"
+        }
+      }
+    }
   }
 }

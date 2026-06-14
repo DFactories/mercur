@@ -34,6 +34,7 @@ type MemberRow = {
   kind: "member";
   id: string;
   email: string;
+  phone: string;
   role_id: string;
   is_owner: boolean;
   created_at: Date;
@@ -45,6 +46,7 @@ type InviteRow = {
   kind: "invite";
   id: string;
   email: string;
+  phone: string;
   role_id: string;
   token: string;
   is_owner: boolean;
@@ -107,6 +109,7 @@ export const StoreMembersDataTable = ({
       kind: "member",
       id: m.id,
       email: m.member?.email ?? "-",
+      phone: m.member?.phone ?? "-",
       role_id: m.role_id,
       is_owner: Boolean(m.is_owner),
       created_at: m.created_at,
@@ -129,7 +132,8 @@ export const StoreMembersDataTable = ({
     const invites: InviteRow[] = pendingInvites.map((invite) => ({
       kind: "invite",
       id: invite.id,
-      email: invite.email,
+      email: invite.email ?? "-",
+      phone: invite.phone ?? "-",
       role_id: invite.role_id,
       token: invite.token,
       is_owner: inviteIsFutureOwner,
@@ -187,15 +191,18 @@ const useColumns = (sellerId: string) => {
 
   return useMemo(
     () => [
-      columnHelper.accessor("email", {
+      columnHelper.accessor("phone", {
         header: () => (
           <div className="flex h-full w-full items-center">
-            <span>{t("fields.email")}</span>
+            <span>{t("fields.phone")}</span>
           </div>
         ),
         cell: ({ row }) => (
-          <div className="flex size-full items-center gap-x-2 overflow-hidden">
-            <span className="truncate">{row.original.email}</span>
+          <div
+            className="flex size-full items-center gap-x-2 overflow-hidden"
+            dir="ltr"
+          >
+            <span className="truncate">{row.original.phone}</span>
             {row.original.is_owner && (
               <Badge
                 size="2xsmall"

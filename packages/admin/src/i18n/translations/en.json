@@ -2628,6 +2628,11 @@
       "currenciesUpdated": "Currencies updated successfully",
       "currenciesRemoved": "Removed currencies from the store successfully",
       "updatedTaxInclusivitySuccessfully": "Tax inclusive pricing updated successfully"
+    },
+    "documents": {
+      "businessLicense": "Business license",
+      "healthPermit": "Health permit",
+      "adminUrlHint": "Document file URL (uploaded by the vendor)"
     }
   },
   "regions": {
@@ -3487,7 +3492,8 @@
         "addedToast": "User was successfully added.",
         "invitedToast": "User was successfully invited.",
         "validation": {
-          "roleRequired": "Please select a role"
+          "roleRequired": "Please select a role",
+          "phoneInvalid": "Enter a valid mobile number (09 + 11 digits)"
         }
       },
       "invite": {

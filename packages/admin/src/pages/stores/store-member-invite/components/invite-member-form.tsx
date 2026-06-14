@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
-import { Button, Input, Select, Text, clx, toast } from "@medusajs/ui";
-import { useMemo, useState } from "react";
+import { Button, Input, Select, Text, toast } from "@medusajs/ui";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -14,7 +14,6 @@ import { useMembers } from "../../../../hooks/api/members";
 import {
   useAddSellerMember,
   useInviteSellerMember,
-  useSellerInvites,
   useSellerMembers,
 } from "../../../../hooks/api/sellers";
 import { SellerMemberDTO, SellerRole } from "@mercurjs/types";
@@ -36,28 +35,43 @@ const ROLE_OPTIONS = [
   { value: SellerRole.SUPPORT, labelKey: "users.roles.support" },
 ];
 
+/** Iranian mobile: 09 + 9 digits = 11 digits. Mirrors the backend check. */
+const IRAN_MOBILE_RE = /^09\d{9}$/;
+
+const normalizePhone = (input: string): string => {
+  let p = input.replace(/[\s-]/g, "");
+  if (p.startsWith("+98")) p = "0" + p.slice(3);
+  else if (p.startsWith("0098")) p = "0" + p.slice(4);
+  else if (p.startsWith("98") && p.length === 12) p = "0" + p.slice(2);
+  return p;
+};
+
 const InviteMemberSchema = zod.object({
-  email: zod
+  phone: zod
     .string()
-    .min(1, { message: i18n.t("stores.create.validation.emailRequired") })
-    .email({ message: i18n.t("stores.create.validation.emailInvalid") }),
+    .trim()
+    .transform(normalizePhone)
+    .refine((v) => IRAN_MOBILE_RE.test(v), {
+      message: i18n.t("stores.members.addUser.validation.phoneInvalid"),
+    }),
   role_id: zod
     .string()
     .min(1, { message: i18n.t("stores.members.addUser.validation.roleRequired") }),
 });
 
-type Member = { id: string; email: string };
+type Member = {
+  id: string;
+  phone?: string | null;
+};
 
 export const InviteMemberForm = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const { handleSuccess } = useRouteModal();
 
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-
   const form = useForm<zod.infer<typeof InviteMemberSchema>>({
     defaultValues: {
-      email: "",
+      phone: "",
       role_id: "",
     },
     mode: "onSubmit",
@@ -65,48 +79,29 @@ export const InviteMemberForm = () => {
     resolver: zodResolver(InviteMemberSchema),
   });
 
-  const emailValue = form.watch("email");
+  const phoneValue = form.watch("phone");
 
+  // Look up an existing member by phone so the operator can add them directly
+  // instead of sending a fresh invite.
   const { members } = useMembers(
-    { q: emailValue || undefined, limit: 10 },
+    { q: phoneValue || undefined, limit: 10 },
     { placeholderData: (prev: any) => prev },
   );
 
-  // Fetch current sellers members and pending invites so we can filter
-  // suggestions to never show emails that are already added or invited.
   const { seller_members: currentMembers } = useSellerMembers(id!, {
     limit: 100,
     offset: 0,
   });
 
-  const { member_invites: pendingInvites } = useSellerInvites(id!);
-
-  const existingEmails = useMemo(() => {
-    const emails = new Set<string>();
-    (
-      (currentMembers as SellerMemberDTO[] | undefined) ?? []
-    ).forEach((sm) => {
-      const email = sm.member?.email;
-      if (email) {
-        emails.add(email.toLowerCase());
+  const existingMemberIds = useMemo(() => {
+    const ids = new Set<string>();
+    ((currentMembers as SellerMemberDTO[] | undefined) ?? []).forEach((sm) => {
+      if (sm.member_id) {
+        ids.add(sm.member_id);
       }
     });
-    ((pendingInvites as { email?: string; accepted?: boolean }[] | undefined) ?? [])
-      .filter((invite) => !invite.accepted)
-      .forEach((invite) => {
-        if (invite.email) {
-          emails.add(invite.email.toLowerCase());
-        }
-      });
-    return emails;
-  }, [currentMembers, pendingInvites]);
-
-  const memberList = useMemo(() => {
-    const all = (members as Member[] | undefined) ?? [];
-    return all.filter(
-      (m) => !existingEmails.has(m.email.toLowerCase()),
-    );
-  }, [members, existingEmails]);
+    return ids;
+  }, [currentMembers]);
 
   const { mutateAsync: inviteMember, isPending: isInviting } =
     useInviteSellerMember(id!);
@@ -118,8 +113,11 @@ export const InviteMemberForm = () => {
 
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      const matched = memberList.find(
-        (m) => m.email.toLowerCase() === values.email.toLowerCase(),
+      const matched = ((members as Member[] | undefined) ?? []).find(
+        (m) =>
+          m.phone &&
+          normalizePhone(m.phone) === values.phone &&
+          !existingMemberIds.has(m.id),
       );
 
       if (matched) {
@@ -130,7 +128,7 @@ export const InviteMemberForm = () => {
         toast.success(t("stores.members.addUser.addedToast"));
       } else {
         await inviteMember({
-          email: values.email,
+          phone: values.phone,
           role_id: values.role_id as SellerRole,
         });
         toast.success(t("stores.members.addUser.invitedToast"));
@@ -154,44 +152,19 @@ export const InviteMemberForm = () => {
           </Text>
           <Form.Field
             control={form.control}
-            name="email"
+            name="phone"
             render={({ field }) => (
               <Form.Item>
-                <Form.Label>{t("fields.email")}</Form.Label>
+                <Form.Label>{t("fields.phone")}</Form.Label>
                 <Form.Control>
-                  <div className="relative">
-                    <Input
-                      {...field}
-                      autoComplete="off"
-                      onFocus={() => setSuggestionsOpen(true)}
-                      onBlur={() => {
-                        field.onBlur();
-                        setTimeout(() => setSuggestionsOpen(false), 150);
-                      }}
-                    />
-                    {suggestionsOpen && memberList.length > 0 && (
-                      <div
-                        className={clx(
-                          "bg-ui-bg-base shadow-elevation-flyout border-ui-border-base absolute z-50 mt-1 flex max-h-60 w-full flex-col overflow-y-auto rounded-md border p-1",
-                        )}
-                      >
-                        {memberList.map((member) => (
-                          <button
-                            key={member.id}
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              field.onChange(member.email);
-                              setSuggestionsOpen(false);
-                            }}
-                            className="hover:bg-ui-bg-base-hover text-ui-fg-base flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm"
-                          >
-                            {member.email}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <Input
+                    {...field}
+                    type="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    placeholder="09xxxxxxxxx"
+                    autoComplete="off"
+                  />
                 </Form.Control>
                 <Form.ErrorMessage />
               </Form.Item>
