@@ -59,7 +59,9 @@ export const POST = async (
     ...sellerData
   } = req.validatedBody
 
-  if (!member_email && !member_phone) {
+  // A member identity is only required when creating a NEW member. An already
+  // registered member (existing actor) can create additional stores without it.
+  if (!req.auth_context.actor_id && !member_email && !member_phone) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
       "Either member_email or member_phone is required to create a seller account."

@@ -11,6 +11,7 @@ export const upsertMembersStep = createStep(
       phone?: string | null
       first_name?: string | null
       last_name?: string | null
+      photo?: string | null
     }[],
     { container }
   ) => {

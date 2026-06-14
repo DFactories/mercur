@@ -99,6 +99,98 @@ type SellerServiceLike = SellerModuleLike & {
   }) => Promise<unknown>
 }
 
+type MemberInviteLite = {
+  id: string
+  seller_id: string
+  role_id: string
+  expires_at: Date | string
+}
+
+/** Seller module surface used by OTP-native (phone) invite acceptance. */
+type InviteServiceLike = {
+  listMembers: (
+    filters: Record<string, unknown>
+  ) => Promise<Array<{ id: string; phone?: string | null }>>
+  createMembers: (
+    data: Array<{ phone?: string | null }>
+  ) => Promise<Array<{ id: string }>>
+  listMemberInvites: (
+    filters: Record<string, unknown>
+  ) => Promise<MemberInviteLite[]>
+  updateMemberInvites: (data: {
+    id: string
+    accepted: boolean
+  }) => Promise<unknown>
+  listSellerMembers: (
+    filters: Record<string, unknown>
+  ) => Promise<Array<{ id: string }>>
+  createSellerMembers: (
+    data: Array<{
+      seller_id: string
+      member_id: string
+      role_id: string
+      is_owner: boolean
+    }>
+  ) => Promise<unknown>
+}
+
+/** Pending (unaccepted, unexpired) invites for a phone, in any common format. */
+async function findPendingInvitesByPhone(
+  req: MedusaRequest,
+  phone: string
+): Promise<MemberInviteLite[]> {
+  const seller = req.scope.resolve<InviteServiceLike>(MercurModules.SELLER)
+  const invites = await seller.listMemberInvites({
+    phone: phoneVariants(phone),
+    accepted: false,
+  })
+  const now = Date.now()
+  return invites.filter((i) => new Date(i.expires_at).getTime() > now)
+}
+
+/**
+ * OTP-native invite acceptance: when a phone with pending invites verifies, the
+ * member is created (if needed) and added to each inviting seller with the
+ * invite's role; the invites are marked accepted. Returns the member id.
+ */
+async function acceptInvitesByPhone(
+  req: MedusaRequest,
+  phone: string,
+  invites: MemberInviteLite[]
+): Promise<string> {
+  const seller = req.scope.resolve<InviteServiceLike>(MercurModules.SELLER)
+
+  let memberId = await findMemberIdByPhone(req, phone)
+  if (!memberId) {
+    const [member] = await seller.createMembers([{ phone }])
+    memberId = member.id
+  }
+
+  for (const invite of invites) {
+    const existing = await seller.listSellerMembers({
+      seller_id: invite.seller_id,
+      member_id: memberId,
+    })
+    if (!existing.length) {
+      const owners = await seller.listSellerMembers({
+        seller_id: invite.seller_id,
+        is_owner: true,
+      })
+      await seller.createSellerMembers([
+        {
+          seller_id: invite.seller_id,
+          member_id: memberId,
+          role_id: invite.role_id,
+          is_owner: owners.length === 0,
+        },
+      ])
+    }
+    await seller.updateMemberInvites({ id: invite.id, accepted: true })
+  }
+
+  return memberId
+}
+
 /** Iranian mobile in canonical local form: 09 + 9 digits = 11 digits. */
 const IRAN_MOBILE_RE = /^09\d{9}$/
 
@@ -281,7 +373,9 @@ export function createRequestOtpHandler(actorType: ActorType) {
         actorType === "member"
           ? mode === "register"
             ? await isPhoneTaken(req, phone)
-            : !!(await findMemberIdByPhone(req, phone))
+            : // login: an account exists, OR a pending invite lets them join
+              !!(await findMemberIdByPhone(req, phone)) ||
+              (await findPendingInvitesByPhone(req, phone)).length > 0
           : !!(await findCustomerIdByPhone(
               req.scope.resolve<ICustomerModuleService>(Modules.CUSTOMER),
               phone
@@ -360,8 +454,16 @@ export function createVerifyOtpHandler(actorType: ActorType) {
       authIdentity = await ensureCustomerForAuthIdentity(req, authIdentity, phone)
     } else if (!authIdentity.app_metadata?.member_id) {
       // Link an existing member whose login phone matches, so phone login reaches
-      // their existing seller(s). If none exists, they go through onboarding.
-      const memberId = await findMemberIdByPhone(req, phone)
+      // their existing seller(s). Otherwise, accept any pending invites for this
+      // phone (OTP-native invites) — creating the member and joining the inviting
+      // store(s). If neither applies, they go through onboarding.
+      let memberId = await findMemberIdByPhone(req, phone)
+      if (!memberId) {
+        const invites = await findPendingInvitesByPhone(req, phone)
+        if (invites.length) {
+          memberId = await acceptInvitesByPhone(req, phone, invites)
+        }
+      }
       if (memberId) {
         await authModule.updateAuthIdentities({
           id: authIdentity.id,

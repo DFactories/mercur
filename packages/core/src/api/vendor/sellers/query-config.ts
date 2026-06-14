@@ -67,6 +67,7 @@ export const listVendorMemberInvitesQueryConfig = {
   defaults: [
     "id",
     "email",
+    "phone",
     "accepted",
     "role_id",
     "expires_at",

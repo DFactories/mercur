@@ -12,6 +12,7 @@ const Member = model
     phone: model.text().searchable().nullable(),
     first_name: model.text().searchable().nullable(),
     last_name: model.text().searchable().nullable(),
+    photo: model.text().nullable(),
     locale: model.text().nullable(),
     is_active: model.boolean().default(true),
     sellers: model.manyToMany(() => Seller, {

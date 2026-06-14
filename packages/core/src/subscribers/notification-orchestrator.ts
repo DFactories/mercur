@@ -1,4 +1,5 @@
 import { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { NotificationIntent } from "@mercurjs/types"
 
 import { notificationEventKeys } from "../notification/catalog"
@@ -26,7 +27,19 @@ export default async function notificationOrchestratorHandler({
     }`,
   }
 
-  await sendNotificationWorkflow(container).run({ input: intent })
+  // A notification failure (e.g. a missing provider for a channel) must never
+  // break the domain operation that emitted the event — log and move on.
+  try {
+    await sendNotificationWorkflow(container).run({ input: intent })
+  } catch (error) {
+    container
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .error(
+        `notification-orchestrator: failed to dispatch "${event.name}": ${
+          (error as Error)?.message ?? error
+        }`
+      )
+  }
 }
 
 export const config: SubscriberConfig = {

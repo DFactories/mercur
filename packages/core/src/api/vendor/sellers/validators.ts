@@ -48,6 +48,8 @@ export const CreateSellerAccount = z.object({
       corporate_name: z.string().nullable().optional(),
       registration_number: z.string().nullable().optional(),
       tax_id: z.string().nullable().optional(),
+      business_license: z.string().nullable().optional(),
+      health_permit: z.string().nullable().optional(),
     })
     .optional(),
   payment_details: z
@@ -84,7 +86,8 @@ export const VendorUpdateSeller = WithAdditionalData(UpdateSeller)
 
 export type VendorInviteMemberType = z.infer<typeof VendorInviteMember>
 export const VendorInviteMember = z.object({
-  email: z.string().email(),
+  phone: z.string().min(1),
+  email: z.string().email().optional(),
   role_id: z.nativeEnum(SellerRole),
 })
 
@@ -127,6 +130,8 @@ export const UpsertSellerProfessionalDetails = z.object({
   corporate_name: z.string().nullable().optional(),
   registration_number: z.string().nullable().optional(),
   tax_id: z.string().nullable().optional(),
+  business_license: z.string().nullable().optional(),
+  health_permit: z.string().nullable().optional(),
 })
 export const VendorUpsertSellerProfessionalDetails = WithAdditionalData(UpsertSellerProfessionalDetails)
 

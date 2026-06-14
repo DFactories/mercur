@@ -143,6 +143,41 @@ async function resolveOrderCustomer(
   ]
 }
 
+async function resolveMemberInvite(
+  payload: Record<string, unknown>,
+  container: MedusaContainer
+): Promise<NotificationRecipient[]> {
+  // `member_invite.created` emits an array of { id, token, expires_at }.
+  const ids = (
+    Array.isArray(payload)
+      ? (payload as Array<{ id?: string }>).map((p) => p.id)
+      : [(payload as { id?: string }).id]
+  ).filter((id): id is string => !!id)
+  if (!ids.length) {
+    return []
+  }
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "member_invite",
+    fields: ["id", "phone", "email", "role_id", "seller.name"],
+    filters: { id: ids },
+  })
+  const invites = (data ?? []) as Array<{
+    phone?: string | null
+    email?: string | null
+    role_id?: string | null
+    seller?: { name?: string | null }
+  }>
+  // OTP-native invites are delivered by SMS — only route those with a phone.
+  return invites
+    .filter((inv) => !!inv.phone)
+    .map((inv) => ({
+      email: inv.email ?? null,
+      phone: inv.phone as string,
+      data: { seller_name: inv.seller?.name, role: inv.role_id },
+    }))
+}
+
 // ---------------------------------------------------------------------------
 // Default seed events
 // ---------------------------------------------------------------------------
@@ -176,6 +211,16 @@ function registerDefaultNotificationEvents(): void {
     availableChannels: ["email", "sms", "feed"],
     resolve: resolveSellerMembers,
     emailTemplate: "seller-suspended",
+  })
+
+  registerNotificationEvent({
+    key: "member_invite.created",
+    audience: "vendor",
+    label: "Team member invited",
+    description:
+      "Sent to an invited phone (OTP-native invite) to join a store's team.",
+    availableChannels: ["sms"],
+    resolve: resolveMemberInvite,
   })
 
   // Read-only system row: OTP is delivered directly by the auth path and is

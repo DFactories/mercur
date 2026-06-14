@@ -37,6 +37,7 @@ export const POST = async (
   const { result: invites } = await createMemberInvitesWorkflow(req.scope).run({
     input: [{
       seller_id: req.params.id,
+      phone: req.validatedBody.phone,
       email: req.validatedBody.email,
       role_id: req.validatedBody.role_id,
     }],

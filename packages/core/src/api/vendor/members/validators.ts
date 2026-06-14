@@ -11,5 +11,6 @@ export type VendorUpdateMemberType = z.infer<typeof VendorUpdateMember>
 export const VendorUpdateMember = z.object({
   first_name: z.string().nullable().optional(),
   last_name: z.string().nullable().optional(),
+  photo: z.string().nullable().optional(),
   locale: z.string().nullable().optional(),
 })

@@ -214,12 +214,16 @@ class SellerModuleService extends MedusaService({
     )
     const sellerMap = new Map(sellers.map((s) => [s.id, s.name]))
 
-    const emails = inviteList.map((i) => i.email)
-    const existingMembers = await this.listMembers(
-      { email: emails },
-      { select: ["id", "email"] },
-      sharedContext,
-    )
+    const emails = inviteList
+      .map((i) => i.email)
+      .filter((e): e is string => !!e)
+    const existingMembers = emails.length
+      ? await this.listMembers(
+          { email: emails },
+          { select: ["id", "email"] },
+          sharedContext,
+        )
+      : []
     const existingEmailSet = new Set(existingMembers.map((m) => m.email))
 
     // Check if any invited emails already belong to the seller
@@ -259,7 +263,8 @@ class SellerModuleService extends MedusaService({
         token: this.generateInviteToken_(
           {
             id,
-            email: invite.email,
+            email: invite.email ?? null,
+            phone: invite.phone ?? null,
             seller_name: sellerMap.get(invite.seller_id) ?? "",
             existing_member: existingEmailSet.has(invite.email),
           },
@@ -315,7 +320,13 @@ class SellerModuleService extends MedusaService({
   }
 
   private generateInviteToken_(
-    data: { id: string; email: string; seller_name: string; existing_member: boolean },
+    data: {
+      id: string
+      email?: string | null
+      phone?: string | null
+      seller_name: string
+      existing_member: boolean
+    },
     expiresIn: number,
   ): string {
     return generateJwtToken(data, {

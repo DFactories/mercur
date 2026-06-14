@@ -5,7 +5,8 @@ import SellerModuleService from "../../../modules/seller/service"
 
 type CreateMemberInviteStepInput = {
   seller_id: string
-  email: string
+  email?: string | null
+  phone?: string | null
   role_id: string
 }
 
