@@ -66,7 +66,10 @@ function loadComponentsModule(mercurConfig: BuiltMercurConfig, cwd: string): str
 
     Object.entries(components).forEach(([name, componentPath]) => {
         const resolvedPath = path.resolve(cwd, 'src', componentPath)
-        imports.push(`import _${name} from "${JSON.stringify(resolvedPath)}"`)
+        // JSON.stringify already wraps the path in quotes — don't double-quote it
+        // (the old `"${JSON.stringify(...)}"` produced `from ""<path>""` and
+        // crashed the panel with an empty-specifier import).
+        imports.push(`import _${name} from ${JSON.stringify(resolvedPath)}`)
         exports.push(`${name}: _${name}`)
     })
 
