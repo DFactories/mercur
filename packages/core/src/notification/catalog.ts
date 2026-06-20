@@ -133,13 +133,25 @@ async function resolveOrderCustomer(
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
     entity: "order",
-    fields: ["id", "display_id", "email", "customer.phone", "customer.first_name"],
+    fields: [
+      "id",
+      "display_id",
+      "email",
+      "currency_code",
+      "total",
+      "customer.phone",
+      "customer.first_name",
+      "items.id",
+    ],
     filters: { id },
   })
   const order = data?.[0] as
     | {
         display_id?: number
         email?: string | null
+        currency_code?: string | null
+        total?: number | null
+        items?: Array<{ id: string }>
         customer?: { phone?: string | null; first_name?: string | null }
       }
     | undefined
@@ -153,6 +165,9 @@ async function resolveOrderCustomer(
       data: {
         display_id: order.display_id,
         first_name: order.customer?.first_name,
+        total: order.total,
+        currency: order.currency_code,
+        items_count: order.items?.length ?? 0,
       },
     },
   ]
@@ -209,6 +224,9 @@ function registerDefaultNotificationEvents(): void {
     variables: [
       { key: "first_name", label: "First name", source: "recipient", example: "Sara" },
       { key: "display_id", label: "Order number", source: "recipient", example: "1042" },
+      { key: "total", label: "Order total", source: "recipient", example: "1250000" },
+      { key: "currency", label: "Currency", source: "recipient", example: "irr" },
+      { key: "items_count", label: "Item count", source: "recipient", example: "3" },
     ],
   })
 
