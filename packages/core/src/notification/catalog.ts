@@ -41,6 +41,14 @@ export interface NotificationEventDef {
    * (a template parameter named after a variable `key` is auto-filled).
    */
   variables?: NotificationVariableDef[]
+  /**
+   * Default ON-state for the in-panel feed channels (`feed` / `seller_feed`)
+   * when no explicit config row exists. Lets the host curate which operational
+   * families surface in the panel by default (admin can still toggle, which
+   * writes a row that overrides this). Defaults to `false`. SMS/email always
+   * default off regardless.
+   */
+  defaultFeedEnabled?: boolean
 }
 
 const registry = new Map<string, NotificationEventDef>()
@@ -212,6 +220,7 @@ function registerDefaultNotificationEvents(): void {
     availableChannels: ["email", "sms", "seller_feed"],
     resolve: resolveSellerMembers,
     emailTemplate: "seller-approved",
+    defaultFeedEnabled: true,
     variables: [
       { key: "seller_name", label: "Store name", source: "recipient", example: "Acme Co" },
       { key: "first_name", label: "First name", source: "recipient", example: "Sara" },
@@ -226,6 +235,7 @@ function registerDefaultNotificationEvents(): void {
     availableChannels: ["email", "sms", "seller_feed"],
     resolve: resolveSellerMembers,
     emailTemplate: "seller-suspended",
+    defaultFeedEnabled: true,
     variables: [
       { key: "seller_name", label: "Store name", source: "recipient", example: "Acme Co" },
       { key: "first_name", label: "First name", source: "recipient", example: "Sara" },

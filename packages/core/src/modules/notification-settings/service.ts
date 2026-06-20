@@ -41,18 +41,33 @@ function templateRequired(channel: NotificationChannel): boolean {
   return TEMPLATE_REQUIRED_CHANNELS.includes(channel)
 }
 
+const FEED_CHANNELS: NotificationChannel[] = ["feed", "seller_feed"]
+
+/**
+ * Default ON-state for a channel with no config row. Feed channels follow the
+ * event's `defaultFeedEnabled` (host curation); sms/email always default off
+ * (admin opts in, sms additionally gated on a template id).
+ */
+function noRowDefault(
+  channel: NotificationChannel,
+  feedDefault: boolean
+): boolean {
+  return FEED_CHANNELS.includes(channel) ? feedDefault : false
+}
+
 /** Effective "enabled": a template-gated channel is off until it has a template id. */
 function effectiveEnabled(
   channel: NotificationChannel,
   rowEnabled: boolean,
   templateId: string | null,
   isSystem: boolean,
-  hasRow: boolean
+  hasRow: boolean,
+  feedDefault: boolean
 ): boolean {
   if (isSystem) {
     return false
   }
-  const base = hasRow ? rowEnabled : channel === "email"
+  const base = hasRow ? rowEnabled : noRowDefault(channel, feedDefault)
   if (templateRequired(channel)) {
     return base && !!templateId
   }
@@ -96,7 +111,8 @@ class NotificationSettingsModuleService extends MedusaService({
             row?.enabled ?? false,
             row?.template_id ?? null,
             !!event.system,
-            !!row
+            !!row,
+            event.defaultFeedEnabled ?? false
           ),
           template_id: row?.template_id ?? null,
           template_required: templateRequired(channel),
@@ -124,7 +140,8 @@ class NotificationSettingsModuleService extends MedusaService({
           row?.enabled ?? false,
           row?.template_id ?? null,
           false,
-          !!row
+          !!row,
+          event.defaultFeedEnabled ?? false
         ),
         template_id: row?.template_id ?? null,
         params_map: row?.params_map ?? null,
