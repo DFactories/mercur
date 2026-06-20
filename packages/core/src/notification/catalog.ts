@@ -284,8 +284,8 @@ function registerDefaultNotificationEvents(): void {
       "One-time login code. Always delivered by SMS through the auth flow; not configurable.",
     availableChannels: ["sms"],
     system: true,
-    variables: [
-      { key: "otp_code", label: "OTP code", source: "payload", example: "123456" },
-    ],
+    // No variables: OTP is delivered directly by the auth path with its own
+    // env-configured template + parameter (SMSIR_OTP_TEMPLATE_ID /
+    // SMSIR_OTP_PARAM_NAME, default "CODE"); it is never routed/configured here.
   })
 }

@@ -44,23 +44,35 @@ const AUDIENCE_ORDER: NotificationEventConfigDTO["audience"][] = [
   "admin",
 ]
 
-/** Channels that carry an in-panel feed body (title override), no template id. */
-const FEED_CHANNELS = new Set(["feed", "seller_feed"])
-
-const channelStateFrom = (ch: {
-  enabled: boolean
-  template_id: string | null
-  params_map: Record<string, unknown> | null
-  subject: string | null
-}): ChannelEdit => ({
-  enabled: ch.enabled,
-  template_id: ch.template_id,
-  subject: ch.subject,
-  paramRows: Object.entries(ch.params_map ?? {}).map(([name, variable]) => ({
+const channelStateFrom = (
+  ch: {
+    enabled: boolean
+    template_id: string | null
+    template_required: boolean
+    params_map: Record<string, unknown> | null
+    subject: string | null
+  },
+  variables: NotificationVariableDef[]
+): ChannelEdit => {
+  const savedRows = Object.entries(ch.params_map ?? {}).map(([name, variable]) => ({
     name,
     variable: String(variable ?? ""),
-  })),
-})
+  }))
+  // Pre-seed the SMS parameters with the convention (one row per variable, named
+  // after its key) so the operator immediately sees exactly which parameters
+  // their sms.ir template will receive — they can rename to match their
+  // template's placeholders or remove any the template doesn't use.
+  const paramRows =
+    savedRows.length || !ch.template_required
+      ? savedRows
+      : variables.map((v) => ({ name: v.key, variable: v.key }))
+  return {
+    enabled: ch.enabled,
+    template_id: ch.template_id,
+    subject: ch.subject,
+    paramRows,
+  }
+}
 
 const paramRowsToMap = (rows: ParamRow[]): Record<string, string> | null => {
   const map: Record<string, string> = {}
@@ -143,9 +155,14 @@ const ParamsMapEditor = ({
 
   return (
     <div className="flex flex-col gap-y-2">
-      <Text size="xsmall" weight="plus" className="text-ui-fg-muted">
-        {t("notificationSettings.params.title")}
-      </Text>
+      <div className="flex flex-col">
+        <Text size="xsmall" weight="plus" className="text-ui-fg-muted">
+          {t("notificationSettings.params.title")}
+        </Text>
+        <Text size="xsmall" className="text-ui-fg-subtle">
+          {t("notificationSettings.params.hint")}
+        </Text>
+      </div>
       {rows.map((row, index) => {
         const unknown = !!row.variable && !variableKeys.has(row.variable)
         return (
@@ -261,10 +278,12 @@ const EventRow = ({
         <div className="flex flex-col gap-y-4">
           {event.channels.map((ch) => {
             const key = keyOf(event.event_key, ch.channel)
-            const state = edits[key] ?? channelStateFrom(ch)
+            const state = edits[key] ?? channelStateFrom(ch, variables)
             const hasTemplate = !!state.template_id?.trim()
             const canEnable = !ch.template_required || hasTemplate
-            const isFeed = FEED_CHANNELS.has(ch.channel)
+            // Only SMS is template-param driven on sms.ir; email + feed channels
+            // carry a free-text subject/title override instead.
+            const isSms = ch.template_required
 
             return (
               <div
@@ -303,7 +322,14 @@ const EventRow = ({
                   </div>
                 </div>
 
-                {isFeed ? (
+                {isSms ? (
+                  <ParamsMapEditor
+                    rows={state.paramRows}
+                    variables={variables}
+                    onChange={(paramRows) => onChange(key, { paramRows })}
+                    testIdPrefix={key}
+                  />
+                ) : (
                   <Input
                     size="small"
                     placeholder={t("notificationSettings.subjectPlaceholder")}
@@ -312,13 +338,6 @@ const EventRow = ({
                       onChange(key, { subject: e.target.value || null })
                     }
                     data-testid={`subject-${key}`}
-                  />
-                ) : (
-                  <ParamsMapEditor
-                    rows={state.paramRows}
-                    variables={variables}
-                    onChange={(paramRows) => onChange(key, { paramRows })}
-                    testIdPrefix={key}
                   />
                 )}
               </div>
@@ -349,7 +368,10 @@ const Root = () => {
         continue
       }
       for (const ch of event.channels) {
-        init[keyOf(event.event_key, ch.channel)] = channelStateFrom(ch)
+        init[keyOf(event.event_key, ch.channel)] = channelStateFrom(
+          ch,
+          event.variables ?? []
+        )
       }
     }
     setEdits(init)
@@ -385,7 +407,7 @@ const Root = () => {
       .flatMap((event) =>
         event.channels.map((ch) => {
           const key = keyOf(event.event_key, ch.channel)
-          const state = edits[key] ?? channelStateFrom(ch)
+          const state = edits[key] ?? channelStateFrom(ch, event.variables ?? [])
           return {
             event_key: event.event_key,
             channel: ch.channel,

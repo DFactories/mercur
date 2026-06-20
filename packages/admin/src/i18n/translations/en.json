@@ -3617,12 +3617,13 @@
       "seller_feed": "Seller feed"
     },
     "variables": {
-      "title": "Available variables",
+      "title": "Template variables (use these names in your sms.ir template)",
       "example": "e.g. {{example}}",
       "copied": "Copied {{key}}"
     },
     "params": {
-      "title": "Template parameters",
+      "title": "Template parameters sent to sms.ir",
+      "hint": "Sent as your template's parameters. Rename a parameter to match your sms.ir placeholder, or remove any your template doesn't use.",
       "add": "Add parameter",
       "namePlaceholder": "Template parameter",
       "variablePlaceholder": "Variable",

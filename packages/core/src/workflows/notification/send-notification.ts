@@ -109,24 +109,30 @@ function buildBasicEmailHtml(
 }
 
 /**
- * Build the effective template-param map for a delivery.
+ * Build the effective template-param map for a delivery (`{ paramName: variableKey }`).
  *
- * Convention default (§9.2): every declared variable maps a template parameter
- * named after its `key` to that same `key` — so once an operator sets a
- * template_id whose params are named like our variables, it "just works" with
- * no params_map. `params_map` is consulted only to *override* (remap to a
- * differently-named template parameter), so it merges on top of the convention.
+ * - When the operator has configured a `params_map`, it is **authoritative**:
+ *   exactly those parameters are sent (sms.ir matches parameters to the
+ *   template's placeholders, so the operator curates the precise set — rename
+ *   to match placeholders, drop ones the template doesn't use).
+ * - With no `params_map`, fall back to the **convention default**: every declared
+ *   variable as a parameter named after its `key` — so a template whose
+ *   placeholders are named like our variable keys "just works" with no config.
  */
 function buildEffectiveParamMap(
   variables: { key: string }[] | undefined,
   paramsMap: Record<string, unknown> | null
 ): Record<string, string> {
+  if (paramsMap && Object.keys(paramsMap).length) {
+    const explicit: Record<string, string> = {}
+    for (const [name, field] of Object.entries(paramsMap)) {
+      explicit[name] = String(field)
+    }
+    return explicit
+  }
   const effective: Record<string, string> = {}
   for (const v of variables ?? []) {
     effective[v.key] = v.key
-  }
-  for (const [name, field] of Object.entries(paramsMap ?? {})) {
-    effective[name] = String(field)
   }
   return effective
 }
