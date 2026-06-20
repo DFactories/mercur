@@ -86,6 +86,7 @@ class NotificationSettingsModuleService extends MedusaService({
       description: event.description ?? null,
       system: !!event.system,
       available_channels: event.availableChannels,
+      variables: event.variables ?? [],
       channels: event.availableChannels.map((channel) => {
         const row = configMap.get(`${event.key}:${channel}`)
         return {
@@ -99,6 +100,8 @@ class NotificationSettingsModuleService extends MedusaService({
           ),
           template_id: row?.template_id ?? null,
           template_required: templateRequired(channel),
+          params_map: row?.params_map ?? null,
+          subject: row?.subject ?? null,
         }
       }),
     }))

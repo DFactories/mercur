@@ -1,8 +1,33 @@
-/** Channels a notification event can be delivered over. */
-export type NotificationChannel = "email" | "sms" | "feed"
+/**
+ * Channels a notification event can be delivered over.
+ * - `email` / `sms`: routed by the send-notification pipeline.
+ * - `feed`: admin in-panel notification feed.
+ * - `seller_feed`: vendor in-panel notification feed.
+ *
+ * `feed` / `seller_feed` are NOT routed by the pipeline — a host subscriber
+ * delivers them while honoring the per-event notification-settings toggle.
+ */
+export type NotificationChannel = "email" | "sms" | "feed" | "seller_feed"
 
 /** Who an event notifies — drives grouping in the admin settings page. */
 export type NotificationAudience = "customer" | "vendor" | "admin"
+
+/**
+ * A template variable an event exposes. Surfaced in the admin settings page so
+ * operators know exactly which data each event's template can use, and to drive
+ * the convention-default params_map (a template parameter named after a `key`
+ * is auto-filled from that variable).
+ */
+export interface NotificationVariableDef {
+  /** Variable name as referenced in templates / params_map (e.g. "reference"). */
+  key: string
+  /** Human label shown in admin (literal or i18n key). */
+  label: string
+  /** Example value shown next to the key (e.g. "SUP-100042"). */
+  example?: string
+  /** `payload` = from event.data; `recipient` = from the resolver's per-recipient data. */
+  source: "payload" | "recipient"
+}
 
 /** A resolved recipient of a notification, produced by a catalog event's resolver. */
 export interface NotificationRecipient {
@@ -54,6 +79,8 @@ export interface NotificationEventConfigDTO {
   system: boolean
   available_channels: NotificationChannel[]
   channels: NotificationEventChannelStateDTO[]
+  /** Template variables this event exposes — documentation + params_map source. */
+  variables: NotificationVariableDef[]
 }
 
 export interface NotificationEventChannelStateDTO {
@@ -62,4 +89,8 @@ export interface NotificationEventChannelStateDTO {
   template_id: string | null
   /** True when this channel cannot be enabled until a template_id is provided (e.g. SMS). */
   template_required: boolean
+  /** Operator override mapping template param name -> variable key. */
+  params_map: Record<string, unknown> | null
+  /** Optional title/subject override (feed/email). */
+  subject: string | null
 }

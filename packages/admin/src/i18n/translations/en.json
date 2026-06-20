@@ -3601,9 +3601,10 @@
   },
   "notificationSettings": {
     "domain": "Notification Settings",
-    "subtitle": "Choose how each event notifies users — email, SMS, or both.",
+    "subtitle": "Choose how each event notifies users, map template variables, and toggle the in-panel feed.",
     "systemManaged": "System",
     "templateIdPlaceholder": "sms.ir template id",
+    "subjectPlaceholder": "Title override (optional)",
     "audience": {
       "customer": "Customer",
       "vendor": "Vendor",
@@ -3612,7 +3613,20 @@
     "channel": {
       "email": "Email",
       "sms": "SMS",
-      "feed": "Feed"
+      "feed": "Feed",
+      "seller_feed": "Seller feed"
+    },
+    "variables": {
+      "title": "Available variables",
+      "example": "e.g. {{example}}",
+      "copied": "Copied {{key}}"
+    },
+    "params": {
+      "title": "Template parameters",
+      "add": "Add parameter",
+      "namePlaceholder": "Template parameter",
+      "variablePlaceholder": "Variable",
+      "unknownVar": "Unknown variable"
     },
     "toast": {
       "saved": "Notification settings saved"

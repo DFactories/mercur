@@ -4,6 +4,7 @@ import {
   NotificationAudience,
   NotificationChannel,
   NotificationRecipient,
+  NotificationVariableDef,
 } from "@mercurjs/types"
 
 /**
@@ -34,6 +35,12 @@ export interface NotificationEventDef {
   emailTemplate?: string
   /** System events are shown read-only in admin and never routed (e.g. OTP). */
   system?: boolean
+  /**
+   * Template variables this event exposes to its channels. Surfaced in the
+   * admin settings page and used as the convention-default params_map source
+   * (a template parameter named after a variable `key` is auto-filled).
+   */
+  variables?: NotificationVariableDef[]
 }
 
 const registry = new Map<string, NotificationEventDef>()
@@ -191,6 +198,10 @@ function registerDefaultNotificationEvents(): void {
     availableChannels: ["email", "sms"],
     resolve: resolveOrderCustomer,
     emailTemplate: "order-placed",
+    variables: [
+      { key: "first_name", label: "First name", source: "recipient", example: "Sara" },
+      { key: "display_id", label: "Order number", source: "recipient", example: "1042" },
+    ],
   })
 
   registerNotificationEvent({
@@ -198,9 +209,13 @@ function registerDefaultNotificationEvents(): void {
     audience: "vendor",
     label: "Seller approved",
     description: "Sent to a seller's team when their store is approved.",
-    availableChannels: ["email", "sms", "feed"],
+    availableChannels: ["email", "sms", "seller_feed"],
     resolve: resolveSellerMembers,
     emailTemplate: "seller-approved",
+    variables: [
+      { key: "seller_name", label: "Store name", source: "recipient", example: "Acme Co" },
+      { key: "first_name", label: "First name", source: "recipient", example: "Sara" },
+    ],
   })
 
   registerNotificationEvent({
@@ -208,9 +223,13 @@ function registerDefaultNotificationEvents(): void {
     audience: "vendor",
     label: "Seller suspended",
     description: "Sent to a seller's team when their store is suspended.",
-    availableChannels: ["email", "sms", "feed"],
+    availableChannels: ["email", "sms", "seller_feed"],
     resolve: resolveSellerMembers,
     emailTemplate: "seller-suspended",
+    variables: [
+      { key: "seller_name", label: "Store name", source: "recipient", example: "Acme Co" },
+      { key: "first_name", label: "First name", source: "recipient", example: "Sara" },
+    ],
   })
 
   registerNotificationEvent({
@@ -219,8 +238,12 @@ function registerDefaultNotificationEvents(): void {
     label: "Team member invited",
     description:
       "Sent to an invited phone (OTP-native invite) to join a store's team.",
-    availableChannels: ["sms"],
+    availableChannels: ["sms", "seller_feed"],
     resolve: resolveMemberInvite,
+    variables: [
+      { key: "seller_name", label: "Store name", source: "recipient", example: "Acme Co" },
+      { key: "role", label: "Role", source: "recipient", example: "member" },
+    ],
   })
 
   // Read-only system row: OTP is delivered directly by the auth path and is
@@ -233,5 +256,8 @@ function registerDefaultNotificationEvents(): void {
       "One-time login code. Always delivered by SMS through the auth flow; not configurable.",
     availableChannels: ["sms"],
     system: true,
+    variables: [
+      { key: "otp_code", label: "OTP code", source: "payload", example: "123456" },
+    ],
   })
 }

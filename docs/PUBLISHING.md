@@ -1,23 +1,45 @@
 # Publishing Packages
 
 **Registry:** `https://registry.dfactories.ir:4873`
-**Version pattern:** `<base>-dfactories.<n>` — e.g. `2.1.2-dfactories.8`
+**Version pattern:** `<base>-dfactories.<n>` — e.g. `2.1.2-dfactories.18`
+
+Publishing is done by **CI on push**, not by hand. Do **not** run `npm publish`
+from your laptop — the GitHub runner has a far better link to the VPS (the
+~1.4 MB vendor tarball times out over the flaky local connection) and the
+workflow already handles auth, build, and "skip if already published".
 
 ---
 
-## Setup
+## How to publish (the only supported way)
 
-Add to `~/.npmrc`:
+1. **Bump** the `version` in each changed `packages/<name>/package.json` to the
+   next `2.1.2-dfactories.<n>`:
 
-```
-//registry.dfactories.ir:4873/:_authToken=<TOKEN>
-```
+   ```
+   "version": "2.1.2-dfactories.<n>"
+   ```
 
-If you don't have a token:
+2. **Commit and push to a `dfactories/**` branch** (e.g. `dfactories/2.1.2`).
+   The push is the trigger.
 
-```bash
-npm adduser --registry https://registry.dfactories.ir:4873
-```
+   ```bash
+   git add -A
+   git commit -m "feat(...): ..."
+   git push origin dfactories/2.1.2
+   ```
+
+3. The Action `.github/workflows/dfactories-publish.yml`:
+   - `bun install --frozen-lockfile`
+   - `bun run build` (Turborepo)
+   - for every non-private package with a `-dfactories.*` version **not already
+     on the registry**, runs `npm publish --tag dfactories` from the runner.
+   - Already-published versions are **skipped**, so re-pushing is safe and you
+     only ever bump the packages you actually changed.
+
+   You can also trigger it manually via **workflow_dispatch** (Actions tab →
+   "Publish to Dfactories registry" → Run workflow).
+
+4. Packages are usually installable **~10 minutes** after the push.
 
 ---
 
@@ -29,28 +51,11 @@ git diff --name-only HEAD~<n> HEAD | grep "^packages/" | cut -d'/' -f1,2 | sort 
 
 ---
 
-## Publish a package
-
-```bash
-# 1. Bump version in packages/<name>/package.json
-#    "version": "2.1.2-dfactories.<n>"
-
-# 2. Build
-cd packages/<name>
-bun run build
-
-# 3. Publish
-npm publish --registry https://registry.dfactories.ir:4873 --tag dfactories
-```
-
-> Large packages (e.g. vendor) may need a higher timeout:
-> `--fetch-timeout 300000`
-
----
-
 ## Verify
 
 ```bash
+npm view @mercurjs/<name>@<ver> version --registry https://registry.dfactories.ir:4873
+# or list all:
 npm view @mercurjs/<name> versions --registry https://registry.dfactories.ir:4873
 ```
 
@@ -61,7 +66,7 @@ npm view @mercurjs/<name> versions --registry https://registry.dfactories.ir:487
 Add to project `.npmrc`:
 
 ```
-@mercurjs:registry=https://registry.dfactories.ir:4873
+@mercurjs:registry=https://registry.dfactories.ir:4873/
 //registry.dfactories.ir:4873/:_authToken=<TOKEN>
 ```
 
@@ -73,15 +78,15 @@ npm install @mercurjs/<name>@dfactories
 
 ---
 
-## Troubleshooting
+## CI requirements / troubleshooting
 
-| Error | Fix |
-|-------|-----|
-| `ENEEDAUTH` | Check `~/.npmrc` has the auth token for `registry.dfactories.ir:4873` |
-| `You must specify a tag` | Add `--tag dfactories` to the publish command |
-| `403 Forbidden` | Run `npm adduser --registry https://registry.dfactories.ir:4873` to refresh token |
-| `FETCH_ERROR` / network timeout | Add `--fetch-timeout 300000` for large packages |
-| Empty `dist/` | Run `bun run build` before publishing |
+| Thing | Detail |
+|-------|--------|
+| Repo secret | `VERDACCIO_TOKEN` = the `_authToken` for the `dfactories` user |
+| Trigger | push to `dfactories/**`, or manual `workflow_dispatch` |
+| "skipped (already published)" | expected — bump the version to republish |
+| Nothing published | check the version is a `-dfactories.*` prerelease and was actually bumped |
+| Auth 403/ENEEDAUTH in CI | refresh `VERDACCIO_TOKEN` repo secret |
 
 ---
 

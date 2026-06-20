@@ -1,5 +1,5 @@
-import { INotificationModuleService } from "@medusajs/framework/types"
-import { Modules } from "@medusajs/framework/utils"
+import { INotificationModuleService, Logger } from "@medusajs/framework/types"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import {
   createStep,
   createWorkflow,
@@ -108,27 +108,64 @@ function buildBasicEmailHtml(
   return `<!DOCTYPE html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f4f5;padding:24px;"><table width="560" style="background:#fff;border-radius:8px;padding:32px;"><tr><td style="font-size:18px;font-weight:600;color:#18181b;padding-bottom:16px;">${subject}</td></tr><tr><td><table>${rows}</table></td></tr></table></body></html>`
 }
 
+/**
+ * Build the effective template-param map for a delivery.
+ *
+ * Convention default (§9.2): every declared variable maps a template parameter
+ * named after its `key` to that same `key` — so once an operator sets a
+ * template_id whose params are named like our variables, it "just works" with
+ * no params_map. `params_map` is consulted only to *override* (remap to a
+ * differently-named template parameter), so it merges on top of the convention.
+ */
+function buildEffectiveParamMap(
+  variables: { key: string }[] | undefined,
+  paramsMap: Record<string, unknown> | null
+): Record<string, string> {
+  const effective: Record<string, string> = {}
+  for (const v of variables ?? []) {
+    effective[v.key] = v.key
+  }
+  for (const [name, field] of Object.entries(paramsMap ?? {})) {
+    effective[name] = String(field)
+  }
+  return effective
+}
+
 const buildMessagesStep = createStep(
   "build-notification-messages",
-  async (input: {
-    event_key: string
-    payload: Record<string, unknown>
-    deliveries: Delivery[]
-  }) => {
+  async (
+    input: {
+      event_key: string
+      payload: Record<string, unknown>
+      deliveries: Delivery[]
+    },
+    { container }
+  ) => {
     const event = getNotificationEvent(input.event_key)
+    const logger = container.resolve<Logger>(ContainerRegistrationKeys.LOGGER)
 
     const messages: OutgoingMessage[] = input.deliveries.map((delivery) => {
       const merged = { ...input.payload, ...delivery.data }
 
       if (delivery.channel === "sms") {
-        // sms.ir is template-driven: send the template id + ordered parameters,
-        // mapped from the event payload via the operator-configured params_map.
-        const parameters = delivery.params_map
-          ? Object.entries(delivery.params_map).map(([name, field]) => ({
-              name,
-              value: String(merged[String(field)] ?? ""),
-            }))
-          : []
+        // sms.ir is template-driven: send the template id + ordered parameters.
+        // The convention default fills every declared variable; params_map only
+        // remaps to differently-named template parameters.
+        const effectiveMap = buildEffectiveParamMap(
+          event?.variables,
+          delivery.params_map
+        )
+        // Missing-variable guard (§9.3): never fail-silent. Log + fallback so a
+        // partially-rendered template is at least observable.
+        const parameters = Object.entries(effectiveMap).map(([name, field]) => {
+          const raw = merged[field]
+          if (raw === undefined || raw === null) {
+            logger.warn(
+              `notifications: event=${input.event_key} channel=sms missing var=${field}`
+            )
+          }
+          return { name, value: String(raw ?? "") }
+        })
         return {
           to: delivery.to,
           channel: "sms",

@@ -1,7 +1,24 @@
 import { useEffect, useMemo, useState } from "react"
 
-import { Badge, Button, Container, Heading, Input, Switch, Text, toast } from "@medusajs/ui"
-import { NotificationEventConfigDTO } from "@mercurjs/types"
+import { Trash } from "@medusajs/icons"
+import {
+  Badge,
+  Button,
+  Container,
+  Heading,
+  IconButton,
+  Input,
+  Select,
+  Switch,
+  Text,
+  Tooltip,
+  clx,
+  toast,
+} from "@medusajs/ui"
+import {
+  NotificationEventConfigDTO,
+  NotificationVariableDef,
+} from "@mercurjs/types"
 import { useTranslation } from "react-i18next"
 
 import { SingleColumnPage } from "../../components/layout/pages"
@@ -10,7 +27,13 @@ import {
   useUpdateNotificationSettings,
 } from "../../hooks/api/notification-settings"
 
-type ChannelEdit = { enabled: boolean; template_id: string | null }
+type ParamRow = { name: string; variable: string }
+type ChannelEdit = {
+  enabled: boolean
+  template_id: string | null
+  subject: string | null
+  paramRows: ParamRow[]
+}
 type EditState = Record<string, ChannelEdit>
 
 const keyOf = (eventKey: string, channel: string) => `${eventKey}:${channel}`
@@ -20,6 +43,181 @@ const AUDIENCE_ORDER: NotificationEventConfigDTO["audience"][] = [
   "vendor",
   "admin",
 ]
+
+/** Channels that carry an in-panel feed body (title override), no template id. */
+const FEED_CHANNELS = new Set(["feed", "seller_feed"])
+
+const channelStateFrom = (ch: {
+  enabled: boolean
+  template_id: string | null
+  params_map: Record<string, unknown> | null
+  subject: string | null
+}): ChannelEdit => ({
+  enabled: ch.enabled,
+  template_id: ch.template_id,
+  subject: ch.subject,
+  paramRows: Object.entries(ch.params_map ?? {}).map(([name, variable]) => ({
+    name,
+    variable: String(variable ?? ""),
+  })),
+})
+
+const paramRowsToMap = (rows: ParamRow[]): Record<string, string> | null => {
+  const map: Record<string, string> = {}
+  for (const { name, variable } of rows) {
+    const n = name.trim()
+    if (n && variable) {
+      map[n] = variable
+    }
+  }
+  return Object.keys(map).length ? map : null
+}
+
+// --- Available-variables strip (click-to-copy documentation) ---------------
+const VariableChips = ({
+  variables,
+}: {
+  variables: NotificationVariableDef[]
+}) => {
+  const { t } = useTranslation()
+  if (!variables.length) {
+    return null
+  }
+  const copy = (key: string) => {
+    navigator.clipboard?.writeText(key)
+    toast.success(t("notificationSettings.variables.copied", { key }))
+  }
+  return (
+    <div className="flex flex-col gap-y-1">
+      <Text size="xsmall" weight="plus" className="text-ui-fg-muted">
+        {t("notificationSettings.variables.title")}
+      </Text>
+      <div className="flex flex-wrap gap-1.5">
+        {variables.map((v) => (
+          <Tooltip
+            key={v.key}
+            content={
+              v.example
+                ? `${v.label} · ${t("notificationSettings.variables.example", {
+                    example: v.example,
+                  })}`
+                : v.label
+            }
+          >
+            <button
+              type="button"
+              onClick={() => copy(v.key)}
+              className="text-ui-fg-subtle hover:bg-ui-bg-base-hover bg-ui-bg-subtle rounded-md px-2 py-0.5 font-mono text-xs transition-colors"
+            >
+              {v.key}
+            </button>
+          </Tooltip>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// --- params_map editor (sms/email) -----------------------------------------
+const ParamsMapEditor = ({
+  rows,
+  variables,
+  onChange,
+  testIdPrefix,
+}: {
+  rows: ParamRow[]
+  variables: NotificationVariableDef[]
+  onChange: (rows: ParamRow[]) => void
+  testIdPrefix: string
+}) => {
+  const { t } = useTranslation()
+  const variableKeys = useMemo(() => new Set(variables.map((v) => v.key)), [
+    variables,
+  ])
+
+  const update = (index: number, patch: Partial<ParamRow>) =>
+    onChange(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
+  const remove = (index: number) =>
+    onChange(rows.filter((_, i) => i !== index))
+  const add = () => onChange([...rows, { name: "", variable: "" }])
+
+  return (
+    <div className="flex flex-col gap-y-2">
+      <Text size="xsmall" weight="plus" className="text-ui-fg-muted">
+        {t("notificationSettings.params.title")}
+      </Text>
+      {rows.map((row, index) => {
+        const unknown = !!row.variable && !variableKeys.has(row.variable)
+        return (
+          <div key={index} className="flex items-center gap-x-2">
+            <Input
+              size="small"
+              className="w-44"
+              placeholder={t("notificationSettings.params.namePlaceholder")}
+              value={row.name}
+              onChange={(e) => update(index, { name: e.target.value })}
+              data-testid={`${testIdPrefix}-param-name-${index}`}
+            />
+            <Text size="small" className="text-ui-fg-muted">
+              ←
+            </Text>
+            <Select
+              size="small"
+              value={row.variable}
+              onValueChange={(value) => update(index, { variable: value })}
+            >
+              <Select.Trigger
+                className="w-44"
+                data-testid={`${testIdPrefix}-param-var-${index}`}
+              >
+                <Select.Value
+                  placeholder={t(
+                    "notificationSettings.params.variablePlaceholder"
+                  )}
+                />
+              </Select.Trigger>
+              <Select.Content>
+                {variables.map((v) => (
+                  <Select.Item key={v.key} value={v.key}>
+                    {v.key}
+                  </Select.Item>
+                ))}
+                {/* Keep an unknown (drifted) mapping selectable so it isn't silently dropped. */}
+                {unknown && (
+                  <Select.Item value={row.variable}>{row.variable}</Select.Item>
+                )}
+              </Select.Content>
+            </Select>
+            {unknown && (
+              <Badge size="2xsmall" color="orange">
+                {t("notificationSettings.params.unknownVar")}
+              </Badge>
+            )}
+            <IconButton
+              size="small"
+              variant="transparent"
+              onClick={() => remove(index)}
+              data-testid={`${testIdPrefix}-param-remove-${index}`}
+            >
+              <Trash />
+            </IconButton>
+          </div>
+        )
+      })}
+      <div>
+        <Button
+          size="small"
+          variant="secondary"
+          onClick={add}
+          disabled={!variables.length}
+          data-testid={`${testIdPrefix}-param-add`}
+        >
+          {t("notificationSettings.params.add")}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 const EventRow = ({
   event,
@@ -31,10 +229,11 @@ const EventRow = ({
   onChange: (key: string, patch: Partial<ChannelEdit>) => void
 }) => {
   const { t } = useTranslation()
+  const variables = event.variables ?? []
 
   return (
-    <div className="flex items-start justify-between gap-x-4 px-6 py-4">
-      <div className="flex max-w-[55%] flex-col">
+    <div className="flex flex-col gap-y-4 px-6 py-4">
+      <div className="flex flex-col">
         <Text size="small" weight="plus">
           {event.label}
         </Text>
@@ -45,58 +244,88 @@ const EventRow = ({
         )}
       </div>
 
-      <div className="flex flex-col items-end gap-y-3">
-        {event.system ? (
-          <div className="flex items-center gap-x-2">
-            <Badge size="2xsmall" color="grey">
-              {t("notificationSettings.systemManaged")}
+      <VariableChips variables={variables} />
+
+      {event.system ? (
+        <div className="flex items-center gap-x-2">
+          <Badge size="2xsmall" color="grey">
+            {t("notificationSettings.systemManaged")}
+          </Badge>
+          {event.available_channels.map((c) => (
+            <Badge key={c} size="2xsmall">
+              {t(`notificationSettings.channel.${c}`)}
             </Badge>
-            {event.available_channels.map((c) => (
-              <Badge key={c} size="2xsmall">
-                {t(`notificationSettings.channel.${c}`)}
-              </Badge>
-            ))}
-          </div>
-        ) : (
-          event.channels.map((ch) => {
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-y-4">
+          {event.channels.map((ch) => {
             const key = keyOf(event.event_key, ch.channel)
-            const state = edits[key] ?? {
-              enabled: ch.enabled,
-              template_id: ch.template_id,
-            }
+            const state = edits[key] ?? channelStateFrom(ch)
             const hasTemplate = !!state.template_id?.trim()
             const canEnable = !ch.template_required || hasTemplate
+            const isFeed = FEED_CHANNELS.has(ch.channel)
 
             return (
-              <div key={ch.channel} className="flex items-center gap-x-3">
-                {ch.template_required && (
-                  <Input
-                    size="small"
-                    className="w-44"
-                    placeholder={t("notificationSettings.templateIdPlaceholder")}
-                    value={state.template_id ?? ""}
-                    onChange={(e) =>
-                      onChange(key, { template_id: e.target.value || null })
-                    }
-                    data-testid={`template-${key}`}
-                  />
-                )}
-                <div className="flex w-20 items-center justify-end gap-x-2">
-                  <Text size="small" className="text-ui-fg-subtle">
+              <div
+                key={ch.channel}
+                className="border-ui-border-base flex flex-col gap-y-3 rounded-lg border p-3"
+              >
+                <div className="flex items-center justify-between gap-x-3">
+                  <Text size="small" weight="plus" className="text-ui-fg-subtle">
                     {t(`notificationSettings.channel.${ch.channel}`)}
                   </Text>
-                  <Switch
-                    checked={state.enabled && canEnable}
-                    disabled={!canEnable}
-                    onCheckedChange={(value) => onChange(key, { enabled: value })}
-                    data-testid={`switch-${key}`}
-                  />
+                  <div className="flex items-center gap-x-3">
+                    {ch.template_required && (
+                      <Input
+                        size="small"
+                        className="w-44"
+                        placeholder={t(
+                          "notificationSettings.templateIdPlaceholder"
+                        )}
+                        value={state.template_id ?? ""}
+                        onChange={(e) =>
+                          onChange(key, {
+                            template_id: e.target.value || null,
+                          })
+                        }
+                        data-testid={`template-${key}`}
+                      />
+                    )}
+                    <Switch
+                      checked={state.enabled && canEnable}
+                      disabled={!canEnable}
+                      onCheckedChange={(value) =>
+                        onChange(key, { enabled: value })
+                      }
+                      data-testid={`switch-${key}`}
+                    />
+                  </div>
                 </div>
+
+                {isFeed ? (
+                  <Input
+                    size="small"
+                    placeholder={t("notificationSettings.subjectPlaceholder")}
+                    value={state.subject ?? ""}
+                    onChange={(e) =>
+                      onChange(key, { subject: e.target.value || null })
+                    }
+                    data-testid={`subject-${key}`}
+                  />
+                ) : (
+                  <ParamsMapEditor
+                    rows={state.paramRows}
+                    variables={variables}
+                    onChange={(paramRows) => onChange(key, { paramRows })}
+                    testIdPrefix={key}
+                  />
+                )}
               </div>
             )
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -120,10 +349,7 @@ const Root = () => {
         continue
       }
       for (const ch of event.channels) {
-        init[keyOf(event.event_key, ch.channel)] = {
-          enabled: ch.enabled,
-          template_id: ch.template_id,
-        }
+        init[keyOf(event.event_key, ch.channel)] = channelStateFrom(ch)
       }
     }
     setEdits(init)
@@ -159,15 +385,14 @@ const Root = () => {
       .flatMap((event) =>
         event.channels.map((ch) => {
           const key = keyOf(event.event_key, ch.channel)
-          const state = edits[key] ?? {
-            enabled: ch.enabled,
-            template_id: ch.template_id,
-          }
+          const state = edits[key] ?? channelStateFrom(ch)
           return {
             event_key: event.event_key,
             channel: ch.channel,
             enabled: state.enabled,
             template_id: state.template_id,
+            params_map: paramRowsToMap(state.paramRows),
+            subject: state.subject,
           }
         })
       )
@@ -207,7 +432,7 @@ const Root = () => {
       {ready &&
         AUDIENCE_ORDER.filter((audience) => grouped[audience]?.length).map(
           (audience) => (
-            <Container key={audience} className="divide-y p-0">
+            <Container key={audience} className={clx("divide-y p-0")}>
               <div className="px-6 py-4">
                 <Heading level="h2">
                   {t(`notificationSettings.audience.${audience}`)}
