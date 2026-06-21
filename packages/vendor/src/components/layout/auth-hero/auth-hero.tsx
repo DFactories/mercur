@@ -10,10 +10,11 @@ import { useLocation } from "react-router-dom";
 // its own file so upstream merges only ever touch the tiny call sites in
 // auth-layout / wizard-preview / invite (each tagged `// DFACTORIES`).
 //
-// Visual: a near-black canvas with soft white/grey glowing waves (the source
-// "Glowy Waves Hero" geometry — amplitudes/frequencies/offsets/opacities kept
-// verbatim), centered copy, and a single horizontal row of pills for the
-// benefits / onboarding steps (no check icons). Copy is i18n-driven (en + fa).
+// Theme-aware: dark canvas + white/grey waves in dark mode, light canvas +
+// dark/grey waves in light mode (brand "white canvas, black actions"). The wave
+// geometry is the source "Glowy Waves Hero" (amplitudes/frequencies/offsets
+// verbatim). Centered copy sits on a radial scrim so it stays readable where a
+// wave passes behind it. Copy is i18n-driven (en + fa).
 
 export type HeroVariant =
   | "login"
@@ -31,16 +32,31 @@ type WaveConfig = {
   opacity: number;
 };
 
-const BG_TOP = "#0a0a0a";
-const BG_BOTTOM = "#101012";
+type Palette = { bgTop: string; bgBottom: string; waves: WaveConfig[] };
 
-const WAVE_PALETTE: WaveConfig[] = [
-  { offset: 0, amplitude: 70, frequency: 0.003, color: "rgba(250,250,250,0.9)", opacity: 0.45 },
-  { offset: Math.PI / 2, amplitude: 90, frequency: 0.0026, color: "rgba(228,228,231,0.85)", opacity: 0.35 },
-  { offset: Math.PI, amplitude: 60, frequency: 0.0034, color: "rgba(244,244,245,0.8)", opacity: 0.3 },
-  { offset: Math.PI * 1.5, amplitude: 80, frequency: 0.0022, color: "rgba(161,161,170,0.7)", opacity: 0.25 },
-  { offset: Math.PI * 2, amplitude: 55, frequency: 0.004, color: "rgba(250,250,250,0.7)", opacity: 0.2 },
-];
+const DARK: Palette = {
+  bgTop: "#0a0a0a",
+  bgBottom: "#101012",
+  waves: [
+    { offset: 0, amplitude: 70, frequency: 0.003, color: "rgba(250,250,250,0.9)", opacity: 0.45 },
+    { offset: Math.PI / 2, amplitude: 90, frequency: 0.0026, color: "rgba(228,228,231,0.85)", opacity: 0.35 },
+    { offset: Math.PI, amplitude: 60, frequency: 0.0034, color: "rgba(244,244,245,0.8)", opacity: 0.3 },
+    { offset: Math.PI * 1.5, amplitude: 80, frequency: 0.0022, color: "rgba(161,161,170,0.7)", opacity: 0.25 },
+    { offset: Math.PI * 2, amplitude: 55, frequency: 0.004, color: "rgba(250,250,250,0.7)", opacity: 0.2 },
+  ],
+};
+
+const LIGHT: Palette = {
+  bgTop: "#ffffff",
+  bgBottom: "#f4f4f5",
+  waves: [
+    { offset: 0, amplitude: 70, frequency: 0.003, color: "rgba(24,24,27,0.8)", opacity: 0.32 },
+    { offset: Math.PI / 2, amplitude: 90, frequency: 0.0026, color: "rgba(39,39,42,0.75)", opacity: 0.26 },
+    { offset: Math.PI, amplitude: 60, frequency: 0.0034, color: "rgba(24,24,27,0.7)", opacity: 0.22 },
+    { offset: Math.PI * 1.5, amplitude: 80, frequency: 0.0022, color: "rgba(82,82,91,0.7)", opacity: 0.18 },
+    { offset: Math.PI * 2, amplitude: 55, frequency: 0.004, color: "rgba(24,24,27,0.65)", opacity: 0.14 },
+  ],
+};
 
 const containerVariants: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -108,6 +124,18 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
     let time = 0;
     let width = 0;
     let height = 0;
+
+    // Track the active theme (Medusa toggles `.dark` on <html>) and switch the
+    // wave palette live so the aside matches light/dark mode.
+    const isDark = () => document.documentElement.classList.contains("dark");
+    let palette: Palette = isDark() ? DARK : LIGHT;
+    const themeObserver = new MutationObserver(() => {
+      palette = isDark() ? DARK : LIGHT;
+    });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -187,14 +215,14 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
         (targetMouseRef.current.y - mouseRef.current.y) * smoothing;
 
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, BG_TOP);
-      gradient.addColorStop(1, BG_BOTTOM);
+      gradient.addColorStop(0, palette.bgTop);
+      gradient.addColorStop(1, palette.bgBottom);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
-      WAVE_PALETTE.forEach(drawWave);
+      palette.waves.forEach(drawWave);
       animationId = window.requestAnimationFrame(animate);
     };
     animationId = window.requestAnimationFrame(animate);
@@ -202,6 +230,7 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       resizeObserver.disconnect();
+      themeObserver.disconnect();
       cancelAnimationFrame(animationId);
     };
   }, []);
@@ -216,7 +245,7 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
     : 0;
 
   return (
-    <div className="df-auth-hero relative hidden flex-1 items-center justify-center overflow-hidden bg-[#0a0a0a] lg:flex">
+    <div className="df-auth-hero relative hidden flex-1 items-center justify-center overflow-hidden bg-white dark:bg-[#0a0a0a] lg:flex">
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full"
@@ -224,19 +253,23 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
       />
 
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-white/[0.05] blur-[130px]" />
-        <div className="absolute bottom-0 right-0 h-[360px] w-[360px] rounded-full bg-white/[0.035] blur-[120px]" />
+        <div className="absolute left-1/2 top-0 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-black/[0.04] blur-[130px] dark:bg-white/[0.05]" />
+        <div className="absolute bottom-0 right-0 h-[360px] w-[360px] rounded-full bg-black/[0.03] blur-[120px] dark:bg-white/[0.035]" />
       </div>
+
+      {/* Readability scrim: dims the waves directly behind the copy while leaving
+          them visible toward the edges. */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_52%_46%_at_center,rgba(255,255,255,0.72),transparent_74%)] dark:bg-[radial-gradient(ellipse_52%_46%_at_center,rgba(10,10,10,0.6),transparent_74%)]" />
 
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 flex w-full max-w-[460px] flex-col items-center px-10 text-center text-white"
+        className="relative z-10 flex w-full max-w-[460px] flex-col items-center px-10 text-center text-zinc-900 dark:text-white"
       >
         <motion.span
           variants={itemVariants}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-xs font-semibold tracking-wide text-white/80 backdrop-blur"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.04] px-4 py-2 text-xs font-semibold tracking-wide text-zinc-600 backdrop-blur dark:border-white/15 dark:bg-white/[0.06] dark:text-white/80"
         >
           <SparkIcon />
           {t(`${base}.eyebrow`)}
@@ -251,7 +284,7 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
 
         <motion.p
           variants={itemVariants}
-          className="mb-8 max-w-[42ch] text-base leading-7 text-white/70"
+          className="mb-8 max-w-[42ch] text-base leading-7 text-zinc-600 dark:text-white/70"
         >
           {t(`${base}.description`)}
         </motion.p>
@@ -271,12 +304,12 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
                 : "static";
               const cls =
                 state === "active"
-                  ? "border-transparent bg-white text-[#0a0a0a]"
+                  ? "border-transparent bg-zinc-900 text-white dark:bg-white dark:text-[#0a0a0a]"
                   : state === "done"
-                    ? "border-white/25 bg-white/15 text-white"
+                    ? "border-black/15 bg-black/10 text-zinc-700 dark:border-white/25 dark:bg-white/15 dark:text-white"
                     : state === "todo"
-                      ? "border-white/10 bg-white/[0.04] text-white/55"
-                      : "border-white/15 bg-white/[0.06] text-white/85";
+                      ? "border-black/10 bg-black/[0.04] text-zinc-400 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/55"
+                      : "border-black/10 bg-black/[0.05] text-zinc-700 dark:border-white/15 dark:bg-white/[0.06] dark:text-white/85";
               return (
                 <span
                   key={label}
@@ -291,13 +324,13 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
 
         {isOnboarding && (
           <motion.div variants={itemVariants} className="mt-7 w-full max-w-[320px]">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
               <div
-                className="h-full rounded-full bg-white transition-[width] duration-500"
+                className="h-full rounded-full bg-zinc-900 transition-[width] duration-500 dark:bg-white"
                 style={{ width: `${percent}%` }}
               />
             </div>
-            <div className="mt-2 text-xs font-medium text-white/70">
+            <div className="mt-2 text-xs font-medium text-zinc-600 dark:text-white/70">
               {t("authHero.progress", { percent: localizeNumber(percent) })}
             </div>
           </motion.div>

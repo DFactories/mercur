@@ -8,7 +8,7 @@ const linkClass =
 
 export const AuthConsent = ({ i18nKey }: { i18nKey: string }) => {
   return (
-    <p className="text-ui-fg-muted txt-small mt-6 text-center leading-6">
+    <p className="text-ui-fg-muted mt-6 text-center text-[0.7rem] leading-5">
       <Trans
         i18nKey={i18nKey}
         components={[

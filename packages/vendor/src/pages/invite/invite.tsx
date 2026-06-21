@@ -101,7 +101,7 @@ export const Invite = () => {
               key="form"
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="flex flex-1 flex-col p-8 lg:px-14 lg:py-12"
+              className="flex flex-1 flex-col p-8 md:justify-center md:py-[66px] lg:px-14"
             >
               <AvatarBox />
               <div className="mt-8 w-full">

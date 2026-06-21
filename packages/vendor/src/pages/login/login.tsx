@@ -174,7 +174,7 @@ const LoginForm = () => {
 
 const LoginFooter = () => {
   return (
-    <div className="mt-auto flex flex-col gap-y-2">
+    <div className="mt-auto flex flex-col gap-y-2 md:mt-8">
       {config.enableSellerRegistration !== false && (
         <span className="text-ui-fg-muted txt-small">
           <Trans

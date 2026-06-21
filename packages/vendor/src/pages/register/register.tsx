@@ -151,7 +151,7 @@ const RegisterForm = () => {
 
 const RegisterFooter = () => {
   return (
-    <div className="mt-auto">
+    <div className="mt-auto md:mt-8">
       <span className="text-ui-fg-muted txt-small">
         <Trans
           i18nKey="register.alreadySeller"
