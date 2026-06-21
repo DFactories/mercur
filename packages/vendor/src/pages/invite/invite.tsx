@@ -21,7 +21,8 @@ import { Form } from "@components/common/form";
 import AvatarBox from "@components/common/logo-box/avatar-box";
 import { useSignInForInvite, useSignUpForInvite } from "@hooks/api/auth";
 import { useAcceptInvite } from "@hooks/api/invites";
-import { assetUrl } from "@/utils/asset-url";
+// DFACTORIES: animated hero aside replaces the static onboarding illustration.
+import { AuthHero } from "@components/layout/auth-hero";
 import { useSelectSeller } from "@hooks/api";
 import { isFetchError } from "@lib/is-fetch-error";
 import { sdk } from "@lib/client";
@@ -118,20 +119,8 @@ export const Invite = () => {
           )}
         </AnimatePresence>
       </div>
-      <div
-        className="hidden lg:flex flex-1 relative overflow-hidden items-center justify-center"
-        style={{
-          backgroundImage: `url(${assetUrl("/onboarding/bg.svg")})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <img
-          src={assetUrl("/onboarding/0.png")}
-          alt=""
-          className="w-[75%] max-h-[75%] object-contain"
-        />
-      </div>
+      {/* DFACTORIES: was a static `div[bg.svg] > img` panel. */}
+      <AuthHero variant="invite" />
     </div>
   );
 };

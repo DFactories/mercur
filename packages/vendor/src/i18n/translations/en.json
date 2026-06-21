@@ -3303,7 +3303,7 @@
       }
     },
     "sessionExpired": "Session expired",
-    "notSellerYet": "Not a seller yet? <0>Create an account</0>",
+    "notSellerYet": "Don't have an account yet? <0>Create an account</0>",
     "validation": {
       "emailRequired": "Please enter an email",
       "emailInvalid": "Please enter a valid email",
@@ -3312,7 +3312,8 @@
     "errors": {
       "invalidCredentials": "Invalid email or password",
       "identityExists": "Identity with email already exists"
-    }
+    },
+    "consent": "By signing in, you agree to Dfactories' <0>Terms of Service</0> and <1>Privacy Policy</1>."
   },
   "register": {
     "title": "Join {{name}}!",
@@ -3337,7 +3338,8 @@
     "passwordHint": "Your password must include at least 8 characters, one lowercase letter, one uppercase letter, one number or symbol",
     "successTitle": "Thank you for registering!",
     "successHint": "You may need to wait for admin authorization before logging in. A confirmation email will be sent to you shortly.",
-    "backToLogin": "Back to login"
+    "backToLogin": "Back to login",
+    "consent": "By creating an account, you agree to Dfactories' <0>Terms of Service</0> and <1>Privacy Policy</1>."
   },
   "onboarding": {
     "step": "Step {{current}} / {{total}}",
@@ -3856,5 +3858,69 @@
     "serverError": "Internal server error.",
     "serviceUnavailable": "Service unavailable.",
     "timeout": "Request timed out."
+  },
+  "authHero": {
+    "login": {
+      "eyebrow": "Supplier Panel",
+      "title": "Manage your business smarter",
+      "description": "Showcase your products, manage your orders, and grow your sales — all in one place.",
+      "items": [
+        "Sell easily",
+        "Manage orders",
+        "Reach customers"
+      ]
+    },
+    "register": {
+      "eyebrow": "Get started",
+      "title": "Take your business online",
+      "description": "Create your store in minutes and reach thousands of new customers.",
+      "items": [
+        "Quick setup",
+        "No code needed",
+        "Start today"
+      ]
+    },
+    "reset": {
+      "eyebrow": "Account recovery",
+      "title": "You'll be back in no time",
+      "description": "Reset your password and pick up right where you left off.",
+      "items": [
+        "Fast & secure",
+        "Stay protected",
+        "Always supported"
+      ]
+    },
+    "invite": {
+      "eyebrow": "You're invited",
+      "title": "Join the store team",
+      "description": "Create your account and help manage the store and grow its sales.",
+      "items": [
+        "Secure access",
+        "Team collaboration",
+        "Quick to start"
+      ]
+    },
+    "onboarding": {
+      "eyebrow": "Finish your profile",
+      "title": "You're a few steps from selling",
+      "description": "Complete your store details so customers can find and trust you.",
+      "items": [
+        "Store info",
+        "Products",
+        "Payments",
+        "Go live"
+      ]
+    },
+    "store-select": {
+      "eyebrow": "Select store",
+      "title": "Choose your store",
+      "description": "Pick the store you'd like to manage to continue.",
+      "items": [
+        "Multi-store",
+        "Easy switching",
+        "Pick up fast"
+      ]
+    },
+    "progress": "{{percent}}% complete"
   }
 }

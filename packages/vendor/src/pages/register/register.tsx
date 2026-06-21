@@ -10,6 +10,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom"
 import config from "virtual:mercur/config"
 import * as z from "zod"
 
+import { AuthConsent } from "@components/common/auth-consent"
 import { Form } from "@components/common/form"
 import AvatarBox from "@components/common/logo-box/avatar-box"
 import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form"
@@ -253,6 +254,8 @@ const RegisterContent = () => {
           })
         }}
       />
+      {/* DFACTORIES: legal consent + Terms / Privacy links. */}
+      <AuthConsent i18nKey="register.consent" />
     </div>
   )
 }

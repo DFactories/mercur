@@ -7,6 +7,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as z from "zod";
 
+import { AuthConsent } from "@components/common/auth-consent";
 import { Form } from "@components/common/form";
 import AvatarBox from "@components/common/logo-box/avatar-box";
 import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form";
@@ -210,6 +211,8 @@ const LoginContent = () => {
           }, 800);
         }}
       />
+      {/* DFACTORIES: legal consent + Terms / Privacy links. */}
+      <AuthConsent i18nKey="login.consent" />
     </div>
   );
 };
