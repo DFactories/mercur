@@ -3,6 +3,16 @@ import { Trans } from "react-i18next";
 // DFACTORIES (isolated): legal consent line shown under the login / register
 // forms. Links go to the storefront Terms and Privacy pages. The wording is
 // i18n-driven (en + fa) and page-specific via `i18nKey`.
+//
+// `__STOREFRONT_URL__` is a build-time global injected by the consuming app's
+// Vite config (env-driven: localhost:3000 in dev, https://dfactories.com in
+// prod). `typeof` guard keeps it safe if a consumer doesn't define it (links
+// fall back to same-origin relative paths).
+declare const __STOREFRONT_URL__: string;
+
+const STOREFRONT_BASE =
+  typeof __STOREFRONT_URL__ !== "undefined" ? __STOREFRONT_URL__ : "";
+
 const linkClass =
   "text-ui-fg-interactive transition-fg hover:text-ui-fg-interactive-hover focus-visible:text-ui-fg-interactive-hover font-medium outline-none";
 
@@ -16,7 +26,7 @@ export const AuthConsent = ({ i18nKey }: { i18nKey: string }) => {
           // string at runtime; they keep the anchors a11y-valid for the linter.
           <a
             key="terms"
-            href="/terms-and-conditions"
+            href={`${STOREFRONT_BASE}/terms-and-conditions`}
             target="_blank"
             rel="noreferrer"
             className={linkClass}
@@ -25,7 +35,7 @@ export const AuthConsent = ({ i18nKey }: { i18nKey: string }) => {
           </a>,
           <a
             key="privacy"
-            href="/privacy-policy"
+            href={`${STOREFRONT_BASE}/privacy-policy`}
             target="_blank"
             rel="noreferrer"
             className={linkClass}

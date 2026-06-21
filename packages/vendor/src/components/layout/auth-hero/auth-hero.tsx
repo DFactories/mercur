@@ -265,7 +265,7 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 flex w-full max-w-[460px] flex-col items-center px-10 text-center text-zinc-900 dark:text-white"
+        className="relative z-10 flex w-full flex-col items-center px-10 text-center text-zinc-900 dark:text-white"
       >
         <motion.span
           variants={itemVariants}
