@@ -17,7 +17,7 @@
     },
     {
       "path": "vendor-notifications/api/vendor/notifications/route.ts",
-      "content": "import { AuthenticatedMedusaRequest, MedusaResponse } from \"@medusajs/framework\"\nimport { ContainerRegistrationKeys } from \"@medusajs/framework/utils\"\nimport { fetchSellerByAuthActorId } from \"./helpers\"\n\nexport async function GET(\n  req: AuthenticatedMedusaRequest,\n  res: MedusaResponse\n): Promise<void> {\n  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)\n  const seller = await fetchSellerByAuthActorId(\n    req.auth_context.actor_id,\n    req.scope\n  )\n\n  const { data: notifications, metadata } = await query.graph({\n    entity: \"notification\",\n    fields: req.queryConfig.fields,\n    filters: { channel: \"seller_feed\", to: seller.id },\n    pagination: req.queryConfig.pagination,\n  })\n\n  res.json({\n    notifications,\n    count: metadata?.count,\n    offset: metadata?.skip,\n    limit: metadata?.take,\n  })\n}\n",
+      "content": "import { AuthenticatedMedusaRequest, MedusaResponse } from \"@medusajs/framework\"\nimport { ContainerRegistrationKeys } from \"@medusajs/framework/utils\"\n\nexport async function GET(\n  req: AuthenticatedMedusaRequest,\n  res: MedusaResponse\n): Promise<void> {\n  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)\n\n  // /vendor/* is auth-protected by @mercurjs/core's ensureSellerMiddleware,\n  // which resolves the seller from the x-seller-id header / session via the\n  // seller_member relationship and sets req.seller_context.seller_id. The auth\n  // actor_id is the *member* id, not the seller id — so resolving the seller by\n  // actor_id (the old block helper) returns nothing and crashes on .id.\n  const sellerId = (\n    req as unknown as { seller_context: { seller_id: string } }\n  ).seller_context.seller_id\n\n  const { data: notifications, metadata } = await query.graph({\n    entity: \"notification\",\n    fields: req.queryConfig.fields,\n    filters: { channel: \"seller_feed\", to: sellerId },\n    pagination: req.queryConfig.pagination,\n  })\n\n  res.json({\n    notifications,\n    count: metadata?.count,\n    offset: metadata?.skip,\n    limit: metadata?.take,\n  })\n}\n",
       "type": "registry:api"
     },
     {
@@ -33,11 +33,6 @@
     {
       "path": "vendor-notifications/api/vendor/notifications/query-config.ts",
       "content": "export const defaultVendorNotificationFields = [\n  \"id\",\n  \"to\",\n  \"channel\",\n  \"template\",\n  \"data\",\n  \"created_at\",\n  \"updated_at\",\n]\n\nexport const vendorNotificationQueryConfig = {\n  list: {\n    defaults: defaultVendorNotificationFields,\n    isList: true,\n  },\n  retrieve: {\n    defaults: defaultVendorNotificationFields,\n    isList: false,\n  },\n}\n",
-      "type": "registry:api"
-    },
-    {
-      "path": "vendor-notifications/api/vendor/notifications/helpers.ts",
-      "content": "import { ContainerRegistrationKeys } from \"@medusajs/framework/utils\"\nimport { MedusaContainer } from \"@medusajs/framework/types\"\n\nexport const fetchSellerByAuthActorId = async (\n  authActorId: string,\n  scope: MedusaContainer,\n  fields: string[] = [\"id\"]\n) => {\n  const query = scope.resolve(ContainerRegistrationKeys.QUERY)\n\n  const {\n    data: [seller],\n  } = await query.graph({\n    entity: \"seller\",\n    filters: { id: authActorId },\n    fields,\n  })\n\n  return seller\n}\n",
       "type": "registry:api"
     },
     {
