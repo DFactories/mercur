@@ -1,4 +1,4 @@
-import { Context, DAL, InferEntityType, ModulesSdkTypes } from "@medusajs/framework/types"
+import { BigNumberInput, Context, DAL, InferEntityType, ModulesSdkTypes } from "@medusajs/framework/types"
 import {
   EmitEvents,
   InjectManager,
@@ -129,7 +129,7 @@ class CommissionModuleService extends MedusaService({
         item_id: item.id,
         code: matchedRate.code,
         rate: matchedRate.value,
-        amount: MathBN.convert(amount).toNumber(),
+        amount: this.roundCommissionForCurrency(amount, currency_code),
         commission_rate_id: matchedRate.id,
       })
     }
@@ -197,11 +197,26 @@ class CommissionModuleService extends MedusaService({
         rate: matchedRate.value,
         commission_rate_id: matchedRate.id,
         description: `Shipping Commission`,
-        amount: MathBN.convert(amount).toNumber(),
+        amount: this.roundCommissionForCurrency(amount, currency_code),
       })
     }
 
     return commissionLines
+  }
+
+  /**
+   * Round a commission amount to the currency's smallest real unit. IRR
+   * (Iranian Rial) has no minor unit, so a fractional Rial is meaningless and
+   * pollutes the downstream ledger (sub-Rial dust at payout, display, and
+   * reconciliation). Only IRR is coerced to a whole number; every other
+   * currency keeps its existing (unrounded) behaviour.
+   */
+  private roundCommissionForCurrency(
+    amount: BigNumberInput,
+    currencyCode: string
+  ): number {
+    const value = MathBN.convert(amount).toNumber()
+    return currencyCode?.toLowerCase() === "irr" ? Math.round(value) : value
   }
 
   @InjectManager()
@@ -210,12 +225,56 @@ class CommissionModuleService extends MedusaService({
     commissionLines: (CreateCommissionLineDTO | UpdateCommissionLineDTO)[],
     @MedusaContext() sharedContext: Context = {}
   ): Promise<CommissionLineDTO[]> {
-    const result = await this.commissionLineService_.upsert(
+    // Idempotency: a commission line is unique per item_id (one matched rate
+    // per item / shipping method). Re-running refresh-order-commission-lines
+    // must converge to ONE line per item — so for any incoming line without an
+    // id we reuse the existing line's id (update in place) instead of inserting
+    // a duplicate, which would double the commission for that item.
+    const reconciled = await this.reconcileCommissionLineIds(
       commissionLines,
       sharedContext
     )
 
+    const result = await this.commissionLineService_.upsert(
+      reconciled,
+      sharedContext
+    )
+
     return await this.baseRepository_.serialize<CommissionLineDTO[]>(result)
+  }
+
+  private async reconcileCommissionLineIds(
+    commissionLines: (CreateCommissionLineDTO | UpdateCommissionLineDTO)[],
+    sharedContext: Context
+  ): Promise<(CreateCommissionLineDTO | UpdateCommissionLineDTO)[]> {
+    const itemIds = Array.from(
+      new Set(
+        commissionLines
+          .map((line) => (line as { item_id?: string }).item_id)
+          .filter((id): id is string => Boolean(id))
+      )
+    )
+    if (!itemIds.length) {
+      return commissionLines
+    }
+
+    const existing = await this.listCommissionLines(
+      { item_id: itemIds },
+      {},
+      sharedContext
+    )
+    const idByItem = new Map(existing.map((line) => [line.item_id, line.id]))
+
+    return commissionLines.map((line) => {
+      const candidate = line as { id?: string; item_id?: string }
+      const existingId = candidate.item_id
+        ? idByItem.get(candidate.item_id)
+        : undefined
+      if (!candidate.id && existingId) {
+        return { ...line, id: existingId }
+      }
+      return line
+    })
   }
 }
 
