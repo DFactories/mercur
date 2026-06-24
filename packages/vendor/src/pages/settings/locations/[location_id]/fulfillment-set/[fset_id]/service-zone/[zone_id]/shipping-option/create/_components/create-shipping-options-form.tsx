@@ -110,6 +110,12 @@ export function CreateShippingOptionsForm({
       (fo) => fo.id === data.fulfillment_option_id
     )
 
+    // Store as a real number in metadata (usable in date math for the return
+    // window floor), never a string.
+    const estimatedDeliveryDays = data.estimated_delivery_days
+      ? castNumber(data.estimated_delivery_days)
+      : undefined
+
     await mutateAsync(
       {
         name: data.name,
@@ -119,6 +125,10 @@ export function CreateShippingOptionsForm({
         price_type: data.price_type,
         prices: [...currencyPrices, ...regionPrices],
         data: fulfillmentOptionData as unknown as Record<string, unknown>,
+        ...(estimatedDeliveryDays !== undefined &&
+        Number.isFinite(estimatedDeliveryDays)
+          ? { metadata: { estimated_delivery_days: estimatedDeliveryDays } }
+          : {}),
         rules: [
           {
             value: isReturn ? "true" : "false",

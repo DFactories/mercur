@@ -170,6 +170,39 @@ export const CreateShippingOptionDetailsForm = ({
               )
             }}
           />
+          {!isReturn && (
+            <Form.Field
+              control={form.control}
+              name="estimated_delivery_days"
+              render={({ field }) => {
+                return (
+                  <Form.Item>
+                    <Form.Label
+                      tooltip={t(
+                        "stockLocations.shippingOptions.fields.estimatedDeliveryDays.hint",
+                        "Used to start the order return window from the expected delivery date."
+                      )}
+                    >
+                      {t(
+                        "stockLocations.shippingOptions.fields.estimatedDeliveryDays.label",
+                        "Estimated delivery time (days)"
+                      )}
+                    </Form.Label>
+                    <Form.Control>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="7"
+                        {...field}
+                      />
+                    </Form.Control>
+                    <Form.ErrorMessage />
+                  </Form.Item>
+                )
+              }}
+            />
+          )}
         </div>
 
         {/* <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>

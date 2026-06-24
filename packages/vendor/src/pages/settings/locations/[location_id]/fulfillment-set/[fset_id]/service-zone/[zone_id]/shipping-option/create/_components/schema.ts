@@ -13,6 +13,15 @@ export const CreateShippingOptionDetailsSchema = z.object({
   shipping_profile_id: z.string().min(1),
   provider_id: z.string().min(1),
   fulfillment_option_id: z.string().optional(),
+  // Estimated delivery time in whole days (string in the form; cast to a number
+  // on submit). Optional — drives the settlement return-window floor.
+  estimated_delivery_days: z
+    .string()
+    .optional()
+    .refine(
+      (v) => !v || (/^\d+$/.test(v) && Number(v) >= 0 && Number(v) <= 365),
+      { message: "Enter a whole number of days (0–365)" }
+    ),
 })
 
 export const ShippingOptionConditionalPriceSchema = z.object({
