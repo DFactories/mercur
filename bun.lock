@@ -155,7 +155,7 @@
     },
     "packages/admin": {
       "name": "@mercurjs/admin",
-      "version": "2.1.2-dfactories.12",
+      "version": "2.1.2-dfactories.22",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
@@ -291,7 +291,7 @@
     },
     "packages/core": {
       "name": "@mercurjs/core",
-      "version": "2.1.2-dfactories.14",
+      "version": "2.1.2-dfactories.23",
       "devDependencies": {
         "@medusajs/cli": "^2.13.4",
         "@medusajs/core-flows": "^2.13.4",
@@ -335,7 +335,7 @@
     },
     "packages/dashboard-sdk": {
       "name": "@mercurjs/dashboard-sdk",
-      "version": "2.1.2",
+      "version": "2.1.2-dfactories.1",
       "dependencies": {
         "@babel/parser": "7.25.6",
         "@babel/traverse": "7.25.6",
@@ -464,7 +464,7 @@
     },
     "packages/types": {
       "name": "@mercurjs/types",
-      "version": "2.1.2-dfactories.12",
+      "version": "2.1.2-dfactories.13",
       "dependencies": {
         "@medusajs/types": "2.13.4",
       },
@@ -474,7 +474,7 @@
     },
     "packages/vendor": {
       "name": "@mercurjs/vendor",
-      "version": "2.1.2-dfactories.14",
+      "version": "2.1.2-dfactories.23",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
