@@ -36,10 +36,22 @@ export const POST = async (
 ) => {
   const sellerId = req.seller_context!.seller_id
 
+  // Fold `estimated_delivery_days` into metadata as a real number (not a string)
+  // so it stays usable in date math downstream (settlement hold floor). It is
+  // dropped from the top level so only the standard shipping-option fields
+  // (incl. metadata) reach the workflow.
+  const { estimated_delivery_days, ...shippingOptionInput } = req.validatedBody
+  if (estimated_delivery_days !== undefined) {
+    shippingOptionInput.metadata = {
+      ...(shippingOptionInput.metadata ?? {}),
+      estimated_delivery_days,
+    }
+  }
+
   const { result } = await createSellerShippingOptionsWorkflow(req.scope).run({
     input: {
       seller_id: sellerId,
-      shipping_options: [req.validatedBody],
+      shipping_options: [shippingOptionInput],
     },
   })
 
