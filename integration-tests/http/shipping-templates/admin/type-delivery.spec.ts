@@ -106,6 +106,14 @@ medusaIntegrationTestRunner({
           adminHeaders
         )
         expect(Number(g1.data.delivery.estimated_delivery_days)).toBe(5)
+
+        // list endpoint returns types with their delivery joined (for the UI)
+        const list = await api.get(`/admin/shipping-templates`, adminHeaders)
+        const found = list.data.shipping_templates.find(
+          (t: any) => t.id === typeId
+        )
+        expect(found).toBeTruthy()
+        expect(Number(found.delivery.estimated_delivery_days)).toBe(5)
       })
     })
   },
