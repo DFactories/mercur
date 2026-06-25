@@ -2,11 +2,15 @@ import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import { IFulfillmentModuleService, MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createSellerUser } from "../../../helpers/create-seller-user"
+import {
+    adminHeaders,
+    createAdminUser,
+} from "../../../helpers/create-admin-user"
 
 jest.setTimeout(60000)
 
 medusaIntegrationTestRunner({
-    testSuite: ({ getContainer, api }) => {
+    testSuite: ({ getContainer, api, dbConnection }) => {
         describe("Vendor - Shipping Options", () => {
             let appContainer: MedusaContainer
             let _seller1: any
@@ -347,6 +351,47 @@ medusaIntegrationTestRunner({
                         filters: { id: response.data.shipping_option.id },
                     })
                     expect(Number(opt.metadata.estimated_delivery_days)).toBe(4)
+                })
+
+                it("e2e: admin sets type delivery (HTTP) → vendor option (HTTP) is stamped", async () => {
+                    // 1) admin curates a type + its delivery time via the admin route
+                    await createAdminUser(dbConnection, adminHeaders, appContainer)
+                    const [type] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "تیپاکس", code: `tipax-${Date.now()}`, description: "" },
+                    ])
+                    await api.post(
+                        `/admin/shipping-templates/${type.id}`,
+                        { estimated_delivery_days: 5, carrier: "tipax" },
+                        adminHeaders
+                    )
+
+                    // 2) vendor creates a shipping option picking that type
+                    const prerequisites = await createShippingPrerequisites(seller1Headers)
+                    const response = await api.post(
+                        `/vendor/shipping-options`,
+                        {
+                            name: "Tipax Shipping",
+                            service_zone_id: prerequisites.serviceZone.id,
+                            shipping_profile_id: prerequisites.shippingProfile.id,
+                            provider_id: "manual_manual",
+                            price_type: "flat",
+                            type_id: type.id,
+                            prices: [{ currency_code: "usd", amount: 1000 }],
+                        },
+                        seller1Headers
+                    )
+                    expect(response.status).toEqual(201)
+
+                    // 3) the admin-set delivery time is stamped onto the option
+                    const query = appContainer.resolve(ContainerRegistrationKeys.QUERY)
+                    const {
+                        data: [opt],
+                    } = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: response.data.shipping_option.id },
+                    })
+                    expect(Number(opt.metadata.estimated_delivery_days)).toBe(5)
                 })
 
                 it("should create a shipping option with metadata", async () => {
