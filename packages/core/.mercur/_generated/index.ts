@@ -458,6 +458,9 @@ export type Routes = {
         };
         members: typeof import("../../src/api/admin/members/route");
         notificationSettings: typeof import("../../src/api/admin/notification-settings/route");
+        shippingTemplates: {
+            $id: typeof import("../../src/api/admin/shipping-templates/[id]/route");
+        };
         subscriptionPlans: typeof import("../../src/api/admin/subscription-plans/route") & {
             $id: typeof import("../../src/api/admin/subscription-plans/[id]/route") & {
                 overrides: typeof import("../../src/api/admin/subscription-plans/[id]/overrides/route") & {
