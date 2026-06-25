@@ -56,6 +56,7 @@ export function CreateShippingOptionsForm({
       shipping_profile_id: "",
       provider_id: "manual_manual",
       fulfillment_option_id: "",
+      shipping_option_type_id: "",
       region_prices: {},
       currency_prices: {},
       conditional_region_prices: {},
@@ -110,12 +111,6 @@ export function CreateShippingOptionsForm({
       (fo) => fo.id === data.fulfillment_option_id
     )
 
-    // Store as a real number in metadata (usable in date math for the return
-    // window floor), never a string.
-    const estimatedDeliveryDays = data.estimated_delivery_days
-      ? castNumber(data.estimated_delivery_days)
-      : undefined
-
     await mutateAsync(
       {
         name: data.name,
@@ -125,10 +120,6 @@ export function CreateShippingOptionsForm({
         price_type: data.price_type,
         prices: [...currencyPrices, ...regionPrices],
         data: fulfillmentOptionData as unknown as Record<string, unknown>,
-        ...(estimatedDeliveryDays !== undefined &&
-        Number.isFinite(estimatedDeliveryDays)
-          ? { metadata: { estimated_delivery_days: estimatedDeliveryDays } }
-          : {}),
         rules: [
           {
             value: isReturn ? "true" : "false",
@@ -141,12 +132,9 @@ export function CreateShippingOptionsForm({
             operator: "eq",
           },
         ],
-        type: {
-          // TODO: FETCH TYPES
-          label: "Type label",
-          description: "Type description",
-          code: "type-code",
-        },
+        // Pick the admin-curated method type; the backend stamps its delivery
+        // time onto the option's metadata.
+        type_id: data.shipping_option_type_id,
       },
       {
         onSuccess: ({ shipping_option }) => {

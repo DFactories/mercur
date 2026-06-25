@@ -32,15 +32,6 @@ const EditShippingOptionSchema = zod.object({
   price_type: zod.nativeEnum(ShippingOptionPriceType),
   enabled_in_store: zod.boolean().optional(),
   shipping_profile_id: zod.string(),
-  // Estimated delivery time in whole days (string in the form; cast to a number
-  // on submit). Drives the settlement return-window floor.
-  estimated_delivery_days: zod
-    .string()
-    .optional()
-    .refine(
-      (v) => !v || (/^\d+$/.test(v) && Number(v) >= 0 && Number(v) <= 365),
-      { message: "Enter a whole number of days (0–365)" }
-    ),
 })
 
 export const EditShippingOptionForm = ({
@@ -72,20 +63,12 @@ export const EditShippingOptionForm = ({
     defaultValue: shippingOption.shipping_profile_id,
   })
 
-  const existingEstimatedDeliveryDays =
-    shippingOption.metadata?.estimated_delivery_days
-
   const form = useForm<zod.infer<typeof EditShippingOptionSchema>>({
     defaultValues: {
       name: shippingOption.name,
       price_type: shippingOption.price_type as ShippingOptionPriceType,
       enabled_in_store: isOptionEnabledInStore(shippingOption),
       shipping_profile_id: shippingOption.shipping_profile_id,
-      estimated_delivery_days:
-        existingEstimatedDeliveryDays === null ||
-        existingEstimatedDeliveryDays === undefined
-          ? ""
-          : String(existingEstimatedDeliveryDays),
     },
     resolver: zodResolver(EditShippingOptionSchema),
   })
@@ -95,21 +78,11 @@ export const EditShippingOptionForm = ({
   )
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    // Store as a real number in metadata (usable in date math), never a string.
-    const estimatedDeliveryDays =
-      values.estimated_delivery_days && values.estimated_delivery_days !== ""
-        ? Number(values.estimated_delivery_days)
-        : undefined
-
     await mutateAsync(
       {
         name: values.name,
         shipping_profile_id: values.shipping_profile_id,
         provider_id: shippingOption.provider_id,
-        ...(estimatedDeliveryDays !== undefined &&
-        Number.isFinite(estimatedDeliveryDays)
-          ? { metadata: { estimated_delivery_days: estimatedDeliveryDays } }
-          : {}),
       },
       {
         onSuccess: ({ shipping_option }) => {
@@ -219,39 +192,6 @@ export const EditShippingOptionForm = ({
                   }}
                 />
 
-                {!isPickup && (
-                  <Form.Field
-                    control={form.control}
-                    name="estimated_delivery_days"
-                    render={({ field }) => {
-                      return (
-                        <Form.Item>
-                          <Form.Label
-                            tooltip={t(
-                              "stockLocations.shippingOptions.fields.estimatedDeliveryDays.hint",
-                              "Used to start the order return window from the expected delivery date."
-                            )}
-                          >
-                            {t(
-                              "stockLocations.shippingOptions.fields.estimatedDeliveryDays.label",
-                              "Estimated delivery time (days)"
-                            )}
-                          </Form.Label>
-                          <Form.Control>
-                            <Input
-                              type="number"
-                              min={0}
-                              step={1}
-                              placeholder="7"
-                              {...field}
-                            />
-                          </Form.Control>
-                          <Form.ErrorMessage />
-                        </Form.Item>
-                      )
-                    }}
-                  />
-                )}
               </div>
 
               {/* <Divider />

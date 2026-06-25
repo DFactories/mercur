@@ -132,10 +132,6 @@ export const VendorCreateShippingOption = z
       VendorCreateShippingOptionPriceWithRegion
     ).array(),
     rules: VendorCreateShippingOptionRule.array().optional(),
-    // Estimated delivery time in whole days. Coerced to an integer so it is
-    // stored as a real number (usable in date math), never a string. Folded
-    // into the shipping option's metadata by the route.
-    estimated_delivery_days: z.coerce.number().int().min(0).max(365).optional(),
     metadata: z.record(z.unknown()).optional(),
   })
   .strict()
@@ -165,8 +161,6 @@ export const VendorUpdateShippingOption = z
     rules: VendorUpdateShippingOptionRule.or(VendorCreateShippingOptionRule)
       .array()
       .optional(),
-    // See create schema: coerced to an integer, folded into metadata by the route.
-    estimated_delivery_days: z.coerce.number().int().min(0).max(365).optional(),
     metadata: z.record(z.unknown()).optional(),
   })
   .strict()

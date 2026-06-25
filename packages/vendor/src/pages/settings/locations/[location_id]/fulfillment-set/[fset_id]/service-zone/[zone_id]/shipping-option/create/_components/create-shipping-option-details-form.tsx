@@ -49,6 +49,26 @@ export const CreateShippingOptionDetailsForm = ({
       }),
   })
 
+  // Admin-curated shipping method types. Each option shows the promised delivery
+  // time (from the type's delivery link); the backend stamps that onto the
+  // option so the vendor never sets it directly.
+  const shippingOptionTypes = useComboboxData({
+    queryFn: () =>
+      fetchQuery(`/vendor/shipping-option-types`, { method: "GET" }),
+    queryKey: ["vendor_shipping_option_types_combobox"],
+    getOptions: (data) =>
+      (data.shipping_option_types || []).map((type: any) => {
+        const days = type.delivery?.estimated_delivery_days
+        return {
+          label:
+            days === null || days === undefined
+              ? type.label
+              : `${type.label} (${days}d)`,
+          value: type.id,
+        }
+      }),
+  })
+
   // const fulfillmentProviders = useComboboxData({
   //   queryFn: (params) =>
   //     sdk.admin.fulfillmentProvider.list({
@@ -170,39 +190,39 @@ export const CreateShippingOptionDetailsForm = ({
               )
             }}
           />
-          {!isReturn && (
-            <Form.Field
-              control={form.control}
-              name="estimated_delivery_days"
-              render={({ field }) => {
-                return (
-                  <Form.Item>
-                    <Form.Label
-                      tooltip={t(
-                        "stockLocations.shippingOptions.fields.estimatedDeliveryDays.hint",
-                        "Used to start the order return window from the expected delivery date."
-                      )}
-                    >
-                      {t(
-                        "stockLocations.shippingOptions.fields.estimatedDeliveryDays.label",
-                        "Estimated delivery time (days)"
-                      )}
-                    </Form.Label>
-                    <Form.Control>
-                      <Input
-                        type="number"
-                        min={0}
-                        step={1}
-                        placeholder="7"
-                        {...field}
-                      />
-                    </Form.Control>
-                    <Form.ErrorMessage />
-                  </Form.Item>
-                )
-              }}
-            />
-          )}
+          <Form.Field
+            control={form.control}
+            name="shipping_option_type_id"
+            render={({ field }) => {
+              return (
+                <Form.Item>
+                  <Form.Label
+                    tooltip={t(
+                      "stockLocations.shippingOptions.fields.type.hint",
+                      "The standard shipping method. Its delivery time (shown in parentheses) is set by the marketplace and starts the order return window."
+                    )}
+                  >
+                    {t(
+                      "stockLocations.shippingOptions.fields.type.label",
+                      "Shipping method"
+                    )}
+                  </Form.Label>
+                  <Form.Control>
+                    <Combobox
+                      {...field}
+                      options={shippingOptionTypes.options}
+                      searchValue={shippingOptionTypes.searchValue}
+                      onSearchValueChange={
+                        shippingOptionTypes.onSearchValueChange
+                      }
+                      disabled={shippingOptionTypes.disabled}
+                    />
+                  </Form.Control>
+                  <Form.ErrorMessage />
+                </Form.Item>
+              )
+            }}
+          />
         </div>
 
         {/* <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>

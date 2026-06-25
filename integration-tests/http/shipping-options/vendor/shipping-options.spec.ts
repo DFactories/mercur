@@ -1,6 +1,6 @@
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import { IFulfillmentModuleService, MedusaContainer } from "@medusajs/framework/types"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createSellerUser } from "../../../helpers/create-seller-user"
 
 jest.setTimeout(60000)
@@ -303,6 +303,50 @@ medusaIntegrationTestRunner({
 
                     expect(response.status).toEqual(201)
                     expect(response.data.shipping_option).toBeDefined()
+                })
+
+                it("stamps the type's admin delivery time onto the option metadata", async () => {
+                    const prerequisites = await createShippingPrerequisites(seller1Headers)
+
+                    const [type] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "Post", code: `post-${Date.now()}`, description: "" },
+                    ])
+
+                    // Admin sets the type's delivery = 4 days (here via the module
+                    // service directly; the admin route does the same).
+                    const deliveryService: any = appContainer.resolve(
+                        "shipping_option_type_delivery"
+                    )
+                    await deliveryService.createShippingOptionTypeDeliveries({
+                        shipping_option_type_id: type.id,
+                        estimated_delivery_days: 4,
+                    })
+
+                    const response = await api.post(
+                        `/vendor/shipping-options`,
+                        {
+                            name: "Post Shipping",
+                            service_zone_id: prerequisites.serviceZone.id,
+                            shipping_profile_id: prerequisites.shippingProfile.id,
+                            provider_id: "manual_manual",
+                            price_type: "flat",
+                            type_id: type.id,
+                            prices: [{ currency_code: "usd", amount: 1000 }],
+                        },
+                        seller1Headers
+                    )
+                    expect(response.status).toEqual(201)
+
+                    // The chosen type's delivery time is stamped onto the option.
+                    const query = appContainer.resolve(ContainerRegistrationKeys.QUERY)
+                    const {
+                        data: [opt],
+                    } = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: response.data.shipping_option.id },
+                    })
+                    expect(Number(opt.metadata.estimated_delivery_days)).toBe(4)
                 })
 
                 it("should create a shipping option with metadata", async () => {

@@ -6,7 +6,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { HttpTypes } from "@mercurjs/types"
 
 import { createSellerShippingOptionsWorkflow } from "../../../workflows/shipping-option"
-import { refetchShippingOption } from "./helpers"
+import { getTypeDeliveryDays, refetchShippingOption } from "./helpers"
 import { VendorCreateShippingOptionType } from "./validators"
 
 export const GET = async (
@@ -36,15 +36,17 @@ export const POST = async (
 ) => {
   const sellerId = req.seller_context!.seller_id
 
-  // Fold `estimated_delivery_days` into metadata as a real number (not a string)
-  // so it stays usable in date math downstream (settlement hold floor). It is
-  // dropped from the top level so only the standard shipping-option fields
-  // (incl. metadata) reach the workflow.
-  const { estimated_delivery_days, ...shippingOptionInput } = req.validatedBody
-  if (estimated_delivery_days !== undefined) {
-    shippingOptionInput.metadata = {
-      ...(shippingOptionInput.metadata ?? {}),
-      estimated_delivery_days,
+  // Stamp the chosen type's admin-curated delivery time onto the option metadata
+  // (usable in date math downstream — the settlement hold floor). The type's
+  // delivery is authoritative; the vendor never sets it directly.
+  const shippingOptionInput = { ...req.validatedBody }
+  if (shippingOptionInput.type_id) {
+    const days = await getTypeDeliveryDays(req.scope, shippingOptionInput.type_id)
+    if (days !== null) {
+      shippingOptionInput.metadata = {
+        ...(shippingOptionInput.metadata ?? {}),
+        estimated_delivery_days: days,
+      }
     }
   }
 

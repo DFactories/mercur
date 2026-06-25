@@ -10,7 +10,11 @@ import {
 import { MedusaError } from "@medusajs/framework/utils"
 import { HttpTypes } from "@mercurjs/types"
 
-import { refetchShippingOption, validateSellerShippingOption } from "../helpers"
+import {
+  getTypeDeliveryDays,
+  refetchShippingOption,
+  validateSellerShippingOption,
+} from "../helpers"
 import { VendorUpdateShippingOptionType } from "../validators"
 
 export const GET = async (
@@ -45,26 +49,22 @@ export const POST = async (
 
   await validateSellerShippingOption(req.scope, sellerId, req.params.id)
 
-  // Fold `estimated_delivery_days` into metadata as a real number. Medusa's
-  // update replaces the metadata object, so merge onto the existing metadata to
-  // preserve any other keys.
-  const {
-    estimated_delivery_days,
-    metadata: bodyMetadata,
-    ...shippingOptionPayload
-  } = req.validatedBody
+  const { metadata: bodyMetadata, ...shippingOptionPayload } = req.validatedBody
 
-  // Merge any metadata change onto the existing metadata (Medusa's update
-  // replaces the object, so a partial update would otherwise drop other keys).
-  let metadataUpdate: Record<string, unknown> | undefined
-  if (estimated_delivery_days !== undefined || bodyMetadata !== undefined) {
+  // When the option's type changes, re-stamp the new type's admin-curated
+  // delivery time onto the metadata. Medusa's update replaces the metadata
+  // object, so merge onto the existing metadata to preserve other keys.
+  let metadataUpdate: Record<string, unknown> | undefined = bodyMetadata
+  const typeId = shippingOptionPayload.type_id
+  if (typeId || bodyMetadata !== undefined) {
     const existing = await refetchShippingOption(req.scope, req.params.id, [
       "metadata",
     ])
+    const days = typeId ? await getTypeDeliveryDays(req.scope, typeId) : null
     metadataUpdate = {
       ...((existing?.metadata as Record<string, unknown> | undefined) ?? {}),
       ...(bodyMetadata ?? {}),
-      ...(estimated_delivery_days !== undefined ? { estimated_delivery_days } : {}),
+      ...(days !== null ? { estimated_delivery_days: days } : {}),
     }
   }
 
