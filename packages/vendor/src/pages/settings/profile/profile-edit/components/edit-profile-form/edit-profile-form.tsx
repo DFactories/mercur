@@ -1,9 +1,14 @@
-import { zodResolver } from "@hookform/resolvers/zod"
 import { Button, Input, Select, toast } from "@medusajs/ui"
 import { useCallback } from "react"
-import { useFieldArray, useForm } from "react-hook-form"
+import { useFieldArray } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import * as zod from "zod"
+
+import {
+  FormExtensionZone,
+  useExtendableForm,
+  useExtension,
+} from "@mercurjs/dashboard-shared"
 
 import { FileType, FileUpload } from "@components/common/file-upload"
 import { Form } from "../../../../../../components/common/form"
@@ -36,10 +41,19 @@ export const EditProfileForm = () => {
   const { handleSuccess } = useRouteModal()
   const direction = useDocumentDirection()
 
-  const { seller_member } = useMe()
+  const memberLinks = useExtension().getLinks("member")
+  const meQuery = memberLinks.length
+    ? { fields: memberLinks.map((link) => `+member.${link}.*`).join(",") }
+    : undefined
+
+  const { seller_member } = useMe(meQuery)
   const member = seller_member?.member
 
-  const form = useForm<zod.infer<typeof EditProfileSchema>>({
+  const form = useExtendableForm({
+    schema: EditProfileSchema,
+    model: "member",
+    zone: "edit",
+    data: member,
     defaultValues: {
       first_name: member?.first_name ?? "",
       last_name: member?.last_name ?? "",
@@ -48,7 +62,6 @@ export const EditProfileForm = () => {
         : [],
       language: i18n.language,
     },
-    resolver: zodResolver(EditProfileSchema),
   })
 
   const { fields: photoFields } = useFieldArray({
@@ -106,6 +119,7 @@ export const EditProfileForm = () => {
         first_name: values.first_name || null,
         last_name: values.last_name || null,
         photo: photoUrl,
+        additional_data: values.additional_data,
       },
       {
         onSuccess: async () => {
@@ -230,6 +244,12 @@ export const EditProfileForm = () => {
                   </div>
                 </Form.Item>
               )}
+            />
+            <FormExtensionZone
+              model="member"
+              zone="edit"
+              control={form.control}
+              data={member}
             />
           </div>
         </RouteDrawer.Body>

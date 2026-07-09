@@ -1,6 +1,7 @@
 import { PencilSquare, Plus, Trash } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import { Checkbox, Container, Heading, toast, usePrompt } from "@medusajs/ui"
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
 import { keepPreviousData } from "@tanstack/react-query"
 import { createColumnHelper } from "@tanstack/react-table"
 import { useMemo } from "react"
@@ -129,6 +130,7 @@ export const CollectionProductSection = ({
           { key: "created_at", label: t("fields.createdAt") },
           { key: "updated_at", label: t("fields.updatedAt") },
         ]}
+        defaultOrder={searchParams.order}
         queryObject={raw}
         commands={[
           {
@@ -138,9 +140,12 @@ export const CollectionProductSection = ({
           },
         ]}
         noRecords={{
+          icon: null,
+          title: t("collections.products.list.noRecordsTitle"),
           message: t("collections.products.list.noRecordsMessage"),
         }}
       />
+      <DisplayExtensionZone model="collection" zone="products" data={collection} />
     </Container>
   )
 }
@@ -224,31 +229,27 @@ const useColumns = () => {
     () => [
       columnHelper.display({
         id: "select",
-        header: ({ table }) => {
-          return (
-            <Checkbox
-              checked={
-                table.getIsSomePageRowsSelected()
-                  ? "indeterminate"
-                  : table.getIsAllPageRowsSelected()
-              }
-              onCheckedChange={(value) =>
-                table.toggleAllPageRowsSelected(!!value)
-              }
-            />
-          )
-        },
-        cell: ({ row }) => {
-          return (
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              onClick={(e) => {
-                e.stopPropagation()
-              }}
-            />
-          )
-        },
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsSomePageRowsSelected()
+                ? "indeterminate"
+                : table.getIsAllPageRowsSelected()
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            data-testid="products-table-header-select-checkbox"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            onClick={(e) => e.stopPropagation()}
+            data-testid={`products-table-cell-${row.id}-select-checkbox`}
+          />
+        ),
       }),
       ...columns,
       columnHelper.display({

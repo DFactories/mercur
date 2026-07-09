@@ -3,6 +3,7 @@ import { Button, Heading, Text } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { useLinkQuery } from "@mercurjs/dashboard-shared";
 import { useLogout, useSellers } from "@hooks/api";
 import { queryClient } from "@lib/query-client";
 import { WizardSidebar } from "./wizard-sidebar";
@@ -26,7 +27,7 @@ export const OnboardingWizard = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mutateAsync: logoutMutation } = useLogout();
-  const { seller_members } = useSellers();
+  const { seller_members } = useSellers(useLinkQuery("seller"));
   const hasStores = (seller_members?.length ?? 0) > 0;
 
   const {

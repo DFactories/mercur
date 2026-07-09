@@ -42,9 +42,11 @@ export const POST = async (
 ) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
-  const update: VendorUpdateSellerType & { phone_verified_at?: Date | null } = {
-    ...req.validatedBody,
-  }
+  const { additional_data, ...rest } = req.validatedBody
+
+  const update: Omit<VendorUpdateSellerType, "additional_data"> & {
+    phone_verified_at?: Date | null
+  } = { ...rest }
 
   // Changing the store phone invalidates any prior OTP verification — the new
   // number must be re-verified (or auto-verified if it's the owner's own phone).
@@ -66,6 +68,7 @@ export const POST = async (
     input: {
       selector: { id: req.params.id },
       update,
+      additional_data,
     },
   })
 

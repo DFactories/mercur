@@ -1,8 +1,14 @@
 import type * as Vite from "vite";
 import path from "path";
 import fs from "fs";
+import { createRequire } from "module";
 import { getFileExports } from "./utils";
-import { RESOLVED_ROUTES_MODULE } from "./constants";
+import {
+    RESOLVED_ROUTES_MODULE,
+    RESOLVED_WIDGETS_MODULE,
+    RESOLVED_NAVIGATION_MODULE,
+    RESOLVED_CUSTOM_FIELDS_MODULE,
+} from "./constants";
 import {
     isVirtualModule,
     resolveVirtualModule,
@@ -15,7 +21,67 @@ function isRouteFile(file: string): boolean {
     return basename === "page";
 }
 
+function isWidgetFile(file: string): boolean {
+    return normalizeSep(file).includes("/src/widgets/");
+}
+
+function isNavigationFile(file: string): boolean {
+    const basename = path.basename(file, path.extname(file));
+    return basename === "_navigation";
+}
+
+function isCustomFieldFile(file: string): boolean {
+    return normalizeSep(file).includes("/src/custom-fields/");
+}
+
+function normalizeSep(file: string): string {
+    return file.replace(/\\/g, "/");
+}
+
 const UI_MODULE_KEYS = ["admin_ui", "vendor_ui"];
+
+// `@medusajs/dashboard` declares `virtual:medusa/*` imports that are resolved
+// upstream by `@medusajs/admin-vite-plugin`. Mercur replaces those modules at
+// bundle time, so the runtime never actually loads them — but esbuild's
+// dependency scanner still walks `@medusajs/dashboard/dist/app.mjs` and fails
+// on the unresolved specifiers. Stubbing them keeps the scan happy.
+const MEDUSA_VIRTUAL_MODULES = [
+    "virtual:medusa/displays",
+    "virtual:medusa/forms",
+    "virtual:medusa/i18n",
+    "virtual:medusa/menu-items",
+    "virtual:medusa/routes",
+    "virtual:medusa/widgets",
+    "virtual:medusa/links",
+];
+
+function isMedusaVirtualModule(id: string): boolean {
+    return MEDUSA_VIRTUAL_MODULES.includes(id);
+}
+
+// Only force-prebundle deps that actually resolve from the app. Consuming apps
+// (e.g. templates) may not declare optional deps like `i18next` or
+// `@medusajs/dashboard` directly, and Vite warns for every unresolved entry in
+// `optimizeDeps.include`.
+function filterResolvableDeps(specifiers: string[], fromDir: string): string[] {
+    const require = createRequire(path.join(fromDir, "noop.js"));
+    return specifiers.filter((specifier) => {
+        try {
+            require.resolve(specifier);
+            return true;
+        } catch {
+            return false;
+        }
+    });
+}
+
+function resolveMedusaVirtualModule(id: string): string {
+    return "\0" + id;
+}
+
+function isResolvedMedusaVirtualModule(id: string): boolean {
+    return id.startsWith("\0virtual:medusa/");
+}
 
 function findNodeModulesRoot(configDir: string): string {
     // Walk up from configDir to find the nearest node_modules
@@ -105,12 +171,24 @@ async function loadMedusaConfig(
     pluginExtensions: string[];
     vendorAppUrl?: string;
 }> {
+    const configDir = path.dirname(medusaConfigPath);
+
     try {
-        const mod = await getFileExports(medusaConfigPath);
+        // Medusa configs assume they execute from their own directory — `medusa` itself
+        // runs them that way (loadEnv(process.cwd()), cwd-relative module resolution).
+        // We load the config from a panel's directory, so emulate Medusa's cwd for the
+        // duration of the import.
+        const previousCwd = process.cwd();
+        let mod: Awaited<ReturnType<typeof getFileExports>>;
+        process.chdir(configDir);
+        try {
+            mod = await getFileExports(medusaConfigPath);
+        } finally {
+            process.chdir(previousCwd);
+        }
         const medusaConfig = mod.default ?? mod;
 
         const modules = medusaConfig?.modules ?? {};
-        const configDir = path.dirname(medusaConfigPath);
 
         let base: string | undefined;
         let appType: "admin" | "vendor" = "admin";
@@ -154,7 +232,16 @@ async function loadMedusaConfig(
         const pluginExtensions = resolvePluginExtensions(plugins, configDir, appType);
 
         return { base, pluginExtensions, vendorAppUrl };
-    } catch {
+    } catch (error) {
+        // Don't fail the build — but never fail silently either: without the Medusa config
+        // the panel is built with base "/" and no plugin extensions, and a panel served
+        // under a sub-path (e.g. /dashboard) would then request assets that 404.
+        console.warn(
+            `[@mercurjs/dashboard-sdk] Could not load the Medusa config from "${medusaConfigPath}": ` +
+                `${error instanceof Error ? error.message : String(error)}. ` +
+                `Building with base "/" and no plugin extensions — if this panel is served ` +
+                `under a sub-path (e.g. /dashboard), its assets will not resolve.`,
+        );
         return { pluginExtensions: [] };
     }
 }
@@ -212,22 +299,28 @@ export function mercurDashboardPlugin(pluginConfig: MercurConfig): Vite.Plugin {
                     exclude: [
                         "virtual:mercur/config",
                         "virtual:mercur/routes",
-                        "virtual:mercur/components",
                         "virtual:mercur/menu-items",
                         "virtual:mercur/i18n",
+                        "virtual:mercur/widgets",
+                        "virtual:mercur/navigation",
+                        "virtual:mercur/custom-fields",
+                        ...MEDUSA_VIRTUAL_MODULES,
                     ],
-                    include: [
-                        "react",
-                        "react/jsx-runtime",
-                        "react-dom/client",
-                        "react-router-dom",
-                        "react-i18next",
-                        "i18next",
-                        "@medusajs/ui",
-                        "@medusajs/dashboard",
-                        "@mercurjs/client",
-                        "@tanstack/react-query",
-                    ],
+                    include: filterResolvableDeps(
+                        [
+                            "react",
+                            "react/jsx-runtime",
+                            "react-dom/client",
+                            "react-router-dom",
+                            "react-i18next",
+                            "i18next",
+                            "@medusajs/ui",
+                            "@medusajs/dashboard",
+                            "@mercurjs/client",
+                            "@tanstack/react-query",
+                        ],
+                        root,
+                    ),
                 },
             };
         },
@@ -238,32 +331,46 @@ export function mercurDashboardPlugin(pluginConfig: MercurConfig): Vite.Plugin {
             if (isVirtualModule(id)) {
                 return resolveVirtualModule(id);
             }
+            if (isMedusaVirtualModule(id)) {
+                return resolveMedusaVirtualModule(id);
+            }
             return null;
         },
         load(id) {
+            if (isResolvedMedusaVirtualModule(id)) {
+                return "export default {}";
+            }
             return loadVirtualModule({ cwd: root, id, mercurConfig: config });
         },
         configureServer(server) {
-            const handleRouteChange = (file: string) => {
-                if (!isRouteFile(file)) return;
-
-                const mod = server.moduleGraph.getModuleById(RESOLVED_ROUTES_MODULE);
+            const invalidate = (moduleId: string, reload: boolean) => {
+                const mod = server.moduleGraph.getModuleById(moduleId);
                 if (mod) {
                     server.moduleGraph.invalidateModule(mod);
-                    server.ws.send({ type: "full-reload" });
+                    if (reload) server.ws.send({ type: "full-reload" });
                 }
             };
 
-            server.watcher.on("add", handleRouteChange);
-            server.watcher.on("unlink", handleRouteChange);
+            const handleChange = (file: string) => {
+                if (isRouteFile(file)) invalidate(RESOLVED_ROUTES_MODULE, true);
+                if (isWidgetFile(file)) invalidate(RESOLVED_WIDGETS_MODULE, true);
+                if (isNavigationFile(file)) invalidate(RESOLVED_NAVIGATION_MODULE, true);
+                if (isCustomFieldFile(file)) invalidate(RESOLVED_CUSTOM_FIELDS_MODULE, true);
+            };
+
+            server.watcher.on("add", handleChange);
+            server.watcher.on("unlink", handleChange);
         },
         handleHotUpdate({ file, server }) {
-            if (isRouteFile(file)) {
-                const mod = server.moduleGraph.getModuleById(RESOLVED_ROUTES_MODULE);
-                if (mod) {
-                    server.moduleGraph.invalidateModule(mod);
-                }
-            }
+            const invalidate = (moduleId: string) => {
+                const mod = server.moduleGraph.getModuleById(moduleId);
+                if (mod) server.moduleGraph.invalidateModule(mod);
+            };
+
+            if (isRouteFile(file)) invalidate(RESOLVED_ROUTES_MODULE);
+            if (isWidgetFile(file)) invalidate(RESOLVED_WIDGETS_MODULE);
+            if (isNavigationFile(file)) invalidate(RESOLVED_NAVIGATION_MODULE);
+            if (isCustomFieldFile(file)) invalidate(RESOLVED_CUSTOM_FIELDS_MODULE);
         },
     };
 }

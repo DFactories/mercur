@@ -18,6 +18,9 @@ import {
   AdminUpdateSeller,
   AdminSuspendSeller,
   AdminTerminateSeller,
+  AdminApproveSeller,
+  AdminUnsuspendSeller,
+  AdminUnterminateSeller,
   AdminAddSellerMember,
   AdminInviteSellerMember,
   AdminUpsertSellerAddress,
@@ -26,7 +29,6 @@ import {
 } from "./validators"
 
 export const adminSellersMiddlewares: MiddlewareRoute[] = [
-  // GET /admin/sellers — list all sellers
   {
     method: ["GET"],
     matcher: "/admin/sellers",
@@ -37,7 +39,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers — create seller
   {
     method: ["POST"],
     matcher: "/admin/sellers",
@@ -49,7 +50,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // GET /admin/sellers/:id — get seller detail
   {
     method: ["GET"],
     matcher: "/admin/sellers/:id",
@@ -60,7 +60,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id — update seller
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id",
@@ -72,7 +71,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id/suspend — suspend seller
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/suspend",
@@ -84,29 +82,28 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id/unsuspend — lift suspension
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/unsuspend",
     middlewares: [
+      validateAndTransformBody(AdminUnsuspendSeller),
       validateAndTransformQuery(
         AdminGetSellerParams,
         adminSellerQueryConfig.retrieve
       ),
     ],
   },
-  // POST /admin/sellers/:id/approve — approve pending seller
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/approve",
     middlewares: [
+      validateAndTransformBody(AdminApproveSeller),
       validateAndTransformQuery(
         AdminGetSellerParams,
         adminSellerQueryConfig.retrieve
       ),
     ],
   },
-  // POST /admin/sellers/:id/terminate — terminate seller
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/terminate",
@@ -118,18 +115,17 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id/unterminate — reactivate terminated seller
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/unterminate",
     middlewares: [
+      validateAndTransformBody(AdminUnterminateSeller),
       validateAndTransformQuery(
         AdminGetSellerParams,
         adminSellerQueryConfig.retrieve
       ),
     ],
   },
-  // POST /admin/sellers/:id/address — upsert seller address
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/address",
@@ -141,7 +137,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id/payment-details — upsert seller payment details
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/payment-details",
@@ -153,7 +148,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id/professional-details — upsert seller professional details
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/professional-details",
@@ -165,7 +159,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // DELETE /admin/sellers/:id/professional-details — remove professional status
   {
     method: ["DELETE"],
     matcher: "/admin/sellers/:id/professional-details",
@@ -176,7 +169,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // GET /admin/sellers/:id/members — list members
   {
     method: ["GET"],
     matcher: "/admin/sellers/:id/members",
@@ -187,7 +179,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // GET /admin/sellers/:id/products — list seller products
   {
     method: ["GET"],
     matcher: "/admin/sellers/:id/products",
@@ -198,7 +189,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id/members — direct add member
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/members",
@@ -206,7 +196,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       validateAndTransformBody(AdminAddSellerMember),
     ],
   },
-  // GET /admin/sellers/:id/members/invites — list invites
   {
     method: ["GET"],
     matcher: "/admin/sellers/:id/members/invites",
@@ -217,7 +206,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-  // POST /admin/sellers/:id/members/invite — invite by email
   {
     method: ["POST"],
     matcher: "/admin/sellers/:id/members/invite",
@@ -225,7 +213,6 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
       validateAndTransformBody(AdminInviteSellerMember),
     ],
   },
-  // DELETE /admin/sellers/:id/members/:member_id — remove member
   {
     method: ["DELETE"],
     matcher: "/admin/sellers/:id/members/:member_id",

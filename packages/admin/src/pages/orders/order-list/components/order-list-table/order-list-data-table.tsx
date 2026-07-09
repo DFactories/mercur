@@ -5,7 +5,11 @@ import { useDataTable } from "@hooks/use-data-table";
 import { IconButton, clx } from "@medusajs/ui";
 import { TriangleRightMini } from "@medusajs/icons";
 import { keepPreviousData } from "@tanstack/react-query";
-import { createColumnHelper } from "@tanstack/react-table";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import {
+  useExtendableTable,
+  useLinkQuery,
+} from "@mercurjs/dashboard-shared";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -29,6 +33,7 @@ import { getStylizedAmount } from "@lib/money-amount-helpers";
 
 import { DEFAULT_FIELDS } from "../../const";
 import { useOrderGroupTableFilters } from "./use-order-table-filters";
+import { OrderExpandCollapseButton } from "./order-expand-collapse-button";
 
 const PAGE_SIZE = 20;
 
@@ -111,10 +116,12 @@ export const OrderListDataTable = () => {
     pageSize: PAGE_SIZE,
   });
 
+  const linkQuery = useLinkQuery("order", DEFAULT_FIELDS);
+
   const { order_groups, count, isError, error, isLoading } = useOrderGroups(
     {
       ...searchParams,
-      fields: DEFAULT_FIELDS,
+      fields: linkQuery.fields,
     },
     {
       placeholderData: keepPreviousData,
@@ -126,8 +133,12 @@ export const OrderListDataTable = () => {
     [order_groups, t],
   );
 
-  const filters = useOrderGroupTableFilters();
-  const columns = useColumns();
+  const baseFilters = useOrderGroupTableFilters();
+  const { columns, filters: extFilters } = useColumns();
+  const filters = useMemo(
+    () => [...baseFilters, ...(extFilters as typeof baseFilters)],
+    [baseFilters, extFilters],
+  );
 
   const { table } = useDataTable({
     data: rows,
@@ -152,6 +163,11 @@ export const OrderListDataTable = () => {
       navigateTo={(row) =>
         row.original._type === "order" ? `/orders/${row.original.id}` : ""
       }
+      onRowClick={(row) => {
+        if (row.getCanExpand()) {
+          row.toggleExpanded();
+        }
+      }}
       count={count}
       search
       filters={filters}
@@ -162,6 +178,8 @@ export const OrderListDataTable = () => {
         { key: "created_at", label: t("fields.createdAt") },
         { key: "updated_at", label: t("fields.updatedAt") },
       ]}
+      defaultOrder="-display_id"
+      toolbarActions={<OrderExpandCollapseButton table={table} />}
       queryObject={raw}
       noRecords={{
         message: t("orders.list.noRecordsMessage"),
@@ -175,7 +193,7 @@ const columnHelper = createColumnHelper<OrderGroupRow>();
 const useColumns = () => {
   const { t } = useTranslation();
 
-  return useMemo(
+  const base = useMemo(
     () => [
       columnHelper.accessor("display_id", {
         header: () => <TextHeader text={t("orders.fields.groupId")} />,
@@ -273,4 +291,11 @@ const useColumns = () => {
     ],
     [t],
   );
+
+  const { columns: extended, filters } = useExtendableTable<OrderGroupRow>({
+    model: "order",
+    columns: base as unknown as ColumnDef<OrderGroupRow, unknown>[],
+  });
+
+  return { columns: extended, filters };
 };

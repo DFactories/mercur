@@ -7,8 +7,9 @@ import {
   toast,
   usePrompt,
 } from "@medusajs/ui"
+import { useExtendableTable, useLinkQuery } from "@mercurjs/dashboard-shared"
 import { keepPreviousData } from "@tanstack/react-query"
-import { createColumnHelper } from "@tanstack/react-table"
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
 import { Children, ReactNode, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
@@ -77,19 +78,28 @@ export const CustomerGroupListDataTable = () => {
 
   const { searchParams, raw } = useCustomerGroupTableQuery({ pageSize: PAGE_SIZE })
 
+  const linkQuery = useLinkQuery(
+    "customer_group",
+    "id,name,created_at,updated_at,customers.id,seller.id,seller.name",
+  )
+
   const { customer_groups, count, isPending, isError, error } =
     useCustomerGroups(
       {
         ...searchParams,
-        fields: "id,name,created_at,updated_at,customers.id",
+        ...linkQuery,
       },
       {
         placeholderData: keepPreviousData,
       },
     )
 
-  const filters = useCustomerGroupTableFilters()
-  const columns = useColumns()
+  const baseFilters = useCustomerGroupTableFilters()
+  const { columns, filters: extFilters } = useColumns()
+  const filters = useMemo(
+    () => [...baseFilters, ...(extFilters as typeof baseFilters)],
+    [baseFilters, extFilters]
+  )
 
   const { table } = useDataTable({
     data: customer_groups ?? [],
@@ -211,13 +221,19 @@ const CustomerGroupActions = ({
   )
 }
 
-const columnHelper = createColumnHelper<HttpTypes.AdminCustomerGroup>()
+// `seller` comes from the Mercur `customer_group_seller` link (requested via
+// `seller.id,seller.name`); it is not on Medusa's base customer-group type.
+type CustomerGroupRow = HttpTypes.AdminCustomerGroup & {
+  seller?: { id: string; name: string } | null
+}
+
+const columnHelper = createColumnHelper<CustomerGroupRow>()
 
 const useColumns = () => {
   const { t } = useTranslation()
   const { getFullDate } = useDate()
 
-  return useMemo(
+  const base = useMemo(
     () => [
       columnHelper.accessor("name", {
         header: t("fields.name"),
@@ -227,6 +243,17 @@ const useColumns = () => {
         header: t("customers.domain"),
         cell: ({ row }) => {
           return <span>{row.original.customers?.length ?? 0}</span>
+        },
+      }),
+      columnHelper.display({
+        id: "owner",
+        header: t("fields.owner"),
+        cell: ({ row }) => {
+          return (
+            <span data-testid={`customer-group-owner-${row.original.id}`}>
+              {row.original.seller?.name ?? "-"}
+            </span>
+          )
         },
       }),
       columnHelper.accessor("created_at", {
@@ -255,11 +282,25 @@ const useColumns = () => {
           )
         },
       }),
+    ],
+    [t, getFullDate]
+  )
+
+  const { columns: extended, filters } = useExtendableTable<CustomerGroupRow>({
+    model: "customer_group",
+    columns: base as unknown as ColumnDef<CustomerGroupRow, unknown>[],
+  })
+
+  const columns = useMemo(
+    () => [
+      ...extended,
       columnHelper.display({
         id: "actions",
         cell: ({ row }) => <CustomerGroupActions group={row.original} />,
       }),
     ],
-    [t, getFullDate]
+    [extended]
   )
+
+  return { columns, filters }
 }

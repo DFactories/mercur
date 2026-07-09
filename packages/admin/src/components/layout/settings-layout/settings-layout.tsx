@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import components from "virtual:mercur/components";
 
 import { ArrowUturnLeft, MinusMini } from "@medusajs/icons";
 import { Divider, IconButton, Text, clx } from "@medusajs/ui";
@@ -10,15 +11,11 @@ import { Link, useLocation } from "react-router-dom";
 import { type INavItem, NavItem } from "@components/layout/nav-item";
 import { Shell } from "@components/layout/shell";
 import { UserMenu } from "@components/layout/user-menu";
-import components from "virtual:mercur/components";
 import menuItemsModule from "virtual:mercur/menu-items";
 import { getMenuItemsByType } from "../../../utils/routes";
 
 export const SettingsLayout = () => {
-  const Sidebar = components.SettingsSidebar
-    ? components.SettingsSidebar
-    : SettingsSidebar;
-
+  const Sidebar = components.SettingsSidebar ? components.SettingsSidebar : SettingsSidebar;
   return (
     <Shell>
       <Sidebar />
@@ -86,8 +83,8 @@ const useSettingRoutes = (): INavItem[] => {
         to: "/settings/locations",
       },
       {
-        label: t("commissionRates.domain"),
-        to: "/settings/commission-rates",
+        label: t("commissions.domain"),
+        to: "/settings/commissions",
       },
       {
         label: t("notificationSettings.domain"),

@@ -2,6 +2,8 @@ import { createClient, InferClient } from '@mercurjs/client'
 import { Routes } from '@mercurjs/core/_generated'
 import config from 'virtual:mercur/config'
 
+import { assetUrl } from '../../utils/asset-url'
+
 export const backendUrl = config.backendUrl ?? 'http://localhost:9000'
 
 export const sdk: InferClient<Routes> = createClient({
@@ -66,33 +68,13 @@ export const fetchQuery = async (
     const errorData = await response.json()
 
     if (response.status === 401) {
-      window.location.href = '/login?reason=Unauthorized'
+      window.location.href = `${assetUrl('/login')}?reason=Unauthorized`
       return
     }
 
     const error = new Error(errorData.message || 'Server error')
       ; (error as Error & { status: number }).status = response.status
     throw error
-  }
-
-  return response.json()
-}
-
-export const uploadFilesQuery = async (files: any[]) => {
-  const formData = new FormData()
-
-  for (const { file } of files) {
-    formData.append('files', file)
-  }
-
-  const response = await fetch(`${backendUrl}/vendor/uploads`, {
-    method: 'POST',
-    credentials: 'include',
-    body: formData,
-  })
-
-  if (!response.ok) {
-    return null
   }
 
   return response.json()

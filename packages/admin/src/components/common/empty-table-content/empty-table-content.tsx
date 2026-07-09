@@ -16,7 +16,7 @@ export const NoResults = ({ title, message, className }: NoResultsProps) => {
   return (
     <div
       className={clx(
-        "flex h-[400px] w-full items-center justify-center",
+        "flex min-h-[400px] size-full items-center justify-center",
         className
       )}
     >
@@ -79,7 +79,7 @@ export const NoRecords = ({
   return (
     <div
       className={clx(
-        "flex h-[400px] w-full flex-col items-center justify-center gap-y-4",
+        "flex min-h-[400px] size-full flex-col items-center justify-center gap-y-4",
         className
       )}
     >
@@ -91,7 +91,10 @@ export const NoRecords = ({
             {title ?? t("general.noRecordsTitle")}
           </Text>
 
-          <Text size="small" className="text-ui-fg-muted">
+          <Text
+            size="small"
+            className="text-ui-fg-muted whitespace-pre-line text-center"
+          >
             {message ?? t("general.noRecordsMessage")}
           </Text>
         </div>

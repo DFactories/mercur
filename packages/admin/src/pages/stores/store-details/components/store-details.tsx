@@ -2,22 +2,24 @@ import { ReactNode, Children, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
+import { WidgetZone, useLinkQuery } from "@mercurjs/dashboard-shared";
+
 import { TwoColumnPageSkeleton } from "../../../../components/common/skeleton";
 import { TwoColumnPage } from "../../../../components/layout/pages";
 import { useSeller } from "@/hooks/api";
 import { SellerStatus } from "@mercurjs/types";
 
+import { STORE_DETAIL_FIELDS } from "../loader";
 import { StoreGeneralSection } from "./store-general-section";
 import { StorePaymentDetailsSection } from "./store-payment-details-section";
 import { StoreCompanyDetailsSection } from "./store-company-details-section";
 import { StoreConfigurationSection } from "./store-configuration-section";
 import { StoreAddressSection } from "./store-address-section";
-import { StoreSubscriptionSection } from "./store-subscription-section";
 import { StoreMembersSection } from "./store-members-section";
 import { StoreDocumentsSection } from "./store-documents-section";
 import { StoreRequestSection } from "./store-request-section";
 import { StoreOrdersSection } from "./store-orders-section";
-import { StoreProductsSection } from "./store-products-section";
+import { StoreOffersSection } from "./store-offers-section";
 import {
   StoreDetailHeader,
   StoreDetailTitle,
@@ -25,7 +27,7 @@ import {
   StoreDetailEditButton,
 } from "./store-detail-header";
 
-const TABS = ["orders", "products", "users", "timeOff"] as const;
+const TABS = ["orders", "offers", "users", "timeOff"] as const;
 
 type Tab = (typeof TABS)[number];
 
@@ -41,7 +43,7 @@ const TabBar = ({
   const labels: Record<Tab, string> = {
     orders: t("orders.domain"),
     users: t("users.domain"),
-    products: t("products.domain"),
+    offers: t("offers.domain"),
     timeOff: t("store.timeOff.header"),
   };
 
@@ -49,7 +51,7 @@ const TabBar = ({
     <div
       role="tablist"
       aria-label={t("stores.domain")}
-      className="flex flex-wrap items-center gap-x-3 py-2"
+      className="mt-1 flex flex-wrap items-center gap-x-2"
       data-testid="store-detail-tabs"
     >
       {TABS.map((tab) => {
@@ -65,7 +67,7 @@ const TabBar = ({
             aria-controls={`store-detail-tab-panel-${tab}`}
             id={`store-detail-tab-${tab}`}
             data-testid={`store-detail-tab-${tab}`}
-            className={`txt-compact-medium-plus rounded-full px-4 py-1.5 transition-colors ${
+            className={`txt-compact-small-plus rounded-full px-3 py-1.5 transition-colors ${
               isActive
                 ? "border-ui-border-base bg-ui-bg-base shadow-borders-base text-ui-fg-base"
                 : "text-ui-fg-subtle hover:text-ui-fg-base"
@@ -83,7 +85,8 @@ const Root = ({ children }: { children?: ReactNode }) => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState<Tab>("orders");
 
-  const { seller, isLoading, isError, error } = useSeller(id!);
+  const query = useLinkQuery("seller", STORE_DETAIL_FIELDS);
+  const { seller, isLoading, isError, error } = useSeller(id!, query);
 
   if (isLoading || !seller) {
     return <TwoColumnPageSkeleton mainSections={3} sidebarSections={3} />;
@@ -104,6 +107,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
   return (
     <TwoColumnPage data={seller} hasOutlet data-testid="store-detail-page">
       <TwoColumnPage.Main>
+        <WidgetZone id="stores.detail.main" data={seller}>
         {seller.status === SellerStatus.PENDING_APPROVAL &&
           !seller.approved_at &&
           !seller.rejected_at && (
@@ -129,13 +133,13 @@ const Root = ({ children }: { children?: ReactNode }) => {
             <StoreMembersSection sellerId={seller.id} />
           </div>
         )}
-        {activeTab === "products" && (
+        {activeTab === "offers" && (
           <div
             role="tabpanel"
-            id="store-detail-tab-panel-products"
-            aria-labelledby="store-detail-tab-products"
+            id="store-detail-tab-panel-offers"
+            aria-labelledby="store-detail-tab-offers"
           >
-            <StoreProductsSection sellerId={seller.id} />
+            <StoreOffersSection sellerId={seller.id} />
           </div>
         )}
         {activeTab === "timeOff" && (
@@ -147,13 +151,15 @@ const Root = ({ children }: { children?: ReactNode }) => {
             <StoreConfigurationSection seller={seller} />
           </div>
         )}
+        </WidgetZone>
       </TwoColumnPage.Main>
       <TwoColumnPage.Sidebar>
-        <StoreAddressSection seller={seller} />
-        <StoreCompanyDetailsSection seller={seller} />
-        <StorePaymentDetailsSection seller={seller} />
-        <StoreDocumentsSection seller={seller} />
-        <StoreSubscriptionSection seller={seller} />
+        <WidgetZone id="stores.detail.side" data={seller}>
+          <StoreAddressSection seller={seller} />
+          <StoreCompanyDetailsSection seller={seller} />
+          <StorePaymentDetailsSection seller={seller} />
+          <StoreDocumentsSection seller={seller} />
+        </WidgetZone>
       </TwoColumnPage.Sidebar>
     </TwoColumnPage>
   );
@@ -167,7 +173,6 @@ export const StoreDetailPage = Object.assign(Root, {
   MainPaymentDetailsSection: StorePaymentDetailsSection,
   MainCompanyDetailsSection: StoreCompanyDetailsSection,
   SidebarAddressSection: StoreAddressSection,
-  SidebarSubscriptionSection: StoreSubscriptionSection,
   SidebarMembersSection: StoreMembersSection,
   Header: StoreDetailHeader,
   HeaderTitle: StoreDetailTitle,

@@ -1,6 +1,8 @@
 {
   "$schema": "./$schema.json",
   "general": {
+    "unknownError": "خطای ناشناخته‌ای رخ داد",
+    "notAvailable": "موجود نیست",
     "ascending": "صعودی",
     "descending": "نزولی",
     "add": "اضافه کردن",
@@ -56,23 +58,23 @@
     "includesTaxTooltip": "قیمت‌های این ستون شامل مالیات هستند.",
     "excludesTaxTooltip": "قیمت‌های این ستون بدون مالیات هستند.",
     "noMoreData": "داده‌ی بیشتری وجود ندارد",
-    "areYouSureDescription": "در حال حذف {{entity}} {{title}} هستید. این عمل قابل بازگشت نیست.",
-    "decrement": "کاهش",
-    "false": "خیر",
     "fullList": "همه",
-    "increment": "افزایش",
-    "no": "غیرفعال",
-    "noOptionsAvailable": "گزینه‌ای موجود نیست",
-    "noOptionsFound": "گزینه‌ای یافت نشد",
-    "noRecordsMessageFiltered": "هیچ رکوردی مطابق با فیلترها وجود ندارد",
     "original": "اصلی",
-    "remaining": "باقی‌مانده",
-    "searchOptions": "جستجوی گزینه‌ها...",
     "selectAll": "انتخاب همه",
+    "unselectAll": "لغو انتخاب همه",
+    "remaining": "باقی‌مانده",
+    "yes": "بله",
+    "no": "غیرفعال",
+    "areYouSureDescription": "در حال حذف {{entity}} {{title}} هستید. این عمل قابل بازگشت نیست.",
+    "noRecordsMessageFiltered": "هیچ رکوردی مطابق با فیلترها وجود ندارد",
+    "searchOptions": "جستجوی گزینه‌ها...",
+    "noOptionsFound": "گزینه‌ای یافت نشد",
+    "noOptionsAvailable": "گزینه‌ای موجود نیست",
     "selectValues": "انتخاب مقادیر...",
     "true": "فعال",
-    "unselectAll": "لغو انتخاب همه",
-    "yes": "بله"
+    "false": "خیر",
+    "decrement": "کاهش",
+    "increment": "افزایش"
   },
   "json": {
     "header": "JSON",
@@ -109,14 +111,19 @@
     }
   },
   "validation": {
+    "requiredField": "فیلد الزامی",
+    "valueRequired": "مقدار الزامی است",
+    "atLeastOnePrice": "حداقل یک قیمت باید افزوده شود.",
+    "currencyCodeNotFound": "کد ارز یافت نشد",
+    "shippingOptionIdMissing": "پارامتر شناسه گزینه ارسال موجود نیست",
     "mustBeInt": "مقدار باید یک عدد صحیح باشد.",
     "mustBePositive": "مقدار باید یک عدد مثبت باشد.",
     "rules": {
+      "lower": "حداقل یک حرف کوچک",
+      "upper": "حداقل یک حرف بزرگ",
       "12chars": "حداقل ۱۲ کاراکتر",
       "digit": "حداقل یک رقم",
-      "lower": "حداقل یک حرف کوچک",
-      "specialChar": "حداقل یک کاراکتر خاص",
-      "upper": "حداقل یک حرف بزرگ"
+      "specialChar": "حداقل یک کاراکتر خاص"
     }
   },
   "actions": {
@@ -162,10 +169,11 @@
     "export": "گرفتن خروجی",
     "import": "وارد کردن",
     "cannotUndo": "این عمل قابل بازگشت نیست",
-    "editImages": "ویرایش تصاویر",
-    "editVariantImages": "ویرایش تصاویر تنوع",
+    "saveChanges": "ذخیره تغییرات",
     "saveAndClose": "ذخیره و بستن",
-    "saveChanges": "ذخیره تغییرات"
+    "request": "درخواست",
+    "editVariantImages": "ویرایش تصاویر تنوع",
+    "editImages": "ویرایش تصاویر"
   },
   "operators": {
     "in": "در"
@@ -434,27 +442,34 @@
   "products": {
     "domain": "محصولات",
     "list": {
-      "noRecordsMessage": "اولین محصول خود را ایجاد کنید تا شروع به فروش کنید."
+      "noRecordsMessage": "اولین محصول خود را ایجاد کنید تا شروع به فروش کنید.",
+      "noRecordsTitle": "هنوز محصولی وجود ندارد"
     },
     "edit": {
       "header": "ویرایش محصول",
       "description": "جزئیات محصول را ویرایش کنید.",
       "successToast": "محصول {{title}} با موفقیت به‌روزرسانی شد.",
+      "requestSuccessToast": "درخواست به‌روزرسانی محصول با موفقیت ثبت شد. پس از تأیید توسط مدیر، تغییرات در فروشگاه آنلاین نمایش داده خواهد شد.",
+      "duplicateRequestErrorToast": "شما در حال حاضر یک درخواست فعال دارید. فقط می‌توانید در هر زمان یک درخواست داشته باشید.",
       "attributes": {
+        "createSuccessToast": "ویژگی با موفقیت ایجاد شد.",
+        "addSuccessToast": "ویژگی‌ها با موفقیت اضافه شدند.",
+        "updateSuccessToast": "ویژگی با موفقیت به‌روزرسانی شد.",
+        "deleteSuccessToast": "ویژگی با موفقیت حذف شد.",
         "addAttribute": "افزودن ویژگی",
-        "conversionWarning": "تبدیل این ویژگی به یک تنوع روی تنوع‌های موجود محصول تأثیر می‌گذارد. این عمل ممکن است تنوع‌ها را حذف یا تغییر دهد.",
-        "editCustomValueDescription": "جایگزینی این با یک مقدار سفارشی بر نحوه نمایش محصول شما در جستجو و فیلترها تأثیر می‌گذارد. مقادیر سفارشی قابل جستجو یا فیلتر نیستند.",
-        "editCustomValueTitle": "مقدار سفارشی",
         "editHeader": "ویرایش ویژگی",
         "required": "ویژگی الزامی",
+        "valuesRequired": "حداقل یک مقدار الزامی است",
+        "valuesPlaceholder": "انتخاب یا وارد کردن مقدار",
         "useForVariations": "استفاده برای تنوع‌ها",
         "useForVariationsDescription": "این ویژگی را به یک گزینه محصول که تنوع تولید می‌کند تبدیل کنید.",
-        "valuesPlaceholder": "انتخاب یا وارد کردن مقدار",
-        "valuesRequired": "حداقل یک مقدار الزامی است"
+        "conversionWarning": "تبدیل این ویژگی به یک تنوع روی تنوع‌های موجود محصول تأثیر می‌گذارد. این عمل ممکن است تنوع‌ها را حذف یا تغییر دهد.",
+        "editCustomValueTitle": "مقدار سفارشی",
+        "editCustomValueDescription": "جایگزینی این با یک مقدار سفارشی بر نحوه نمایش محصول شما در جستجو و فیلترها تأثیر می‌گذارد. مقادیر سفارشی قابل جستجو یا فیلتر نیستند."
       },
       "informationalAttributes": {
-        "description": "ویژگی‌هایی که برای مقاصد اطلاع‌رسانی استفاده می‌شوند",
-        "header": "اطلاعات محصول"
+        "header": "اطلاعات محصول",
+        "description": "ویژگی‌هایی که برای مقاصد اطلاع‌رسانی استفاده می‌شوند"
       }
     },
     "create": {
@@ -465,23 +480,22 @@
         "details": "جزئیات",
         "organize": "سازماندهی",
         "variants": "متغیرها",
-        "inventory": "کیت‌های موجودی",
-        "attributes": "ویژگی‌ها"
+        "attributes": "ویژگی‌ها",
+        "inventory": "کیت‌های موجودی"
       },
       "errors": {
         "variants": "لطفاً حداقل یک متغیر را انتخاب کنید.",
         "options": "لطفاً حداقل یک گزینه ایجاد کنید.",
         "uniqueSku": "SKU باید منحصر به فرد باشد.",
+        "requiredAttribute": "This attribute is required.",
+        "primaryCategoryRequired": "دسته‌بندی اصلی الزامی است",
+        "categoryRequired": "لطفاً یک دسته‌بندی انتخاب کنید",
+        "titleRequired": "عنوان الزامی است",
         "handleInvalidFormat": "شناسه پیوند فقط می‌تواند شامل حروف کوچک، اعداد و خط تیره باشد",
         "handleMustContainLetter": "شناسه پیوند باید حداقل شامل یک حرف باشد",
-        "primaryCategoryRequired": "دسته‌بندی اصلی الزامی است",
-        "titleRequired": "عنوان الزامی است"
-      },
-      "inventory": {
-        "heading": "کیت‌های موجودی",
-        "label": "آیتم‌های موجودی را به کیت موجودی متغیر اضافه کنید.",
-        "itemPlaceholder": "آیتم موجودی را انتخاب کنید",
-        "quantityPlaceholder": "چند عدد از این آیتم برای کیت نیاز است؟"
+        "requiredAttributeSelect": "این ویژگی توسط بازار الزامی شده است. لطفاً یک مقدار انتخاب کنید.",
+        "requiredAttributeEnter": "این ویژگی توسط بازار الزامی شده است. لطفاً یک مقدار وارد کنید.",
+        "requiredAttributeMultiSelect": "این ویژگی توسط بازار الزامی شده است. لطفاً حداقل یک مقدار انتخاب کنید."
       },
       "variants": {
         "header": "متغیرها",
@@ -498,8 +512,8 @@
           "hint": "این رتبه‌بندی بر ترتیب متغیرها در فروشگاه شما تأثیر خواهد گذاشت.",
           "alert": "برای ایجاد متغیرها گزینه‌ها را اضافه کنید.",
           "tip": "متغیرهایی که بررسی نشده‌اند ایجاد نخواهند شد. شما همیشه می‌توانید متغیرها را بعداً ایجاد و ویرایش کنید اما این لیست تناسبات گزینه‌های محصول شما را پوشش می‌دهد.",
-          "media": "رسانه",
-          "searchPlaceholder": "جستجوی تنوع‌ها..."
+          "searchPlaceholder": "جستجوی تنوع‌ها...",
+          "media": "رسانه"
         },
         "productOptions": {
           "label": "گزینه‌های محصول",
@@ -509,20 +523,51 @@
       },
       "successToast": "محصول {{title}} با موفقیت ایجاد شد.",
       "attributes": {
-        "buttonLabel": "ویژگی",
+        "header": "Attributes",
+        "addExisting": "Add existing",
+        "createNew": "Create new",
+        "requiredAttributes": "Required attributes",
+        "requiredAttributesHint": "These attributes are required by the Marketplace. Select them before proceeding.",
+        "selectValues": "Select values",
+        "tip": "Tip",
+        "useForVariants": "Use for Variations",
+        "useForVariantsDescription": "If checked, you will be able to create variants using this attribute. If not, the attribute will be used for informational purposes only.",
+        "variantAxisTip": "This attribute will create variants. You can define them in the next step.",
+        "titlePlaceholder": "e.g. Color",
+        "valuePlaceholder": "Enter values",
         "description": "به محصول خود ویژگی اضافه کنید. از ویژگی‌های تعریف‌شده توسط مدیر انتخاب کنید یا ویژگی خود را بسازید.",
-        "learnMore": {
-          "content": "ویژگی‌ها به مشتریان کمک می‌کنند محصولات شما را پیدا و فیلتر کنند. ویژگی‌های تعریف‌شده توسط مدیر در نتایج جستجو نمایش داده می‌شوند.",
-          "label": "درباره ویژگی‌ها بیشتر بدانید"
-        },
-        "loading": "در حال بارگذاری ویژگی‌ها...",
+        "requiredHeading": "ویژگی‌های الزامی",
         "requiredDescription": "این ویژگی‌ها برای محصولات این دسته‌بندی الزامی هستند.",
-        "requiredHeading": "ویژگی‌های الزامی"
+        "buttonLabel": "ویژگی",
+        "loading": "در حال بارگذاری ویژگی‌ها...",
+        "learnMore": {
+          "label": "درباره ویژگی‌ها بیشتر بدانید",
+          "content": "ویژگی‌ها به مشتریان کمک می‌کنند محصولات شما را پیدا و فیلتر کنند. ویژگی‌های تعریف‌شده توسط مدیر در نتایج جستجو نمایش داده می‌شوند."
+        },
+        "editVariantAxisTip": "می‌توانید با استفاده از این ویژگی، تنوع ایجاد کنید.",
+        "warning": "هشدار",
+        "editWarning": "تغییرات در این ویژگی ممکن است بر تنوع‌ها یا جزئیات موجود محصول تأثیر بگذارد. پس از ذخیره، تنوع‌ها و جزئیات محصول را بررسی کنید.",
+        "enterValuePlaceholder": "وارد کردن مقدار",
+        "selectValuePlaceholder": "انتخاب مقدار",
+        "requiredTooltip": "این ویژگی توسط بازار الزامی شده است و قابل لغو انتخاب نیست.",
+        "noAttributesTitle": "هنوز ویژگی محصولی وجود ندارد",
+        "noAttributesDescription": "هیچ ویژگی‌ای توسط بازار تعریف نشده است.",
+        "errors": {
+          "titleRequired": "لطفاً یک عنوان وارد کنید",
+          "valuesRequired": "لطفاً حداقل یک مقدار وارد کنید"
+        }
       },
       "defaults": {
         "optionTitle": "گزینه پیش‌فرض",
         "optionValue": "مقدار گزینه پیش‌فرض",
         "variantTitle": "تنوع پیش‌فرض"
+      },
+      "requestSuccessToast": "درخواست محصول با موفقیت ثبت شد. اکنون می‌توانید برای این محصول پیشنهاد ایجاد کنید. پس از تأیید محصول توسط مدیر، پیشنهادهای شما در فروشگاه آنلاین نمایش داده خواهد شد. فقط پیشنهادهایی که موجودی و قیمت تعیین‌شده دارند نمایش داده می‌شوند.",
+      "inventory": {
+        "heading": "کیت‌های موجودی",
+        "label": "آیتم‌های موجودی را به کیت موجودی متغیر اضافه کنید.",
+        "itemPlaceholder": "آیتم موجودی را انتخاب کنید",
+        "quantityPlaceholder": "چند عدد از این آیتم برای کیت نیاز است؟"
       }
     },
     "export": {
@@ -574,16 +619,15 @@
         "description": "هیچ تنوعی با معیارهای فیلتر فعلی مطابقت ندارد."
       },
       "editStocksAndPrices": {
-        "action": "ویرایش موجودی و قیمت‌ها",
-        "description": "مدیریت مکان‌های موجودی و قیمت‌ها برای همه تنوع‌ها",
         "header": "ویرایش موجودی و قیمت‌ها",
+        "description": "مدیریت مکان‌های موجودی و قیمت‌ها برای همه تنوع‌ها",
+        "action": "ویرایش موجودی و قیمت‌ها",
         "successToast": "موجودی و قیمت‌ها با موفقیت به‌روزرسانی شدند"
       }
     },
     "attributes": "ویژگی‌ها",
     "editAttributes": "ویرایش ویژگی‌ها",
     "editOptions": "ویرایش گزینه‌ها",
-    "editPrices": "ویرایش قیمت‌ها",
     "media": {
       "label": "رسانه‌ها",
       "editHint": "رسانه‌ها را به محصول اضافه کنید تا در فروشگاه شما نمایش داده شود.",
@@ -607,16 +651,16 @@
         "variantDescription": "این تنوع تصویری ندارد. به تنوع تصویر اضافه کنید."
       },
       "successToast": "رسانه با موفقیت بروزرسانی شد.",
-      "availableImages": "انتخاب تصاویر",
-      "editLabel": "ویرایش",
-      "fileTooLarge": "یک یا چند فایل از حداکثر اندازه مجاز {{size}} بیشتر هستند: {{name}}",
       "manageImageVariants": "مدیریت تنوع‌های مرتبط",
+      "fileTooLarge": "یک یا چند فایل از حداکثر اندازه مجاز {{size}} بیشتر هستند: {{name}}",
+      "variantImages": "تصاویر تنوع",
+      "showAvailableImages": "نمایش تصاویر موجود",
+      "availableImages": "انتخاب تصاویر",
+      "selectToAdd": "تصاویر محصول را به تنوع اضافه کنید. برای افزودن تصاویر جدید، ابتدا آن‌ها را به محصول اضافه کنید.",
       "removeSelected": "حذف موارد انتخاب‌شده",
       "selectImages": "انتخاب تصاویر",
       "selectImagesHint": "روی تصاویر کلیک کنید تا به این تنوع اضافه شوند.",
-      "selectToAdd": "تصاویر محصول را به تنوع اضافه کنید. برای افزودن تصاویر جدید، ابتدا آن‌ها را به محصول اضافه کنید.",
-      "showAvailableImages": "نمایش تصاویر موجود",
-      "variantImages": "تصاویر تنوع"
+      "editLabel": "ویرایش"
     },
     "discountableHint": "هنگامی که غیرفعال باشد، تخفیف‌ها به این محصول اعمال نخواهند شد.",
     "noSalesChannels": "در هیچ کانال فروش موجود نیست",
@@ -627,6 +671,7 @@
       "draft": "پیش‌نویس",
       "published": "منتشر شده",
       "proposed": "پیشنهادی",
+      "requires_action": "Changes required",
       "rejected": "رد شده"
     },
     "fields": {
@@ -707,6 +752,10 @@
       "hs_code": {
         "label": "کد HS"
       },
+      "shipping_profile": {
+        "label": "پروفایل ارسال",
+        "hint": "محصول را به یک پروفایل ارسال متصل کنید"
+      },
       "attributes": {
         "add": {
           "title": {
@@ -720,62 +769,51 @@
             "required": "حداقل یک مقدار الزامی است"
           }
         },
-        "enterValuePlaceholder": "وارد کردن مقدار",
-        "selectValuePlaceholder": "یک مقدار انتخاب کنید",
         "useForVariants": {
+          "label": "استفاده برای تنوع‌ها",
           "description": "برای ایجاد تنوع‌های محصول بر اساس این ویژگی، آن را فعال کنید.",
-          "editDescription": "تغییر این مورد روی تنوع‌های موجود محصول تأثیر می‌گذارد.",
-          "label": "استفاده برای تنوع‌ها"
+          "editDescription": "تغییر این مورد روی تنوع‌های موجود محصول تأثیر می‌گذارد."
         },
         "validation": {
           "required": "{{name}} الزامی است",
-          "requiredEnter": "لطفاً یک مقدار وارد کنید",
           "requiredSelect": "لطفاً یک مقدار انتخاب کنید",
+          "requiredEnter": "لطفاً یک مقدار وارد کنید",
           "requiredSelectMultiple": "لطفاً حداقل یک مقدار انتخاب کنید"
-        }
-      },
-      "primaryCategory": {
-        "label": "دسته‌بندی اصلی",
-        "tooltip": "دسته‌بندی اصلی تعیین می‌کند چه ویژگی‌هایی برای این محصول در دسترس هستند. ویژگی‌ها هنگام راه‌اندازی بازارگاه توسط مدیر ایجاد می‌شوند."
+        },
+        "enterValuePlaceholder": "وارد کردن مقدار",
+        "selectValuePlaceholder": "یک مقدار انتخاب کنید"
       },
       "secondaryCategories": {
         "label": "دسته‌بندی‌های فرعی"
       },
-      "shipping_profile": {
-        "hint": "محصول را به یک پروفایل ارسال متصل کنید",
-        "label": "پروفایل ارسال"
+      "primaryCategory": {
+        "label": "دسته‌بندی اصلی",
+        "tooltip": "دسته‌بندی اصلی تعیین می‌کند چه ویژگی‌هایی برای این محصول در دسترس هستند. ویژگی‌ها هنگام راه‌اندازی بازارگاه توسط مدیر ایجاد می‌شوند."
       }
     },
     "variant": {
       "edit": {
         "header": "ویرایش متغیر",
-        "success": "متغیر با موفقیت ویرایش شد"
+        "success": "متغیر با موفقیت ویرایش شد",
+        "attributesTooltip": "این‌ها مقادیر پیش‌فرضی هستند که برای توصیف مورد استفاده می‌شوند. توسط بازار تعریف نشده‌اند."
       },
       "create": {
-        "header": "جزئیات متغیر"
+        "header": "جزئیات متغیر",
+        "successToast": "تنوع با موفقیت ایجاد شد."
       },
       "deleteWarning": "آیا مطمئن هستید که می‌خواهید این متغیر را حذف کنید؟",
-      "pricesPagination": "1 - {{current}} از {{total}} قیمت‌",
       "tableItemAvailable": "{{availableCount}} موجود",
       "tableItem_one": "{{availableCount}} موجود در {{locationCount}} مکان",
       "tableItem_other": "{{availableCount}} موجود در {{locationCount}} مکان‌",
       "inventory": {
         "notManaged": "مدیریت نمی‌شود",
-        "manageItems": "مدیریت اقلام موجودی",
-        "notManagedDesc": "برای این متغیر موجودی مدیریت نمی‌شود. برای پیگیری موجودی، گزینه 'مدیریت موجودی' را فعال کنید.",
-        "manageKit": "مدیریت کیت موجودی",
         "navigateToItem": "برو به آیتم موجودی",
-        "actions": {
-          "inventoryItems": "برو به آیتم موجودی",
-          "inventoryKit": "نمایش اقلام موجودی"
-        },
         "inventoryKit": "کیت موجودی",
         "inventoryKitHint": "آیا این متغیر از چندین آیتم موجودی تشکیل شده است؟",
         "validation": {
           "itemId": "لطفاً یک آیتم موجودی انتخاب کنید.",
           "quantity": "مقدار مورد نیاز است. لطفاً یک عدد مثبت وارد کنید."
         },
-        "header": "موجودی و انبار",
         "editItemDetails": "ویرایش جزئیات آیتم",
         "manageInventoryLabel": "مدیریت موجودی",
         "manageInventoryHint": "هنگامی که فعال شود، زمانی که سفارشات و بازگشت‌ها ایجاد شوند مقدار موجودی برای شما به روز می‌شود.",
@@ -786,8 +824,21 @@
           "update": "آیتم موجودی با موفقیت به روز شد.",
           "updateLevel": "میزان موجودی با موفقیت به روز شد.",
           "itemsManageSuccess": "اقلام موجودی با موفقیت به روز شدند."
-        }
-      }
+        },
+        "manageItems": "مدیریت اقلام موجودی",
+        "notManagedDesc": "برای این متغیر موجودی مدیریت نمی‌شود. برای پیگیری موجودی، گزینه 'مدیریت موجودی' را فعال کنید.",
+        "manageKit": "مدیریت کیت موجودی",
+        "actions": {
+          "inventoryItems": "برو به آیتم موجودی",
+          "inventoryKit": "نمایش اقلام موجودی"
+        },
+        "header": "موجودی و انبار"
+      },
+      "validation": {
+        "titleRequired": "لطفاً یک عنوان وارد کنید",
+        "optionRequired": "لطفاً یک مقدار انتخاب کنید"
+      },
+      "pricesPagination": "1 - {{current}} از {{total}} قیمت‌"
     },
     "options": {
       "header": "گزینه‌ها",
@@ -801,8 +852,8 @@
       },
       "deleteWarning": "شما در حال حذف گزینه محصول: {{title}} هستید. این عمل غیرقابل بازگشت است.",
       "variations": {
-        "description": "ویژگی‌هایی که برای ایجاد تنوع‌های محصول استفاده می‌شوند.",
-        "label": "تنوع‌ها"
+        "label": "تنوع‌ها",
+        "description": "ویژگی‌هایی که برای ایجاد تنوع‌های محصول استفاده می‌شوند."
       }
     },
     "organization": {
@@ -812,15 +863,6 @@
         "toasts": {
           "success": "سازمان {{title}} با موفقیت به روز شد."
         }
-      }
-    },
-    "stock": {
-      "heading": "مدیریت میزان موجودی و مکان‌ها",
-      "description": "مقدار موجودی برای تمامی متغیرهای محصول را به روز کنید.",
-      "loading": "لطفاً منتظر بمانید، ممکن است کمی زمان ببرد...",
-      "tooltips": {
-        "alreadyManaged": "این آیتم موجودی تحت عنوان {{title}} در حال ویرایش است.",
-        "alreadyManagedWithSku": "این آیتم موجودی تحت عنوان {{title}} ({{sku}}) در حال ویرایش است."
       }
     },
     "toasts": {
@@ -834,58 +876,89 @@
         }
       }
     },
+    "bulkDelete": {
+      "title": "حذف محصولات",
+      "description": "در حال حذف {{count}} محصول از فهرست هستید. این عمل قابل بازگشت نیست.",
+      "success": "{{count}} محصول با موفقیت حذف شد.",
+      "error": "حذف محصولات ناموفق بود."
+    },
+    "edits": {
+      "panel": {
+        "title": "درخواست به‌روزرسانی محصول",
+        "deleteRequested": "حذف محصول در انتظار تأیید است.",
+        "cancelTitle": "لغو درخواست به‌روزرسانی",
+        "cancelDescription": "آیا مطمئن هستید که می‌خواهید این درخواست به‌روزرسانی محصول را لغو کنید؟ این عملیات قابل بازگشت نیست."
+      },
+      "toast": {
+        "canceledSuccessfully": "درخواست به‌روزرسانی محصول با موفقیت لغو شد."
+      }
+    },
+    "attributeVariations": "تنوع‌ها",
+    "attributeVariantsDescription": "ویژگی‌های استفاده‌شده برای تنوع‌ها",
+    "attributeProductInformation": "اطلاعات محصول",
+    "attributeProductInformationDescription": "ویژگی‌های استفاده‌شده برای مقاصد اطلاعاتی",
+    "attributeRequiredByMarketplace": "این ویژگی توسط بازار الزامی شده است.",
+    "attributeRequiredDeleteDisabledTooltip": "ویژگی‌های الزامی قابل حذف نیستند.",
+    "addAttribute": "افزودن ویژگی",
+    "deleteAttributeWarning": "آیا مطمئن هستید که می‌خواهید ویژگی «{{title}}» را حذف کنید؟ این عملیات قابل بازگشت نیست.",
     "attributesSection": {
       "removeWarning": "در حال حذف این ویژگی از محصول هستید. این عمل قابل بازگشت نیست."
     },
-    "bulkDelete": {
-      "description": "در حال حذف {{count}} محصول از فهرست هستید. این عمل قابل بازگشت نیست.",
-      "error": "حذف محصولات ناموفق بود.",
-      "success": "{{count}} محصول با موفقیت حذف شد.",
-      "title": "حذف محصولات"
-    },
-    "bulkEdit": {
-      "description": "چندین محصول را هم‌زمان ویرایش کنید.",
-      "noChanges": "تغییری برای ذخیره وجود ندارد.",
-      "success": "محصولات با موفقیت به‌روزرسانی شدند.",
-      "title": "ویرایش گروهی محصولات"
+    "editAttribute": "ویرایش ویژگی",
+    "editAttributeHint": "مقادیر انتخاب‌شده برای این ویژگی در محصول را به‌روزرسانی کنید.",
+    "variantMedia": {
+      "label": "رسانه تنوع",
+      "manageVariants": "مدیریت تنوع‌ها",
+      "addToMultipleVariants": "افزودن به چند تنوع",
+      "manageVariantsDescription": "مدیریت تنوع‌های مرتبط با تصویر",
+      "successToast": "تنوع‌های تصویر با موفقیت به‌روزرسانی شدند.",
+      "emptyState": {
+        "header": "هنوز رسانه‌ای نیست",
+        "description": "برای نمایش تنوع در فروشگاه خود به آن رسانه اضافه کنید.",
+        "action": "افزودن رسانه"
+      }
     },
     "columns": {
-      "collection": "مجموعه",
-      "created_at": "ایجاد شده",
-      "handle": "شناسه پیوند",
       "product_display": "محصول",
+      "variants_count": "تنوع‌ها",
       "sales_channels_display": "کانال‌های فروش",
+      "collection": "مجموعه",
       "status": "وضعیت",
       "thumbnail": "تصویر بندانگشتی",
       "title": "عنوان",
-      "updated_at": "به‌روزرسانی شده",
-      "variants_count": "تنوع‌ها"
+      "handle": "شناسه پیوند",
+      "created_at": "ایجاد شده",
+      "updated_at": "به‌روزرسانی شده"
     },
     "shippingProfile": {
-      "create": {
-        "errors": {
-          "required": "پروفایل ارسال الزامی است"
-        }
-      },
+      "header": "پیکربندی ارسال",
       "edit": {
         "header": "پیکربندی ارسال",
         "toasts": {
           "success": "پروفایل ارسال برای {{title}} با موفقیت به‌روزرسانی شد."
         }
       },
-      "header": "پیکربندی ارسال"
+      "create": {
+        "errors": {
+          "required": "پروفایل ارسال الزامی است"
+        }
+      }
     },
-    "variantMedia": {
-      "addToMultipleVariants": "افزودن به چند تنوع",
-      "emptyState": {
-        "action": "افزودن رسانه",
-        "description": "برای نمایش تنوع در فروشگاه خود به آن رسانه اضافه کنید.",
-        "header": "هنوز رسانه‌ای نیست"
-      },
-      "label": "رسانه تنوع",
-      "manageVariants": "مدیریت تنوع‌ها",
-      "manageVariantsDescription": "مدیریت تنوع‌های مرتبط با تصویر",
-      "successToast": "تنوع‌های تصویر با موفقیت به‌روزرسانی شدند."
+    "bulkEdit": {
+      "title": "ویرایش گروهی محصولات",
+      "description": "چندین محصول را هم‌زمان ویرایش کنید.",
+      "noChanges": "تغییری برای ذخیره وجود ندارد.",
+      "success": "محصولات با موفقیت به‌روزرسانی شدند."
+    },
+    "editPrices": "ویرایش قیمت‌ها",
+    "stock": {
+      "heading": "مدیریت میزان موجودی و مکان‌ها",
+      "description": "مقدار موجودی برای تمامی متغیرهای محصول را به روز کنید.",
+      "loading": "لطفاً منتظر بمانید، ممکن است کمی زمان ببرد...",
+      "tooltips": {
+        "alreadyManaged": "این آیتم موجودی تحت عنوان {{title}} در حال ویرایش است.",
+        "alreadyManagedWithSku": "این آیتم موجودی تحت عنوان {{title}} ({{sku}}) در حال ویرایش است."
+      }
     }
   },
   "collections": {
@@ -911,6 +984,23 @@
       "remove": {
         "successToast_one": "محصول با موفقیت از مجموعه حذف شد.",
         "successToast_other": "محصولات با موفقیت از مجموعه حذف شدند."
+      }
+    },
+    "requestSuccess": "درخواست مجموعه با موفقیت ثبت شد",
+    "media": {
+      "label": "رسانه‌ها",
+      "thumbnail": "تصویر کوچک",
+      "banner": "بنر",
+      "empty": {
+        "header": "هیچ رسانه‌ای هنوز اضافه نشده است",
+        "description": "رسانه‌های اضافه‌شده توسط اپراتور بازار در اینجا نمایش داده خواهند شد."
+      }
+    },
+    "icon": {
+      "label": "آیکون",
+      "empty": {
+        "header": "هنوز آیکونی وجود ندارد",
+        "description": "آیکونی که توسط اپراتور بازار اضافه شده است در اینجا نمایش داده خواهد شد."
       }
     }
   },
@@ -976,6 +1066,22 @@
       "new": {
         "label": "جدید"
       }
+    },
+    "media": {
+      "label": "رسانه‌ها",
+      "thumbnail": "تصویر کوچک",
+      "banner": "بنر",
+      "empty": {
+        "header": "هیچ رسانه‌ای هنوز اضافه نشده است",
+        "description": "رسانه‌های اضافه‌شده توسط اپراتور بازار در اینجا نمایش داده خواهند شد."
+      }
+    },
+    "icon": {
+      "label": "آیکون",
+      "empty": {
+        "header": "هنوز آیکونی وجود ندارد",
+        "description": "آیکونی که توسط اپراتور بازار اضافه شده است در اینجا نمایش داده خواهد شد."
+      }
     }
   },
   "inventory": {
@@ -996,7 +1102,8 @@
       "attributes": "ویژگی‌ها",
       "requiresShipping": "آیا نیاز به حمل و نقل دارد؟",
       "requiresShippingHint": "آیا این آیتم موجودی نیاز به حمل و نقل دارد؟",
-      "successToast": "آیتم موجودی با موفقیت ایجاد شد."
+      "successToast": "آیتم موجودی با موفقیت ایجاد شد.",
+      "descriptionPlaceholder": "توضیحات مورد"
     },
     "reservation": {
       "header": "رزرو {{itemName}}",
@@ -1041,9 +1148,9 @@
       "disabledToggleTooltip": "غیرفعال کردن امکان‌پذیر نیست: مقدار ورودی و/یا رزرو را قبل از غیرفعال کردن پاک کنید.",
       "successToast": "سطح موجودی با موفقیت به‌روزرسانی شد."
     },
-    "levelDeleted": "سطح موجودی با موفقیت حذف شد.",
     "manageLocationQuantity": "مدیریت موجودی مکان",
-    "quantityAcrossLocations": "{{quantity}} در {{locations}} مکان"
+    "quantityAcrossLocations": "{{quantity}} در {{locations}} مکان",
+    "levelDeleted": "سطح موجودی با موفقیت حذف شد."
   },
   "giftCards": {
     "domain": "کارت‌های هدیه",
@@ -1079,20 +1186,26 @@
       "removeMany": "آیا مطمئنید که می‌خواهید مشتری را از گروه‌های زیر حذف کنید: {{groups}}؟",
       "alreadyAddedTooltip": "مشتری از قبل در این گروه مشتریان است.",
       "list": {
-        "noRecordsMessage": "این مشتری به هیچ گروهی تعلق ندارد."
+        "noRecordsMessage": "این مشتری به هیچ گروهی تعلق ندارد.",
+        "emptyTitle": "گروه مشتری وجود ندارد"
       },
       "add": {
         "success": "مشتری به گروه‌های: {{groups}} اضافه شد.",
         "list": {
           "noRecordsMessage": "لطفاً ابتدا یک گروه مشتری ایجاد کنید."
-        }
+        },
+        "successOne": "مشتری با موفقیت به گروه {{groups}} اضافه شد.",
+        "successMany": "مشتری با موفقیت به {{groups}} گروه اضافه شد."
       },
       "removed": {
         "success": "مشتری از گروه‌های: {{groups}} حذف شد.",
         "list": {
           "noRecordsMessage": "لطفاً ابتدا یک گروه مشتری ایجاد کنید."
-        }
-      }
+        },
+        "successOne": "مشتری با موفقیت از گروه {{groups}} حذف شد.",
+        "successMany": "مشتری با موفقیت از {{groups}} گروه حذف شد."
+      },
+      "removeTitle": "حذف مشتری"
     },
     "edit": {
       "header": "ویرایش مشتری",
@@ -1113,25 +1226,27 @@
     "guest": "مهمان",
     "hasAccount": "حساب دارد",
     "addresses": {
+      "title": "آدرس‌ها",
+      "emptyTitle": "هنوز آدرسی وجود ندارد",
+      "emptyMessage": "این مشتری هیچ آدرسی ندارد",
+      "fields": {
+        "addressName": "نام آدرس",
+        "address1": "آدرس ۱",
+        "address2": "آدرس ۲",
+        "city": "شهر",
+        "province": "استان",
+        "postalCode": "کد پستی",
+        "country": "کشور",
+        "phone": "تلفن",
+        "company": "شرکت",
+        "countryCode": "کد کشور",
+        "provinceCode": "کد استان"
+      },
       "create": {
         "header": "ایجاد آدرس",
         "hint": "یک آدرس جدید برای مشتری ایجاد کنید.",
         "successToast": "آدرس با موفقیت ایجاد شد."
-      },
-      "fields": {
-        "address1": "آدرس ۱",
-        "address2": "آدرس ۲",
-        "addressName": "نام آدرس",
-        "city": "شهر",
-        "company": "شرکت",
-        "country": "کشور",
-        "countryCode": "کد کشور",
-        "phone": "تلفن",
-        "postalCode": "کد پستی",
-        "province": "استان",
-        "provinceCode": "کد استان"
-      },
-      "title": "آدرس‌ها"
+      }
     }
   },
   "customerGroups": {
@@ -1150,7 +1265,8 @@
     "create": {
       "header": "ایجاد گروه مشتری",
       "hint": "یک گروه مشتری جدید ایجاد کنید تا مشتریان خود را بخش‌بندی کنید.",
-      "successToast": "گروه مشتری {{name}} با موفقیت ایجاد شد."
+      "successToast": "گروه مشتری {{name}} با موفقیت ایجاد شد.",
+      "alreadyExistsToast": "گروه مشتری با نام {{name}} قبلاً وجود دارد."
     },
     "edit": {
       "header": "ویرایش گروه مشتری",
@@ -1174,11 +1290,17 @@
         "title_one": "حذف مشتری",
         "title_other": "حذف مشتریان",
         "description_one": "شما در حال حذف {{count}} مشتری از گروه مشتریان هستید. این عمل قابل بازگشت نیست.",
-        "description_other": "شما در حال حذف {{count}} مشتری از گروه مشتریان هستید. این عمل قابل بازگشت نیست."
+        "description_other": "شما در حال حذف {{count}} مشتری از گروه مشتریان هستید. این عمل قابل بازگشت نیست.",
+        "successToast_one": "مشتری با موفقیت از گروه حذف شد.",
+        "successToast_other": "مشتریان با موفقیت از گروه حذف شدند."
       },
       "list": {
-        "noRecordsMessage": "این گروه مشتری ندارد."
+        "noRecordsMessage": "این گروه مشتری ندارد.",
+        "noRecordsTitle": "هنوز مشتری‌ای وجود ندارد"
       }
+    },
+    "validation": {
+      "nameRequired": "لطفاً یک نام وارد کنید"
     }
   },
   "orders": {
@@ -1245,7 +1367,8 @@
         "partiallyCaptured": "بخشی از مبلغ پرداخت شده",
         "refunded": "مسترد شده",
         "canceled": "لغو شده",
-        "requiresAction": "نیاز به اقدام"
+        "requiresAction": "نیاز به اقدام",
+        "pending": "در انتظار"
       },
       "capturePayment": "مبلغ {{amount}} از مشتری دریافت خواهد شد.",
       "capturePaymentSuccess": "مبلغ {{amount}} با موفقیت دریافت شد",
@@ -1259,7 +1382,12 @@
       "selectPaymentToRefund": "پرداخت را برای استرداد انتخاب کنید",
       "totalPending": "مجموع در انتظار",
       "totalRefunded": "بازپرداخت‌شده",
-      "totalStoreCreditRefunds": "مجموع بازپرداخت اعتبار فروشگاه"
+      "totalStoreCreditRefunds": "مجموع بازپرداخت اعتبار فروشگاه",
+      "enterAmount": "لطفاً یک مبلغ وارد کنید",
+      "copyPaymentLink": "لینک پرداخت برای {{amount}} را کپی کنید",
+      "copyLinkSuccess": "پیوند پرداخت در کلیپ‌بورد کپی شد",
+      "copyLinkError": "کپی پیوند پرداخت ناموفق بود",
+      "outstandingAmount": "مبلغ باقی‌مانده"
     },
     "edits": {
       "title": "ویرایش سفارش",
@@ -1285,11 +1413,15 @@
       },
       "toast": {
         "canceledSuccessfully": "ویرایش سفارش لغو شد",
-        "confirmedSuccessfully": "ویرایش سفارش تأیید شد"
+        "confirmedSuccessfully": "ویرایش سفارش تأیید شد",
+        "requestSent": "درخواست ویرایش به مشتری ارسال شد"
       },
       "validation": {
         "quantityLowerThanFulfillment": "نمی‌توان مقدار را کمتر از یا برابر با مقدار انجام‌شده تنظیم کرد"
-      }
+      },
+      "sendNotification": "ارسال اطلاع‌رسانی",
+      "sendNotificationHint": "مشتری را از ویرایش مطلع کنید.",
+      "removeBlockedFulfilledOrReturned": "امکان حذف اقلامی که تحویل داده شده یا بازگشت داده شده‌اند وجود ندارد."
     },
     "edit": {
       "email": {
@@ -1374,7 +1506,16 @@
         "title": "مرجوعی آغاز شد",
         "description": "یک درخواست مرجوعی باز برای تکمیل وجود دارد"
       },
-      "estDifference": "تفاوت تخمینی"
+      "policyHint": "بازگشت‌ها تا {{days}} روز پس از تحویل پذیرفته می‌شوند.",
+      "outOfPolicy": "بازگشت‌ها تا {{days}} روز پس از تحویل پذیرفته می‌شوند.",
+      "restockPreview": "دریافت {{quantity}} × {{offerSku}} ← +{{delta}} به {{inventoryItem}} در {{location}}",
+      "noItemsSelected": "برای بازگشت، حداقل یک مورد انتخاب کنید.",
+      "estDifference": "تفاوت تخمینی",
+      "emptyState": {
+        "title": "هنوز رکوردی وجود ندارد",
+        "description": "برای ایجاد بازگشت، حداقل یک مورد از سفارش اضافه کنید"
+      },
+      "emptyItemsError": "لطفاً حداقل یک مورد از سفارش اضافه کنید"
     },
     "claims": {
       "create": "ایجاد ادعا",
@@ -1407,7 +1548,35 @@
       "panel": {
         "title": "ادعا آغاز شد",
         "description": "یک درخواست ادعای باز برای تکمیل وجود دارد"
-      }
+      },
+      "title": "ایجاد ادعا",
+      "description": "نوع ادعا را انتخاب کرده و مواردی که مشتری می‌خواهد ادعا کند را انتخاب کنید.",
+      "policyHint": "ادعاها تا {{days}} روز پس از تحویل پذیرفته می‌شوند.",
+      "outOfPolicy": "ادعاها تا {{days}} روز پس از تحویل پذیرفته می‌شوند.",
+      "location": "موقعیت",
+      "locationHint": "مکان موجودی که اقلام بازگشتی در آن دریافت خواهند شد.",
+      "inboundShipping": "ارسال بازگشتی (اختیاری)",
+      "inboundShippingHint": "روش ارسالی که مشتری برای بازگشت اقلام استفاده خواهد کرد.",
+      "typeLabel": "نوع ادعا",
+      "typeRefund": "بازپرداخت — بدون ارسال جایگزین",
+      "typeReplace": "جایگزینی — ارسال اقلام جایگزین",
+      "typeLockedAfterStart": "پس از شروع پیش‌نویس، نوع ادعا قفل می‌شود. برای تغییر، لغو کرده و دوباره باز کنید.",
+      "claimItems": "اقلام برای ادعا",
+      "noClaimableItems": "هیچ مورد قابل ادعایی در این سفارش وجود ندارد.",
+      "outboundItems": "اقلام برای ارسال",
+      "noOutboundItems": "هنوز موردی جایگزین اضافه نشده است.",
+      "addOutboundItems": "اضافه کردن آیتم‌",
+      "addOutboundItemsDescription": "تنوع‌هایی را برای ارسال به‌عنوان جایگزین اقلام ادعاشده انتخاب کنید.",
+      "remainingQty": "{{count}} قابل ادعا",
+      "reasonPlaceholder": "یک دلیل انتخاب کنید",
+      "itemNotePlaceholder": "یادداشتی اضافه کنید (اختیاری)",
+      "reasons": {
+        "missing_item": "مورد گمشده",
+        "wrong_item": "مورد اشتباه",
+        "production_failure": "خرابی تولید",
+        "other": "سایر"
+      },
+      "noteHint": "یادداشتی داخلی برای این ادعا اضافه کنید (فقط برای تیم شما قابل مشاهده است)."
     },
     "exchanges": {
       "create": "ایجاد تعویض",
@@ -1441,6 +1610,27 @@
         "title": "تعویض آغاز شد",
         "description": "یک درخواست تعویض باز برای تکمیل وجود دارد"
       },
+      "title": "ایجاد تعویض",
+      "description": "اقلام قابل بازگشت را انتخاب کرده و برای ایجاد درخواست تعویض تأیید کنید.",
+      "policyHint": "تعویض‌ها تا {{days}} روز پس از تحویل پذیرفته می‌شوند.",
+      "outOfPolicy": "تعویض‌ها تا {{days}} روز پس از تحویل پذیرفته می‌شوند.",
+      "inboundItems": "اقلام برای بازگشت",
+      "noReturnableItems": "هیچ مورد قابل بازگشتی در این سفارش وجود ندارد.",
+      "outboundItems": "اقلام برای ارسال",
+      "noOutboundItems": "هنوز موردی جایگزین اضافه نشده است.",
+      "addOutboundItems": "اضافه کردن آیتم‌",
+      "addOutboundItemsDescription": "تنوع‌هایی را برای ارسال به‌عنوان جایگزین اقلام بازگشتی انتخاب کنید.",
+      "location": "مکان بازگشت",
+      "locationHint": "مکانی که می‌خواهید اقلام بازگشتی به آن ارسال شوند را انتخاب کنید.",
+      "locationPlaceholder": "یک مکان انتخاب کنید",
+      "inboundShipping": "ارسال بازگشتی (اختیاری)",
+      "inboundShippingHint": "روشی که برای محموله ورودی استفاده می‌شود را انتخاب کنید.",
+      "inboundShippingPlaceholder": "یک گزینه ارسال انتخاب کنید",
+      "inboundShippingLockedPlaceholder": "ابتدا یک مکان انتخاب کنید",
+      "reasonPlaceholder": "یک دلیل انتخاب کنید",
+      "itemNotePlaceholder": "یادداشتی اضافه کنید (اختیاری)",
+      "remainingQty": "{{count}} قابل بازگشت",
+      "noteHint": "یادداشتی داخلی برای این تعویض اضافه کنید (فقط برای تیم شما قابل مشاهده است).",
       "carryOverPromotion": "انتقال تخفیف‌ها",
       "carryOverPromotionHint": "تخفیف‌های سفارش را به اقلام تعویض اعمال کنید",
       "carryOverPromotionTooltip": "فقط تخفیف‌های نوع ثابت با تخصیص EACH و تخفیف‌های درصدی با تخصیص EACH یا ACROSS قابل انتقال به اقلام تعویض خروجی هستند."
@@ -1463,7 +1653,8 @@
         "error": "تخصیص اقلام زیر ناموفق بود: {{items}}"
       },
       "error": {
-        "quantityNotAllocated": "آیتم‌های تخصیص‌ نشده وجود دارند."
+        "quantityNotAllocated": "آیتم‌های تخصیص‌ نشده وجود دارند.",
+        "noItemsSelected": "برای تخصیص، حداقل یک مورد انتخاب کنید."
       }
     },
     "shipment": {
@@ -1473,9 +1664,9 @@
       "sendNotification": "ارسال اطلاع‌رسانی",
       "sendNotificationHint": "به مشتری درباره این ارسال اطلاع دهید.",
       "toastCreated": "ارسال با موفقیت ایجاد شد.",
-      "addTrackingUrl": "افزودن لینک رهگیری",
-      "labelUrl": "لینک برچسب",
       "trackingUrl": "لینک رهگیری",
+      "labelUrl": "لینک برچسب",
+      "addTrackingUrl": "افزودن لینک رهگیری",
       "trackingUrlPlaceholder": "https://www.dhl.com/shipment/1234567890"
     },
     "fulfillment": {
@@ -1502,8 +1693,9 @@
         "wrongQuantity": "فقط یک آیتم برای پردازش موجود است",
         "wrongQuantity_other": "تعداد باید بین 1 و {{number}} باشد",
         "noItems": "هیچ آیتمی برای پردازش وجود ندارد.",
-        "noLocation": "مکان الزامی است",
-        "noShippingOption": "گزینه ارسال الزامی است"
+        "exceedsReservedQuantity": "تعدادی که می‌خواهید تحویل دهید بیشتر از تعداد رزرو‌شده برای اقلام است. لطفاً تحویل خود را بررسی کنید.",
+        "noShippingOption": "گزینه ارسال الزامی است",
+        "noLocation": "مکان الزامی است"
       },
       "status": {
         "notFulfilled": "پردازش نشده",
@@ -1517,9 +1709,9 @@
         "returned": "مرجوع شده",
         "canceled": "لغو شده",
         "requiresAction": "نیاز به اقدام",
-        "awaitingDelivery": "در انتظار تحویل",
         "awaitingPickup": "در انتظار دریافت حضوری",
-        "awaitingShipping": "در انتظار ارسال"
+        "awaitingShipping": "در انتظار ارسال",
+        "awaitingDelivery": "در انتظار تحویل"
       },
       "toast": {
         "created": "پردازش با موفقیت ایجاد شد",
@@ -1533,6 +1725,10 @@
       "itemsLabel": "آیتم‌ها",
       "differentOptionSelected": "گزینه ارسال انتخاب‌شده با گزینه‌ای که مشتری انتخاب کرده متفاوت است.",
       "disabledItemTooltip": "گزینه ارسالی که انتخاب کرده‌اید اجازه پردازش این قلم را نمی‌دهد",
+      "noInventoryLevel": {
+        "title": "میزان موجودی وجود ندارد",
+        "description": "مکان انتخاب‌شده سطح موجودی برای اقلام انتخاب‌شده ندارد. برای ادامه تحویل، یک سطح موجودی برای مکان انتخاب‌شده ایجاد کنید."
+      },
       "markAsPickedUp": "علامت‌گذاری به‌عنوان تحویل‌گرفته‌شده"
     },
     "refund": {
@@ -1635,41 +1831,44 @@
       "refundableAmount": "مبلغ قابل بازپرداخت",
       "returnableQuantity": "تعداد قابل مرجوع"
     },
-    "balanceSettlement": {
-      "settlementType": "نوع تسویه",
-      "settlementTypes": {
-        "creditLine": "اعتبار فروشگاه",
-        "creditLineDescription": "بازگرداندن مبلغ به‌صورت اعتبار فروشگاه",
-        "paymentMethod": "روش پرداخت",
-        "paymentMethodDescription": "بازگرداندن مبلغ به روش پرداخت"
-      },
-      "title": "تسویه مانده"
-    },
+    "giftCardsStoreCreditLines": "کارت‌های هدیه و خطوط اعتبار",
     "creditLines": {
+      "title": "خطوط اعتبار",
+      "total": "مجموع همه خطوط اعتبار",
+      "creditOrDebit": "بستانکار / بدهکار",
       "createCreditLine": "ایجاد خط اعتبار",
-      "createCreditLineDescription": "ایجاد خط اعتبار برای مبلغ {{amount}}",
-      "createCreditLineError": "خطا در ایجاد خط اعتبار",
       "createCreditLineSuccess": "خط اعتبار با موفقیت ایجاد شد",
+      "createCreditLineError": "خطا در ایجاد خط اعتبار",
+      "createCreditLineDescription": "ایجاد خط اعتبار برای مبلغ {{amount}}",
+      "operation": "عملیات",
       "credit": "بستانکار",
       "creditDescription": "مبلغی مثبت به سفارش اضافه می‌کند",
-      "creditOrDebit": "بستانکار / بدهکار",
       "debit": "بدهکار",
-      "debitDescription": "مبلغی منفی از سفارش کم می‌کند",
-      "operation": "عملیات",
-      "title": "خطوط اعتبار",
-      "total": "مجموع همه خطوط اعتبار"
+      "debitDescription": "مبلغی منفی از سفارش کم می‌کند"
     },
-    "giftCardsStoreCreditLines": "کارت‌های هدیه و خطوط اعتبار",
+    "balanceSettlement": {
+      "title": "تسویه مانده",
+      "settlementType": "نوع تسویه",
+      "settlementTypes": {
+        "paymentMethod": "روش پرداخت",
+        "paymentMethodDescription": "بازگرداندن مبلغ به روش پرداخت",
+        "creditLine": "اعتبار فروشگاه",
+        "creditLineDescription": "بازگرداندن مبلغ به‌صورت اعتبار فروشگاه"
+      }
+    },
+    "actions": {
+      "cancelDisabledFulfilled": "امکان لغو سفارشی که دارای اقلام تحویل‌شده است وجود ندارد."
+    },
     "export": {
-      "description": "فهرست سفارش‌ها را به فایل CSV خروجی بگیرید.",
-      "filters": {
-        "description": "فیلترهای زیر روی خروجی اعمال می‌شوند.",
-        "title": "فیلترها"
-      },
       "header": "خروجی فهرست سفارش‌ها",
+      "description": "فهرست سفارش‌ها را به فایل CSV خروجی بگیرید.",
       "success": {
-        "description": "پس از آماده شدن خروجی به شما اطلاع داده می‌شود.",
-        "title": "خروجی‌گیری آغاز شد"
+        "title": "خروجی‌گیری آغاز شد",
+        "description": "پس از آماده شدن خروجی به شما اطلاع داده می‌شود."
+      },
+      "filters": {
+        "title": "فیلترها",
+        "description": "فیلترهای زیر روی خروجی اعمال می‌شوند."
       }
     }
   },
@@ -1716,12 +1915,12 @@
       "invalidEmail": "ایمیل باید یک آدرس ایمیل معتبر باشد."
     },
     "list": {
+      "noRecordsMessage": "پیش‌سفارشی یافت نشد",
       "description": "برای شروع، یک پیش‌سفارش جدید ایجاد کنید.",
       "filtered": {
-        "description": "هیچ پیش‌سفارشی با معیارهای فیلتر شما مطابقت ندارد.",
-        "heading": "نتیجه‌ای یافت نشد"
-      },
-      "noRecordsMessage": "پیش‌سفارشی یافت نشد"
+        "heading": "نتیجه‌ای یافت نشد",
+        "description": "هیچ پیش‌سفارشی با معیارهای فیلتر شما مطابقت ندارد."
+      }
     }
   },
   "stockLocations": {
@@ -1779,8 +1978,8 @@
         "description": "محصولات را بر اساس نیازهای حمل و نقل گروه‌بندی کنید"
       },
       "shippingOptionTypes": {
-        "description": "گروه‌بندی گزینه‌های ارسال بر اساس نوع",
-        "label": "انواع گزینه ارسال"
+        "label": "انواع گزینه ارسال",
+        "description": "گروه‌بندی گزینه‌های ارسال بر اساس نوع"
       }
     },
     "salesChannels": {
@@ -1963,8 +2162,8 @@
       "errors": {
         "rateIsRequired": "نرخ مالیات هنگام ایجاد یک نرخ مالیاتی پیش‌فرض ضروری است.",
         "nameIsRequired": "نام هنگام ایجاد یک نرخ مالیاتی پیش‌فرض ضروری است.",
-        "missingCountry": "هنگام ایجاد منطقه مالیاتی، کشور الزامی است.",
-        "missingProvider": "هنگام ایجاد منطقه مالیاتی، ارائه‌دهنده الزامی است."
+        "missingProvider": "هنگام ایجاد منطقه مالیاتی، ارائه‌دهنده الزامی است.",
+        "missingCountry": "هنگام ایجاد منطقه مالیاتی، کشور الزامی است."
       },
       "successToast": "منطقه مالیاتی با موفقیت ایجاد شد."
     },
@@ -2199,6 +2398,12 @@
     }
   },
   "promotions": {
+    "templates": {
+      "percentageOffProduct": {
+        "title": "تخفیف درصدی روی محصول",
+        "description": "تخفیف درصدی روی محصولات انتخاب‌شده"
+      }
+    },
     "domain": "تبلیغات",
     "sections": {
       "details": "جزئیات تبلیغات"
@@ -2228,17 +2433,17 @@
         "target-rules": {
           "title": "این تبلیغ روی چه آیتم‌هایی اعمال می‌شود؟",
           "description": "تبلیغ روی آیتم‌هایی اعمال می‌شود که با شرایط زیر مطابقت داشته باشند.",
-          "items": {
-            "description": "تخفیف روی اقلامی که با شرایط زیر مطابقت دارند اعمال می‌شود.",
-            "title": "تخفیف روی چه اقلامی اعمال شود؟"
-          },
           "order": {
-            "description": "تخفیف روی اقلامی که با شرایط زیر مطابقت دارند اعمال می‌شود.",
-            "title": "تخفیف روی چه اقلامی اعمال شود؟"
+            "title": "تخفیف روی چه اقلامی اعمال شود؟",
+            "description": "تخفیف روی اقلامی که با شرایط زیر مطابقت دارند اعمال می‌شود."
           },
           "shipping_methods": {
-            "description": "تخفیف روی روش‌های ارسالی که با شرایط زیر مطابقت دارند اعمال می‌شود.",
-            "title": "تخفیف روی چه روش‌های ارسالی اعمال شود؟"
+            "title": "تخفیف روی چه روش‌های ارسالی اعمال شود؟",
+            "description": "تخفیف روی روش‌های ارسالی که با شرایط زیر مطابقت دارند اعمال می‌شود."
+          },
+          "items": {
+            "title": "تخفیف روی چه اقلامی اعمال شود؟",
+            "description": "تخفیف روی اقلامی که با شرایط زیر مطابقت دارند اعمال می‌شود."
           }
         },
         "buy-rules": {
@@ -2248,8 +2453,8 @@
       },
       "allocationTooltip": "گزینه «هر» محدودیت تعداد را برای هر قلم اعمال می‌کند، در حالی که «یک‌بار» محدودیت را برای کل سبد خرید اعمال می‌کند",
       "taxInclusive": "شامل مالیات",
-      "usage": "استفاده",
-      "usageLimit": "سقف استفاده"
+      "usageLimit": "سقف استفاده",
+      "usage": "استفاده"
     },
     "tooltips": {
       "campaignType": "برای تنظیم بودجه، کد ارز باید در تبلیغ انتخاب شود."
@@ -2359,8 +2564,8 @@
           "description": "مقدار را به صورت کلی بر روی همه آیتم‌ها اعمال می‌کند"
         },
         "once": {
-          "description": "مقدار را به تعداد محدودی از اقلام اعمال می‌کند",
-          "title": "یک‌بار"
+          "title": "یک‌بار",
+          "description": "مقدار را به تعداد محدودی از اقلام اعمال می‌کند"
         }
       },
       "code": {
@@ -2381,13 +2586,14 @@
           "description": "درصدی که باید از مقدار تخفیف داده شود. مثلاً 8%"
         }
       },
-      "limit": {
-        "description": "حداکثر دفعاتی که این تخفیف می‌تواند در همه سفارش‌ها استفاده شود. برای استفاده نامحدود خالی بگذارید.",
-        "title": "سقف استفاده"
-      },
+      "selectOperator": "انتخاب عملگر",
       "taxInclusive": {
-        "description": "برای اعمال تخفیف پس از مالیات این فیلد را فعال کنید",
-        "title": "آیا تخفیف شامل مالیات است؟"
+        "title": "آیا تخفیف شامل مالیات است؟",
+        "description": "برای اعمال تخفیف پس از مالیات این فیلد را فعال کنید"
+      },
+      "limit": {
+        "title": "سقف استفاده",
+        "description": "حداکثر دفعاتی که این تخفیف می‌تواند در همه سفارش‌ها استفاده شود. برای استفاده نامحدود خالی بگذارید."
       }
     },
     "deleteWarning": "شما در حال حذف تبلیغ {{code}} هستید. این عمل قابل بازگشت نیست.",
@@ -2398,6 +2604,11 @@
       "list": {
         "noRecordsMessage": "یک شرط اضافه کنید تا محدودیت‌هایی برای اعمال تبلیغ روی آیتم‌ها تعیین کنید."
       }
+    },
+    "campaignSection": {
+      "noRecordsTitle": "بخشی از کمپین نیست",
+      "noRecordsMessage": "این تخفیف را به یک کمپین موجود اضافه کنید",
+      "addToCampaign": "افزودن به کمپین"
     }
   },
   "campaigns": {
@@ -2473,18 +2684,18 @@
           "description": "محدودیتی روی تعداد دفعاتی که تبلیغ می‌تواند استفاده شود تعیین کنید."
         },
         "useByAttribute": {
-          "description": "محدودیتی برای تعداد دفعات استفاده از تخفیف بر اساس یک مقدار ویژگی مشخص تعیین کنید.",
           "title": "استفاده بر اساس ویژگی (شناسه مشتری، ایمیل و غیره)",
           "titleCustomerId": "استفاده به ازای هر مشتری",
-          "titleEmail": "استفاده به ازای هر ایمیل"
+          "titleEmail": "استفاده به ازای هر ایمیل",
+          "description": "محدودیتی برای تعداد دفعات استفاده از تخفیف بر اساس یک مقدار ویژگی مشخص تعیین کنید."
         }
       },
       "edit": {
         "header": "ویرایش بودجه کمپین"
       },
       "attribute": {
-        "customer_email": "ایمیل",
-        "customer_id": "مشتری"
+        "customer_id": "مشتری",
+        "customer_email": "ایمیل"
       }
     },
     "promotions": {
@@ -2557,10 +2768,17 @@
         "successToast_other": "قیمت‌های {{count}} محصول با موفقیت حذف شد."
       },
       "add": {
-        "successToast": "قیمت‌ها با موفقیت به لیست قیمت اضافه شدند."
+        "successToast": "قیمت‌ها با موفقیت به لیست قیمت اضافه شدند.",
+        "atLeastOnePrice": "حداقل یک قیمت باید اضافه شود.",
+        "alreadyInPriceList": "این محصول قبلاً در لیست قیمت وجود دارد",
+        "noVariants": "این محصول تنوعی ندارد",
+        "title": "افزودن محصولات به لیست قیمت",
+        "description": "محصولات را اضافه کرده و قیمت‌ها را برای لیست قیمت تنظیم کنید"
       },
       "edit": {
-        "successToast": "قیمت‌ها با موفقیت به‌روزرسانی شدند."
+        "successToast": "قیمت‌ها با موفقیت به‌روزرسانی شدند.",
+        "title": "ویرایش قیمت‌ها برای {{title}}",
+        "description": "قیمت‌های محصولات در لیست قیمت را به‌روزرسانی کنید"
       }
     },
     "fields": {
@@ -2650,10 +2868,10 @@
       "admin": "ادمین",
       "developer": "توسعه‌دهنده",
       "member": "عضو",
-      "accounting": "حسابداری",
       "administration": "مدیریت",
       "inventoryManagement": "مدیریت موجودی",
       "orderManagement": "مدیریت سفارش‌ها",
+      "accounting": "حسابداری",
       "support": "پشتیبانی"
     },
     "list": {
@@ -2669,38 +2887,16 @@
     "deleteUserWarning": "شما در حال حذف کاربر {{name}} هستید. این عمل قابل بازگشت نیست.",
     "deleteUserSuccess": "کاربر {{name}} با موفقیت حذف شد",
     "invite": "دعوت",
+    "selectRole": "انتخاب نقش",
     "inviteForm": {
       "validation": {
         "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
         "roleRequired": "لطفاً یک نقش انتخاب کنید",
         "phoneInvalid": "یک شماره موبایل معتبر وارد کنید (۰۹ و ۱۱ رقم)"
       }
-    },
-    "selectRole": "انتخاب نقش"
+    }
   },
   "store": {
-    "phoneVerification": {
-      "verified": "تأیید شده",
-      "unverified": "تأیید نشده",
-      "verify": "تأیید شماره",
-      "title": "تأیید شماره فروشگاه",
-      "description": "کد تأیید به شماره {{phone}} ارسال شد. آن را وارد کنید.",
-      "codeLabel": "کد تأیید",
-      "submit": "تأیید",
-      "resend": "ارسال مجدد کد",
-      "resendIn": "ارسال مجدد تا {{seconds}} ثانیه",
-      "toast": {
-        "sent": "کد تأیید ارسال شد",
-        "verified": "شماره فروشگاه با موفقیت تأیید شد"
-      },
-      "errors": {
-        "alreadyRegistered": "این شماره قبلاً ثبت شده است",
-        "invalidCode": "کد تأیید نامعتبر است",
-        "phoneInvalid": "این شماره نامعتبر است (باید با ۰۹ شروع شود و ۱۱ رقم باشد)",
-        "notSet": "ابتدا شماره فروشگاه را وارد و ذخیره کنید",
-        "generic": "خطایی رخ داد. دوباره تلاش کنید"
-      }
-    },
     "domain": "فروشگاه",
     "manageYourStoresDetails": "جزئیات فروشگاه خود را مدیریت کنید",
     "editStore": "ویرایش فروشگاه",
@@ -2718,46 +2914,74 @@
     "currencyAlreadyAdded": "این ارز قبلاً به فروشگاه شما اضافه شده است.",
     "edit": {
       "header": "ویرایش فروشگاه",
-      "websiteHint": "باید شامل پروتکل باشد (مثلاً https://)"
+      "websiteHint": "باید شامل پروتکل باشد (مثلاً https://)",
+      "mediaHeading": "رسانه‌ها",
+      "mediaTipLabel": "نکته:",
+      "mediaTipBody": "این رسانه در فروشگاه آنلاین قابل مشاهده خواهد بود.",
+      "uploadLogoLabel": "بارگذاری لوگو",
+      "uploadLogoHint": "لوگوی خود را اینجا بکشید و رها کنید یا برای بارگذاری کلیک کنید.",
+      "uploadBannerLabel": "بارگذاری بنر",
+      "uploadBannerHint": "بنر خود را اینجا بکشید و رها کنید یا برای بارگذاری کلیک کنید."
     },
     "toast": {
       "update": "فروشگاه با موفقیت به‌روزرسانی شد",
       "currenciesUpdated": "ارزها با موفقیت به‌روزرسانی شدند",
       "currenciesRemoved": "ارزها با موفقیت از فروشگاه حذف شدند",
       "updatedTaxInclusivitySuccessfully": "قیمت‌گذاری شامل مالیات با موفقیت به‌روزرسانی شد",
-      "localesRemoved": "زبان‌ها با موفقیت از فروشگاه حذف شدند",
-      "localesUpdated": "زبان‌ها با موفقیت به‌روزرسانی شدند"
-    },
-    "banner": "بنر",
-    "company": "شرکت",
-    "defaultLocale": "زبان پیش‌فرض",
-    "defaultLocation": "مکان پیش‌فرض",
-    "defaultSalesChannel": "کانال فروش پیش‌فرض",
-    "editCompany": {
-      "header": "ویرایش شرکت"
+      "localesUpdated": "زبان‌ها با موفقیت به‌روزرسانی شدند",
+      "localesRemoved": "زبان‌ها با موفقیت از فروشگاه حذف شدند"
     },
     "handleTooltip": "شناسه پیوند به آدرس URL فروشگاه شما تبدیل می‌شود. برای ساخت خودکار از روی نام، خالی بگذارید.",
-    "localeAlreadyAdded": "این زبان قبلاً به فروشگاه شما اضافه شده است.",
-    "locales": "زبان‌ها",
-    "logo": "لوگو",
-    "manageCompanyDetails": "اطلاعات شرکت خود را مدیریت کنید",
-    "profileCompletion": {
-      "steps": {
-        "address": "افزودن آدرس",
-        "companyDetails": "افزودن اطلاعات شرکت",
-        "paymentDetails": "افزودن اطلاعات پرداخت",
-        "storeDetails": "افزودن اطلاعات فروشگاه"
-      },
-      "title": "تکمیل پروفایل فروشگاه"
-    },
-    "removeLocaleWarning_one": "در حال حذف {{count}} زبان از فروشگاه خود هستید. هر ترجمه‌ای که از این زبان استفاده کند حذف خواهد شد.",
-    "removeLocaleWarning_other": "در حال حذف {{count}} زبان از فروشگاه خود هستید. هر ترجمه‌ای که از این زبان‌ها استفاده کند حذف خواهد شد.",
     "validation": {
-      "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
       "nameRequired": "لطفاً یک نام وارد کنید",
+      "emailRequired": "لطفاً یک ایمیل وارد کنید",
+      "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
       "nameTooLong": "نام باید حداکثر ۱۰۰ کاراکتر باشد",
       "phoneRequired": "لطفاً شماره موبایل را وارد کنید",
       "handleInvalid": "فقط حروف کوچک انگلیسی، اعداد و خط‌تیره (مثل my-store)"
+    },
+    "profileCompletion": {
+      "title": "تکمیل پروفایل فروشگاه",
+      "steps": {
+        "storeDetails": "افزودن اطلاعات فروشگاه",
+        "address": "افزودن آدرس",
+        "companyDetails": "افزودن اطلاعات شرکت",
+        "paymentDetails": "افزودن اطلاعات پرداخت"
+      }
+    },
+    "status": {
+      "active": "فعال",
+      "pendingApproval": "در انتظار",
+      "suspended": "غیرفعال",
+      "terminated": "خاتمه‌یافته"
+    },
+    "alert": {
+      "pendingApproval": {
+        "title": "درخواست فروشگاه",
+        "description": "درخواست فروشگاه با موفقیت ثبت شد. پس از بررسی توسط مدیر، اعلانی در پنل خود دریافت خواهید کرد."
+      },
+      "suspended": {
+        "title": "فروشگاه شما تعلیق شده است",
+        "description": "فروشگاه شما توسط مدیر پلتفرم تعلیق شده است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید."
+      },
+      "terminated": {
+        "title": "فروشگاه شما خاتمه یافته است",
+        "description": "فروشگاه شما به‌طور دائم توسط مدیر پلتفرم خاتمه یافته است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید."
+      }
+    },
+    "defaultLocale": "زبان پیش‌فرض",
+    "defaultSalesChannel": "کانال فروش پیش‌فرض",
+    "defaultLocation": "مکان پیش‌فرض",
+    "locales": "زبان‌ها",
+    "removeLocaleWarning_one": "در حال حذف {{count}} زبان از فروشگاه خود هستید. هر ترجمه‌ای که از این زبان استفاده کند حذف خواهد شد.",
+    "removeLocaleWarning_other": "در حال حذف {{count}} زبان از فروشگاه خود هستید. هر ترجمه‌ای که از این زبان‌ها استفاده کند حذف خواهد شد.",
+    "localeAlreadyAdded": "این زبان قبلاً به فروشگاه شما اضافه شده است.",
+    "company": "شرکت",
+    "manageCompanyDetails": "اطلاعات شرکت خود را مدیریت کنید",
+    "logo": "لوگو",
+    "banner": "بنر",
+    "editCompany": {
+      "header": "ویرایش شرکت"
     },
     "address": {
       "header": "آدرس",
@@ -2842,6 +3066,9 @@
         "description": "یک بازهٔ تعطیلی برای فروشگاه خود زمان‌بندی کنید.",
         "successToast": "تعطیلی ذخیره شد"
       },
+      "edit": {
+        "successToast": "تعطیلی با موفقیت به‌روزرسانی شد."
+      },
       "fields": {
         "firstDay": "روز اول",
         "lastDay": "روز آخر",
@@ -2854,6 +3081,28 @@
       },
       "deleteSuccess": "تعطیلی حذف شد"
     },
+    "phoneVerification": {
+      "verified": "تأیید شده",
+      "unverified": "تأیید نشده",
+      "verify": "تأیید شماره",
+      "title": "تأیید شماره فروشگاه",
+      "description": "کد تأیید به شماره {{phone}} ارسال شد. آن را وارد کنید.",
+      "codeLabel": "کد تأیید",
+      "submit": "تأیید",
+      "resend": "ارسال مجدد کد",
+      "resendIn": "ارسال مجدد تا {{seconds}} ثانیه",
+      "toast": {
+        "sent": "کد تأیید ارسال شد",
+        "verified": "شماره فروشگاه با موفقیت تأیید شد"
+      },
+      "errors": {
+        "alreadyRegistered": "این شماره قبلاً ثبت شده است",
+        "invalidCode": "کد تأیید نامعتبر است",
+        "phoneInvalid": "این شماره نامعتبر است (باید با ۰۹ شروع شود و ۱۱ رقم باشد)",
+        "notSet": "ابتدا شماره فروشگاه را وارد و ذخیره کنید",
+        "generic": "خطایی رخ داد. دوباره تلاش کنید"
+      }
+    },
     "subscription": {
       "header": "اشتراک",
       "noPlan": "بدون طرح اشتراک",
@@ -2863,26 +3112,6 @@
       "freePeriod": "دورهٔ رایگان",
       "requiresOrders": "نیازمند سفارش",
       "month": "ماه"
-    },
-    "status": {
-      "active": "فعال",
-      "pendingApproval": "در انتظار",
-      "suspended": "غیرفعال",
-      "terminated": "خاتمه‌یافته"
-    },
-    "alert": {
-      "pendingApproval": {
-        "title": "درخواست فروشگاه",
-        "description": "درخواست فروشگاه با موفقیت ثبت شد. پس از بررسی توسط مدیر، اعلانی در پنل خود دریافت خواهید کرد."
-      },
-      "suspended": {
-        "title": "فروشگاه شما تعلیق شده است",
-        "description": "فروشگاه شما توسط مدیر پلتفرم تعلیق شده است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید."
-      },
-      "terminated": {
-        "title": "فروشگاه شما خاتمه یافته است",
-        "description": "فروشگاه شما به‌طور دائم توسط مدیر پلتفرم خاتمه یافته است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید."
-      }
     },
     "mediaTip": {
       "label": "نکته:",
@@ -3059,12 +3288,12 @@
     },
     "list": {
       "empty": {
-        "description": "پس از ایجاد یک کانال فروش، اینجا نمایش داده می‌شود.",
-        "heading": "کانال فروشی یافت نشد"
+        "heading": "کانال فروشی یافت نشد",
+        "description": "پس از ایجاد یک کانال فروش، اینجا نمایش داده می‌شود."
       },
       "filtered": {
-        "description": "هیچ کانال فروشی با معیارهای فیلتر فعلی مطابقت ندارد.",
-        "heading": "نتیجه‌ای یافت نشد"
+        "heading": "نتیجه‌ای یافت نشد",
+        "description": "هیچ کانال فروشی با معیارهای فیلتر فعلی مطابقت ندارد."
       }
     }
   },
@@ -3188,9 +3417,14 @@
     "forgotPassword": "رمز عبور را فراموش کرده‌اید؟ - <0>بازنشانی</0>",
     "title": "ورود به دی فکتوریز",
     "hint": "برای دسترسی به بخش حساب کاربری وارد شوید",
-    "notSellerYet": "حساب کاربری ندارید؟ <0>یک حساب بسازید</0>",
-    "sessionExpired": "نشست منقضی شد",
     "submit": "ورود",
+    "sessionExpired": "نشست منقضی شد",
+    "notSellerYet": "حساب کاربری ندارید؟ <0>یک حساب بسازید</0>",
+    "validation": {
+      "emailRequired": "لطفاً ایمیل را وارد کنید",
+      "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
+      "passwordRequired": "لطفاً رمز عبور خود را وارد کنید"
+    },
     "method": {
       "email": "ایمیل",
       "phone": "موبایل"
@@ -3211,11 +3445,6 @@
         "phoneInvalid": "شماره موبایل نامعتبر است. باید با ۰۹ شروع شود و ۱۱ رقم باشد.",
         "codeRequired": "کد تأیید الزامی است"
       }
-    },
-    "validation": {
-      "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
-      "emailRequired": "لطفاً ایمیل را وارد کنید",
-      "passwordRequired": "لطفاً رمز عبور خود را وارد کنید"
     },
     "errors": {
       "invalidCredentials": "ایمیل یا رمز عبور نادرست است",
@@ -3241,8 +3470,8 @@
       "accepted": "دعوت‌نامه با موفقیت پذیرفته شد"
     },
     "existingMemberHint": "با حساب موجود خود وارد شوید",
-    "logIn": "ورود",
-    "signIn": "ورود"
+    "signIn": "ورود",
+    "logIn": "ورود"
   },
   "resetPassword": {
     "title": "بازنشانی رمز عبور",
@@ -3319,7 +3548,9 @@
     "create": {
       "header": "ایجاد نوع محصول",
       "hint": "یک نوع محصول جدید ایجاد کنید تا محصولات خود را دسته‌بندی کنید.",
-      "successToast": "نوع محصول {{value}} با موفقیت ایجاد شد."
+      "successToast": "نوع محصول {{value}} با موفقیت ایجاد شد.",
+      "requestHeader": "درخواست نوع محصول",
+      "requestSuccessToast": "درخواست نوع محصول با موفقیت ثبت شد"
     },
     "edit": {
       "header": "ویرایش نوع محصول",
@@ -3385,6 +3616,7 @@
     "removed": "حذف شده",
     "from": "از",
     "to": "به",
+    "updated": "به‌روزرسانی شده در",
     "beaware": "توجه",
     "loading": "در حال بارگذاری",
     "selectValue": "انتخاب مقدار",
@@ -3547,17 +3779,40 @@
     "endDate": "تاریخ پایان",
     "draft": "پیش‌نویس",
     "values": "مقادیر",
-    "premium": "ویژه",
-    "website": "وب‌سایت",
-    "commission": "کارمزد",
-    "creditTotal": "مجموع خطوط اعتبار",
-    "enabledInStore": "فعال در فروشگاه",
-    "isReturn": "مرجوعی است",
-    "professional": "حرفه‌ای",
-    "promotionCode": "کد تخفیف",
+    "brand": "Brand",
     "reference": "مرجع",
     "reference_id": "شناسه مرجع",
-    "serviceZone": "منطقه خدمات"
+    "images": "رسانه‌ها",
+    "type_id": "نوع",
+    "collection_id": "مجموعه",
+    "enabledInStore": "فعال در فروشگاه",
+    "isReturn": "مرجوعی است",
+    "promotionCode": "کد تخفیف",
+    "website": "وب‌سایت",
+    "serviceZone": "منطقه خدمات",
+    "commission": "کارمزد",
+    "creditTotal": "مجموع خطوط اعتبار",
+    "premium": "ویژه",
+    "professional": "حرفه‌ای",
+    "is_giftcard": "کارت هدیه",
+    "origin_country": "کشور مبدأ",
+    "hs_code": "کد HS",
+    "mid_code": "کد MID",
+    "external_id": "شناسه خارجی",
+    "is_restricted": "محدود شده",
+    "tag_ids": "برچسب‌ها",
+    "category_ids": "دسته‌بندی‌ها",
+    "allow_backorder": "اجازه پیش‌سفارش",
+    "manage_inventory": "مدیریت موجودی",
+    "variant_rank": "رتبه تنوع",
+    "attribute_values": "مقادیر ویژگی",
+    "isbn": "ISBN",
+    "asin": "ASIN",
+    "gtin": "GTIN",
+    "inventory_quantity": "مقدار موجودی",
+    "requires_shipping": "آیا نیاز به حمل و نقل دارد؟",
+    "variant_attributes": "ویژگی‌های تنوع",
+    "product_attributes": "ویژگی‌های محصول"
   },
   "dateTime": {
     "years_one": "سال",
@@ -3575,48 +3830,229 @@
     "seconds_one": "ثانیه",
     "seconds_other": "ثانیه"
   },
-  "auth": {
-    "login": {
-      "authenticationFailed": "احراز هویت ناموفق بود",
-      "cloud": "ورود با دی فکتوریز"
-    }
-  },
-  "payouts": {
-    "domain": "تسویه‌ها",
-    "noRecords": "تسویه‌ای یافت نشد",
-    "payout": "تسویه",
-    "status": {
-      "canceled": "لغوشده",
-      "failed": "ناموفق",
-      "paid": "پرداخت‌شده",
-      "pending": "در انتظار",
-      "processing": "در حال پردازش"
+  "attributes": {
+    "fields": {
+      "name": "Name",
+      "handle": "Handle",
+      "required": "Required",
+      "type": "Type",
+      "values": "Values",
+      "variantAxis": "Use for Variants",
+      "filterable": "Filterable",
+      "productAttribute": "ویژگی محصول"
+    },
+    "type": {
+      "select": "Single Select",
+      "multivalue": "Multi Select",
+      "unit": "Unit",
+      "toggle": "Toggle",
+      "text_area": "Text Area"
     }
   },
   "seller": {
     "domain": "تامین‌کننده"
   },
+  "offers": {
+    "domain": "پیشنهادها",
+    "subtitle": "فهرست‌های کاتالوگ خود را مدیریت کنید",
+    "create": {
+      "header": "ایجاد پیشنهاد",
+      "description": "برای ایجاد پیشنهاد، تنوع‌ها را انتخاب کرده و سطح موجودی و قیمت‌ها را پیکربندی کنید.",
+      "successToast": "پیشنهاد با موفقیت منتشر شد. فقط پیشنهادهایی که موجودی و قیمت تعیین‌شده دارند در فروشگاه آنلاین نمایش داده می‌شوند.",
+      "publish": "منتشر کردن",
+      "tipLabel": "نکته:",
+      "tip": "همه محصولات مرتبط با موجودی خود را انتخاب کنید، سپس با افزودن سطح موجودی و قیمت‌ها به‌راحتی برای آن‌ها پیشنهاد ایجاد کنید.",
+      "addPrice": "افزودن قیمت",
+      "addInventoryItem": "افزودن مورد موجودی",
+      "stockLevelsWarning": "پیشنهادها ایجاد شدند، اما برخی سطوح موجودی ذخیره نشدند: {{message}}",
+      "tabs": {
+        "catalogue": "محصولات",
+        "stockLevelsAndPrices": "سطوح موجودی و قیمت‌ها"
+      }
+    },
+    "detail": {
+      "offerLabel": "پیشنهاد",
+      "productVariant": "تنوع محصول",
+      "offerVariant": "تنوع پیشنهاد",
+      "associatedProduct": "محصول مرتبط",
+      "shippingConfiguration": "پیکربندی حمل و نقل",
+      "inventoryItems": "موجودی اقلام",
+      "manageKit": "مدیریت کیت موجودی",
+      "noInventoryItems": "هیچ مورد موجودی پیوست نشده است. کشوی موجودی را باز کنید تا یکی پیوست کنید.",
+      "goToInventoryItem": "برو به آیتم موجودی"
+    },
+    "edit": {
+      "header": "ویرایش پیشنهاد",
+      "description": "هویت، پروفایل ارسال یا متادیتای پیشنهاد را به‌روزرسانی کنید.",
+      "successToast": "پیشنهاد به‌روزرسانی شد"
+    },
+    "variant": {
+      "edit": {
+        "successToast": "تنوع پیشنهاد با موفقیت به‌روزرسانی شد."
+      },
+      "shipping": {
+        "successToast": "پیکربندی ارسال با موفقیت به‌روزرسانی شد."
+      }
+    },
+    "pricing": {
+      "header": "مدیریت قیمت‌ها",
+      "description": "قیمت‌ها را در نردبان این پیشنهاد اضافه، تغییر یا حذف کنید.",
+      "successToast": "قیمت‌ها با موفقیت به‌روزرسانی شدند.",
+      "empty": "هیچ قیمتی پیکربندی نشده است"
+    },
+    "inventory": {
+      "header": "مدیریت اقلام موجودی",
+      "description": "برای هر مورد، پیوست، جدا کردن یا تغییر تعداد مورد نیاز را انجام دهید.",
+      "successToast": "سطوح موجودی با موفقیت به‌روزرسانی شدند.",
+      "empty": "هیچ مورد موجودی پیوست نشده است"
+    },
+    "delete": {
+      "description": "شما در حال حذف پیشنهاد {{sku}} هستید. این عملیات قابل بازگشت نیست.",
+      "successToast": "پیشنهاد با موفقیت حذف شد."
+    },
+    "bulkDelete": {
+      "description_one": "شما در حال حذف {{count}} پیشنهاد هستید. این عملیات قابل بازگشت نیست.",
+      "description_other": "شما در حال حذف {{count}} پیشنهاد هستید. این عملیات قابل بازگشت نیست.",
+      "successToast_one": "{{count}} پیشنهاد حذف شد",
+      "successToast_other": "{{count}} پیشنهاد حذف شد",
+      "partialToast": "{{succeeded}} از {{total}} پیشنهاد حذف شد؛ {{failed}} مورد ناموفق بود"
+    },
+    "actions": {
+      "create": "ایجاد",
+      "manage_prices": "مدیریت قیمت‌ها",
+      "manage_inventory": "مدیریت موجودی",
+      "edit_prices": "ویرایش قیمت‌ها",
+      "edit_stock_levels": "ویرایش میزان موجودی",
+      "bulkDelete": "حذف موارد انتخاب‌شده"
+    },
+    "fields": {
+      "sku": "SKU",
+      "variant": "تنوع اصلی",
+      "shippingProfile": "پروفایل حمل و نقل",
+      "ean": "EAN",
+      "upc": "UPC",
+      "requiredQuantity": "مقدار مورد نیاز",
+      "stockStatus": "وضعیت موجودی",
+      "category": "دسته‌بندی",
+      "collection": "مجموعه",
+      "variants": "متغیرها",
+      "status": "وضعیت",
+      "offer": "پیشنهاد",
+      "minQuantity": "حداقل تعداد",
+      "maxQuantity": "حداکثر تعداد",
+      "stockLocation": "مکان موجودی {{name}}",
+      "priceCurrency": "قیمت {{code}}",
+      "notEnabled": "غیرفعال شده",
+      "enabled": "فعال",
+      "variantsCount_one": "{{count}} متغیر",
+      "variantsCount_other": "{{count}} متغیر"
+    },
+    "status": {
+      "published": "منتشر شده",
+      "draft": "پیش‌نویس",
+      "proposed": "پیشنهادی",
+      "rejected": "رد شده"
+    },
+    "stockStatus": {
+      "in_stock": "در انبار",
+      "low_stock": "موجودی کم",
+      "out_of_stock": "ناموجود"
+    },
+    "empty": {
+      "heading": "هنوز پیشنهادی وجود ندارد",
+      "description": "برای شروع فروش در بازار، پیشنهاد ایجاد کنید"
+    },
+    "filtered": {
+      "heading": "هیچ پیشنهاد مطابقی یافت نشد",
+      "description": "فیلترها یا عبارت‌های جستجو را تنظیم کنید."
+    },
+    "validation": {
+      "skuRequired": "برای انتشار این ردیف، SKU الزامی است.",
+      "shippingProfileRequired": "برای انتشار این ردیف، یک پروفایل ارسال انتخاب کنید.",
+      "duplicateSku": "ردیف دیگری در این ارسال قبلاً از این SKU استفاده می‌کند.",
+      "duplicatePriceRule": "ردیف قیمت دیگری قبلاً این ترکیب از ارز، منطقه، گروه مشتری و محدوده تعداد را دارد.",
+      "duplicateInventoryItem": "این مورد موجودی قبلاً پیوست شده است.",
+      "selectAtLeastOneVariant": "برای ادامه، حداقل یک تنوع انتخاب کنید.",
+      "noPublishableRows": "برای انتشار، یک SKU اضافه کنید، یک مکان موجودی فعال کنید یا قیمتی تعیین کنید.",
+      "duplicateBatchEntry": "یک مورد موجودی فقط می‌تواند در یک گروه ظاهر شود (ایجاد، به‌روزرسانی یا حذف)."
+    }
+  },
+  "payouts": {
+    "domain": "تسویه‌ها",
+    "payout": "تسویه",
+    "noRecords": "تسویه‌ای یافت نشد",
+    "status": {
+      "pending": "در انتظار",
+      "processing": "در حال پردازش",
+      "paid": "پرداخت‌شده",
+      "failed": "ناموفق",
+      "canceled": "لغوشده"
+    }
+  },
+  "translations": {
+    "domain": "ترجمه‌ها",
+    "settings": {
+      "header": "مدیریت موجودیت‌های قابل ترجمه",
+      "successToast": "تنظیمات با موفقیت به‌روزرسانی شد"
+    },
+    "actions": {
+      "manage": "مدیریت ترجمه‌ها",
+      "manageEntities": "مدیریت موجودیت‌ها",
+      "manageLocales": "مدیریت زبان‌ها"
+    },
+    "subtitle": "ترجمه‌های داده‌های خود را در مدوسا مدیریت کنید",
+    "list": {
+      "metrics": "{{translated}} از {{total}} ترجمه"
+    },
+    "edit": {
+      "successToast": "ترجمه‌ها با موفقیت به‌روزرسانی شدند",
+      "unsavedChanges": {
+        "title": "ترجمه‌های ذخیره‌نشده",
+        "description": "کارتان را از دست ندهید. تغییراتی دارید که هنوز ذخیره نشده‌اند"
+      }
+    },
+    "bulk": {
+      "header": "ویرایشگر گروهی ترجمه‌ها",
+      "mainColumn": "زبان"
+    },
+    "activeLocales": {
+      "heading": "زبان‌ها",
+      "subtitle": "ترجمه‌های فعال‌شده",
+      "noLocalesTip": "برای شروع ترجمه داده‌های خود حداقل یک زبان پیکربندی کنید",
+      "noLocalesTipConfigureAction": "پیکربندی"
+    },
+    "completion": {
+      "heading": "فیلدهای ترجمه‌شده",
+      "translated": "ترجمه‌شده",
+      "toTranslate": "ترجمه‌نشده",
+      "footer": "زبان‌ها"
+    }
+  },
   "refundReasons": {
+    "domain": "دلایل بازپرداخت",
+    "subtitle": "دلایل صدور بازپرداخت را مدیریت کنید.",
     "calloutHint": "دلایل دسته‌بندی بازپرداخت‌ها را مدیریت کنید.",
+    "editReason": "ویرایش دلیل بازپرداخت",
     "create": {
       "header": "افزودن دلیل بازپرداخت",
-      "hint": "یک دلیل بازپرداخت جدید برای دسته‌بندی بازپرداخت‌ها ایجاد کنید.",
       "subtitle": "رایج‌ترین دلایل بازپرداخت را مشخص کنید.",
+      "hint": "یک دلیل بازپرداخت جدید برای دسته‌بندی بازپرداخت‌ها ایجاد کنید.",
       "successToast": "دلیل بازپرداخت {{label}} با موفقیت ایجاد شد."
-    },
-    "domain": "دلایل بازپرداخت",
-    "editReason": "ویرایش دلیل بازپرداخت",
-    "subtitle": "دلایل صدور بازپرداخت را مدیریت کنید.",
-    "delete": {
-      "confirmation": "در حال حذف دلیل بازپرداخت «{{label}}» هستید. این عمل قابل بازگشت نیست.",
-      "successToast": "دلیل بازپرداخت با موفقیت حذف شد."
     },
     "edit": {
       "header": "ویرایش دلیل بازپرداخت",
       "subtitle": "مقدار دلیل بازپرداخت را ویرایش کنید.",
       "successToast": "دلیل بازپرداخت {{label}} با موفقیت به‌روزرسانی شد."
     },
+    "delete": {
+      "confirmation": "در حال حذف دلیل بازپرداخت «{{label}}» هستید. این عمل قابل بازگشت نیست.",
+      "successToast": "دلیل بازپرداخت با موفقیت حذف شد."
+    },
     "fields": {
+      "label": {
+        "label": "برچسب",
+        "placeholder": "حسن نیت"
+      },
       "code": {
         "label": "کد",
         "placeholder": "gesture_of_goodwill"
@@ -3624,151 +4060,146 @@
       "description": {
         "label": "توضیحات",
         "placeholder": "مشتری تجربه خرید بدی داشت"
-      },
-      "label": {
-        "label": "برچسب",
-        "placeholder": "حسن نیت"
       }
     }
   },
-  "translations": {
-    "actions": {
-      "manage": "مدیریت ترجمه‌ها",
-      "manageEntities": "مدیریت موجودیت‌ها",
-      "manageLocales": "مدیریت زبان‌ها"
+  "storeSelect": {
+    "title": "یک فروشگاه انتخاب کنید",
+    "subtitle": "برای ادامه یک فروشگاه انتخاب کنید.",
+    "pendingApproval": "در انتظار",
+    "addNewStore": "افزودن فروشگاه جدید",
+    "status": {
+      "open": "فعال",
+      "pendingApproval": "در انتظار",
+      "suspended": "غیرفعال",
+      "terminated": "خاتمه‌یافته"
+    }
+  },
+  "register": {
+    "title": "به دی فکتوریز بپیوندید!",
+    "hint": "اطلاعات خود را وارد کنید و برای راه‌اندازی حساب مدیریتی، شماره خود را تایید کنید.",
+    "companyName": "نام شرکت",
+    "confirmPassword": "تأیید رمز عبور",
+    "signUp": "ثبت‌نام",
+    "alreadySeller": "از قبل حساب دارید؟ <0>وارد شوید</0>",
+    "passwordMismatch": "رمزهای عبور مطابقت ندارند",
+    "emailTaken": "ایمیل واردشده قبلاً استفاده شده است",
+    "validation": {
+      "nameRequired": "نام باید حداقل ۲ کاراکتر باشد",
+      "firstNameRequired": "لطفاً نام خود را وارد کنید",
+      "lastNameRequired": "لطفاً نام خانوادگی خود را وارد کنید",
+      "emailInvalid": "لطفاً یک نشانی ایمیل معتبر وارد کنید",
+      "passwordMinLength": "رمز عبور باید حداقل ۸ کاراکتر باشد",
+      "passwordComplexity": "رمز عبور باید شامل یک حرف کوچک، یک حرف بزرگ و یک عدد یا نماد باشد",
+      "confirmPasswordRequired": "لطفاً رمز عبور خود را تأیید کنید"
     },
-    "activeLocales": {
-      "heading": "زبان‌ها",
-      "noLocalesTip": "برای شروع ترجمه داده‌های خود حداقل یک زبان پیکربندی کنید",
-      "noLocalesTipConfigureAction": "پیکربندی",
-      "subtitle": "ترجمه‌های فعال‌شده"
-    },
-    "bulk": {
-      "header": "ویرایشگر گروهی ترجمه‌ها",
-      "mainColumn": "زبان"
-    },
-    "completion": {
-      "footer": "زبان‌ها",
-      "heading": "فیلدهای ترجمه‌شده",
-      "toTranslate": "ترجمه‌نشده",
-      "translated": "ترجمه‌شده"
-    },
-    "domain": "ترجمه‌ها",
-    "edit": {
-      "successToast": "ترجمه‌ها با موفقیت به‌روزرسانی شدند",
-      "unsavedChanges": {
-        "description": "کارتان را از دست ندهید. تغییراتی دارید که هنوز ذخیره نشده‌اند",
-        "title": "ترجمه‌های ذخیره‌نشده"
-      }
-    },
-    "list": {
-      "metrics": "{{translated}} از {{total}} ترجمه"
-    },
-    "settings": {
-      "header": "مدیریت موجودیت‌های قابل ترجمه",
-      "successToast": "تنظیمات با موفقیت به‌روزرسانی شد"
-    },
-    "subtitle": "ترجمه‌های داده‌های خود را در مدوسا مدیریت کنید"
+    "firstName": "نام",
+    "lastName": "نام خانوادگی",
+    "passwordHint": "رمز عبور شما باید حداقل شامل ۸ کاراکتر، یک حرف کوچک، یک حرف بزرگ و یک عدد یا نماد باشد",
+    "successTitle": "از ثبت‌نام شما متشکریم!",
+    "successHint": "ممکن است لازم باشد پیش از ورود، منتظر تأیید مدیر بمانید. ایمیل تأیید به‌زودی برای شما ارسال می‌شود.",
+    "backToLogin": "بازگشت به ورود",
+    "consent": "با ثبت‌نام، <0>شرایط استفاده از خدمات</0> و <1>سیاست حفظ حریم خصوصی</1> دی فکتوریز را می‌پذیرید."
   },
   "onboarding": {
-    "detailsSetup": {
-      "addressSubtitle": "آدرس کسب‌وکار شما",
-      "addressTitle": "آدرس",
-      "completeSetup": "تکمیل راه‌اندازی",
-      "corporateName": "شرکت",
-      "isProfessional": "تامین‌کننده حرفه‌ای",
-      "isProfessionalDescription": "به‌عنوان یک شخصیت حقوقی ثبت‌نام کنید",
-      "professionalSubtitle": "اطلاعات تامین‌کننده حرفه‌ای",
-      "professionalTitle": "اطلاعات کسب‌وکار",
-      "registrationNumber": "شماره ثبت",
-      "subtitle": "آدرس و اطلاعات کسب‌وکار خود را اضافه کنید",
-      "taxId": "شناسه مالیاتی",
-      "title": "پروفایل خود را تکمیل کنید"
-    },
-    "organizationSetup": {
-      "organizationName": "نام سازمان",
-      "organizationNamePlaceholder": "سازمان من",
-      "subtitle": "نام سازمان خود را مشخص کنید",
-      "title": "راه‌اندازی سازمان شما"
-    },
     "step": "مرحله {{current}} / {{total}}",
+    "organizationSetup": {
+      "title": "راه‌اندازی سازمان شما",
+      "subtitle": "نام سازمان خود را مشخص کنید",
+      "organizationName": "نام سازمان",
+      "organizationNamePlaceholder": "سازمان من"
+    },
     "storeSetup": {
-      "currencyHint": "پس از ایجاد فروشگاه قابل تغییر نیست",
-      "descriptionPlaceholder": "توضیحی درباره فروشگاه شما",
-      "selectCurrency": "یک واحد پول انتخاب کنید",
-      "storeEmail": "ایمیل فروشگاه",
-      "storeEmailHint": "ایمیل تماس عمومی فروشگاه شما",
+      "title": "راه‌اندازی فروشگاه شما",
+      "subtitle": "جزئیات فروشگاه خود را مشخص کنید",
       "storeName": "نام فروشگاه",
       "storeNamePlaceholder": "فروشگاه من",
-      "subtitle": "جزئیات فروشگاه خود را مشخص کنید",
-      "title": "راه‌اندازی فروشگاه شما"
+      "storeEmail": "ایمیل فروشگاه",
+      "storeEmailHint": "ایمیل تماس عمومی فروشگاه شما",
+      "selectCurrency": "یک واحد پول انتخاب کنید",
+      "currencyHint": "پس از ایجاد فروشگاه قابل تغییر نیست",
+      "descriptionPlaceholder": "توضیحی درباره فروشگاه شما"
+    },
+    "detailsSetup": {
+      "title": "پروفایل خود را تکمیل کنید",
+      "subtitle": "آدرس و اطلاعات کسب‌وکار خود را اضافه کنید",
+      "addressTitle": "آدرس",
+      "addressSubtitle": "آدرس کسب‌وکار شما",
+      "professionalTitle": "اطلاعات کسب‌وکار",
+      "professionalSubtitle": "اطلاعات تامین‌کننده حرفه‌ای",
+      "isProfessional": "تامین‌کننده حرفه‌ای",
+      "isProfessionalDescription": "به‌عنوان یک شخصیت حقوقی ثبت‌نام کنید",
+      "corporateName": "شرکت",
+      "registrationNumber": "شماره ثبت",
+      "taxId": "شناسه مالیاتی",
+      "completeSetup": "تکمیل راه‌اندازی"
     },
     "submitted": {
-      "action": "ادامه به داشبورد",
+      "title": "درخواست ارسال شد!",
       "description": "حساب تامین‌کنندگی شما ایجاد شد و در انتظار تأیید است. پس از بررسی فروشگاه شما، از طریق {{email}} به شما اطلاع می‌دهیم.",
       "hint": "در این مدت می‌توانید فروشگاه خود را انتخاب و راه‌اندازی را تکمیل کنید.",
-      "title": "درخواست ارسال شد!"
+      "action": "ادامه به داشبورد"
     },
     "wizard": {
-      "address": {
+      "stepOf": "مرحله {{current}} از {{total}}",
+      "steps": {
+        "store": "اطلاعات فروشگاه",
         "address": "آدرس",
-        "address2": "واحد، آپارتمان و غیره",
-        "city": "شهر",
-        "country": "کشور",
+        "company": "اطلاعات شرکت",
+        "payment": "اطلاعات پرداخت"
+      },
+      "store": {
+        "title": "اطلاعات فروشگاه خود را وارد کنید",
+        "name": "نام",
+        "email": "ایمیل",
+        "handle": "شناسه پیوند",
+        "handleTooltip": "شناسه پیوند به آدرس URL فروشگاه شما تبدیل می‌شود. برای ساخت خودکار از روی نام، خالی بگذارید.",
+        "handlePlaceholder": "my-store",
+        "currency": "واحد پول",
+        "selectCurrency": "انتخاب",
+        "currencyHint": "پس از ایجاد فروشگاه قابل تغییر نیست — با دقت انتخاب کنید. برای فروش در بازار ایران، IRR را انتخاب کنید."
+      },
+      "skip": "رد کردن",
+      "address": {
+        "title": "آدرس خود را وارد کنید",
         "name": "نام",
         "namePlaceholder": "دفتر مرکزی",
+        "address": "آدرس",
+        "address2": "واحد، آپارتمان و غیره",
         "postalCode": "کد پستی",
-        "state": "استان",
-        "title": "آدرس خود را وارد کنید"
+        "city": "شهر",
+        "country": "کشور",
+        "state": "استان"
       },
       "company": {
+        "title": "اطلاعات شرکت خود را وارد کنید",
+        "subtitle": "اطلاعات تامین‌کننده حرفه‌ای",
         "corporateName": "شرکت",
         "registrationNumber": "شماره ثبت",
-        "subtitle": "اطلاعات تامین‌کننده حرفه‌ای",
-        "taxId": "شناسه مالیاتی",
-        "title": "اطلاعات شرکت خود را وارد کنید"
+        "taxId": "شناسه مالیاتی"
       },
       "payment": {
+        "title": "اطلاعات پرداخت خود را وارد کنید",
+        "subtitle": "نحوه دریافت تسویه‌ها",
         "accountName": "نام صاحب حساب",
         "accountNumber": "شماره حساب",
         "achRoutingNumber": "شماره مسیریابی ACH",
         "iban": "IBAN",
-        "subtitle": "نحوه دریافت تسویه‌ها",
-        "swiftBic": "SWIFT / BIC",
-        "title": "اطلاعات پرداخت خود را وارد کنید"
-      },
-      "preview": {
-        "description": "پورتال یکپارچه تامین‌کنندگی شما برای مدیریت فروشگاه، محصولات، سفارش‌ها و تسویه‌ها.",
-        "placeholder": "پیش‌نمایش برنامه",
-        "title": "به دی فکتوریز خوش آمدید"
-      },
-      "skip": "رد کردن",
-      "stepOf": "مرحله {{current}} از {{total}}",
-      "steps": {
-        "address": "آدرس",
-        "company": "اطلاعات شرکت",
-        "payment": "اطلاعات پرداخت",
-        "store": "اطلاعات فروشگاه"
-      },
-      "store": {
-        "currency": "واحد پول",
-        "currencyHint": "پس از ایجاد فروشگاه قابل تغییر نیست — با دقت انتخاب کنید. برای فروش در بازار ایران، IRR را انتخاب کنید.",
-        "email": "ایمیل",
-        "handle": "شناسه پیوند",
-        "handlePlaceholder": "my-store",
-        "handleTooltip": "شناسه پیوند به آدرس URL فروشگاه شما تبدیل می‌شود. برای ساخت خودکار از روی نام، خالی بگذارید.",
-        "name": "نام",
-        "selectCurrency": "انتخاب",
-        "title": "اطلاعات فروشگاه خود را وارد کنید"
+        "swiftBic": "SWIFT / BIC"
       },
       "validation": {
-        "accountNameRequired": "لطفاً نام صاحب حساب را وارد کنید",
-        "countryRequired": "لطفاً یک کشور انتخاب کنید",
-        "currencyRequired": "لطفاً یک واحد پول انتخاب کنید",
-        "phoneRequired": "لطفاً شماره موبایل را وارد کنید",
-        "emailInvalid": "لطفاً یک ایمیل وارد کنید",
         "nameRequired": "لطفاً یک نام وارد کنید",
+        "emailInvalid": "لطفاً یک ایمیل وارد کنید",
+        "currencyRequired": "لطفاً یک واحد پول انتخاب کنید",
+        "countryRequired": "لطفاً یک کشور انتخاب کنید",
+        "accountNameRequired": "لطفاً نام صاحب حساب را وارد کنید",
+        "phoneRequired": "لطفاً شماره موبایل را وارد کنید",
         "handleInvalid": "فقط حروف کوچک انگلیسی، اعداد و خط‌تیره (مثل my-store)"
+      },
+      "preview": {
+        "title": "به دی فکتوریز خوش آمدید",
+        "description": "پورتال یکپارچه تامین‌کنندگی شما برای مدیریت فروشگاه، محصولات، سفارش‌ها و تسویه‌ها.",
+        "placeholder": "پیش‌نمایش برنامه"
       }
     },
     "success": {
@@ -3777,85 +4208,67 @@
       "login": "ورود"
     }
   },
-  "register": {
-    "alreadySeller": "از قبل حساب دارید؟ <0>وارد شوید</0>",
-    "backToLogin": "بازگشت به ورود",
-    "companyName": "نام شرکت",
-    "confirmPassword": "تأیید رمز عبور",
-    "emailTaken": "ایمیل واردشده قبلاً استفاده شده است",
-    "firstName": "نام",
-    "hint": "اطلاعات خود را وارد کنید و برای راه‌اندازی حساب مدیریتی، شماره خود را تایید کنید.",
-    "lastName": "نام خانوادگی",
-    "passwordHint": "رمز عبور شما باید حداقل شامل ۸ کاراکتر، یک حرف کوچک، یک حرف بزرگ و یک عدد یا نماد باشد",
-    "passwordMismatch": "رمزهای عبور مطابقت ندارند",
-    "signUp": "ثبت‌نام",
-    "successHint": "ممکن است لازم باشد پیش از ورود، منتظر تأیید مدیر بمانید. ایمیل تأیید به‌زودی برای شما ارسال می‌شود.",
-    "successTitle": "از ثبت‌نام شما متشکریم!",
-    "title": "به دی فکتوریز بپیوندید!",
-    "validation": {
-      "confirmPasswordRequired": "لطفاً رمز عبور خود را تأیید کنید",
-      "emailInvalid": "لطفاً یک نشانی ایمیل معتبر وارد کنید",
-      "firstNameRequired": "لطفاً نام خود را وارد کنید",
-      "lastNameRequired": "لطفاً نام خانوادگی خود را وارد کنید",
-      "nameRequired": "نام باید حداقل ۲ کاراکتر باشد",
-      "passwordComplexity": "رمز عبور باید شامل یک حرف کوچک، یک حرف بزرگ و یک عدد یا نماد باشد",
-      "passwordMinLength": "رمز عبور باید حداقل ۸ کاراکتر باشد"
-    },
-    "consent": "با ثبت‌نام، <0>شرایط استفاده از خدمات</0> و <1>سیاست حفظ حریم خصوصی</1> دی فکتوریز را می‌پذیرید."
-  },
   "shippingOptionTypes": {
+    "domain": "انواع گزینه ارسال",
+    "subtitle": "گزینه‌های ارسال خود را در قالب نوع‌ها سازمان‌دهی کنید.",
     "create": {
       "header": "ایجاد نوع گزینه ارسال",
       "hint": "یک نوع گزینه ارسال جدید برای دسته‌بندی گزینه‌های ارسال خود ایجاد کنید.",
       "successToast": "نوع گزینه ارسال {{label}} با موفقیت ایجاد شد."
     },
-    "delete": {
-      "confirmation": "در حال حذف نوع گزینه ارسال «{{label}}» هستید. این عمل قابل بازگشت نیست.",
-      "successToast": "نوع گزینه ارسال «{{label}}» با موفقیت حذف شد."
-    },
-    "domain": "انواع گزینه ارسال",
     "edit": {
       "header": "ویرایش نوع گزینه ارسال",
       "successToast": "نوع گزینه ارسال {{label}} با موفقیت به‌روزرسانی شد."
     },
+    "delete": {
+      "confirmation": "در حال حذف نوع گزینه ارسال «{{label}}» هستید. این عمل قابل بازگشت نیست.",
+      "successToast": "نوع گزینه ارسال «{{label}}» با موفقیت حذف شد."
+    },
     "fields": {
+      "label": "برچسب",
       "code": "کد",
-      "description": "توضیحات",
-      "label": "برچسب"
-    },
-    "subtitle": "گزینه‌های ارسال خود را در قالب نوع‌ها سازمان‌دهی کنید."
-  },
-  "storeSelect": {
-    "addNewStore": "افزودن فروشگاه جدید",
-    "pendingApproval": "در انتظار",
-    "status": {
-      "open": "فعال",
-      "pendingApproval": "در انتظار",
-      "suspended": "غیرفعال",
-      "terminated": "خاتمه‌یافته"
-    },
-    "subtitle": "برای ادامه یک فروشگاه انتخاب کنید.",
-    "title": "یک فروشگاه انتخاب کنید"
+      "description": "توضیحات"
+    }
   },
   "views": {
-    "prompts": {
-      "updateDefault": {
-        "cancelText": "انصراف",
-        "confirmText": "به‌روزرسانی برای همه",
-        "description": "این کار نمای پیش‌فرض را برای همه کاربران به‌روزرسانی می‌کند. مطمئن هستید؟",
-        "title": "به‌روزرسانی نمای پیش‌فرض"
-      },
-      "updateView": {
-        "cancelText": "انصراف",
-        "confirmText": "به‌روزرسانی",
-        "description": "آیا مطمئن هستید که می‌خواهید «{{name}}» را به‌روزرسانی کنید؟",
-        "title": "به‌روزرسانی نما"
-      }
-    },
     "save": "ذخیره",
     "saveAsNew": "ذخیره به‌عنوان نمای جدید",
+    "saveAsSystemDefault": "ذخیره به‌عنوان پیش‌فرض سیستم",
     "updateDefaultForEveryone": "به‌روزرسانی پیش‌فرض برای همه",
-    "updateViewName": "به‌روزرسانی نما"
+    "updateViewName": "به‌روزرسانی نما",
+    "updateNamed": "به‌روزرسانی «{{name}}»",
+    "prompts": {
+      "updateDefault": {
+        "title": "به‌روزرسانی نمای پیش‌فرض",
+        "description": "این کار نمای پیش‌فرض را برای همه کاربران به‌روزرسانی می‌کند. مطمئن هستید؟",
+        "confirmText": "به‌روزرسانی برای همه",
+        "cancelText": "انصراف"
+      },
+      "updateView": {
+        "title": "به‌روزرسانی نما",
+        "description": "آیا مطمئن هستید که می‌خواهید «{{name}}» را به‌روزرسانی کنید؟",
+        "confirmText": "به‌روزرسانی",
+        "cancelText": "انصراف"
+      },
+      "saveAsDefault": {
+        "title": "ذخیره به‌عنوان پیش‌فرض سیستم",
+        "description": "این کار پیکربندی فعلی را به‌عنوان پیش‌فرض سیستم ذخیره می‌کند. همه کاربران این پیکربندی را به‌طور پیش‌فرض خواهند دید، مگر اینکه نمای شخصی خود را داشته باشند. آیا مطمئن هستید؟",
+        "confirmText": "ذخیره به‌عنوان پیش‌فرض",
+        "cancelText": "لغو"
+      },
+      "updateExisting": {
+        "title": "به‌روزرسانی نمای موجود",
+        "description": "«{{name}}» با پیکربندی فعلی به‌روزرسانی شود؟",
+        "confirmText": "به‌روزرسانی",
+        "cancelText": "لغو"
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "authenticationFailed": "احراز هویت ناموفق بود",
+      "cloud": "ورود با دی فکتوریز"
+    }
   },
   "apiErrors": {
     "unauthorized": "نشست شما منقضی شده؛ لطفاً دوباره وارد شوید.",

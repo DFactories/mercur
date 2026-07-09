@@ -4,6 +4,8 @@ import { Container, Heading, Text } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
 
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
+
 import { ActionMenu } from "@components/common/action-menu"
 import { DateRangeDisplay } from "@components/common/date-range-display"
 import { NoRecords } from "@components/common/empty-table-content"
@@ -78,15 +80,17 @@ export const CampaignSection = ({
       ) : (
         <NoRecords
           className="h-[180px] pt-4 text-center"
-          title="Not part of a campaign"
-          message="Add this promotion to an existing campaign"
+          title={t("promotions.campaignSection.noRecordsTitle")}
+          message={t("promotions.campaignSection.noRecordsMessage")}
           action={{
             to: `/promotions/${id}/add-to-campaign`,
-            label: "Add to Campaign",
+            label: t("promotions.campaignSection.addToCampaign"),
           }}
           buttonVariant="transparentIconLeft"
         />
       )}
+
+      <DisplayExtensionZone model="promotion" zone="campaign" data={campaign} />
     </Container>
   )
 }

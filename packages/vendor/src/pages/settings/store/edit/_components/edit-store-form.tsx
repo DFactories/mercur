@@ -1,25 +1,29 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
 import {
   Button,
   Heading,
+  Hint,
   Input,
   Select,
-  Text,
   Textarea,
   toast,
 } from "@medusajs/ui";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as zod from "zod";
 import { useCallback } from "react";
+
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared";
 
 import { FileType, FileUpload } from "@components/common/file-upload";
 import { Form } from "@components/common/form";
 import { HandleInput } from "@components/inputs/handle-input";
 import { RouteDrawer, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
-import { uploadFilesQuery } from "@lib/client";
+import { sdk } from "@lib/client";
 import { currencies } from "@lib/data/currencies";
 import { MediaSchema } from "@pages/products/create/constants";
 import { HttpTypes } from "@mercurjs/types";
@@ -77,6 +81,20 @@ const SUPPORTED_FORMATS_FILE_EXTENSIONS = [
 const stripWebsiteProtocol = (url: string | null | undefined): string =>
   url ? url.replace(/^https?:\/\//i, "") : "";
 
+const getFileNameFromUrl = (
+  url: string | null | undefined,
+): string | undefined => {
+  if (!url || url.startsWith("blob:")) return undefined;
+  try {
+    const pathname = new URL(url).pathname;
+    const last = pathname.split("/").filter(Boolean).pop();
+    return last ? decodeURIComponent(last) : undefined;
+  } catch {
+    const last = url.split("?")[0].split("/").filter(Boolean).pop();
+    return last ? decodeURIComponent(last) : undefined;
+  }
+};
+
 const ensureWebsiteProtocol = (url: string): string | null => {
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -88,7 +106,11 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
 
-  const form = useForm<zod.infer<typeof EditStoreSchema>>({
+  const form = useExtendableForm({
+    schema: EditStoreSchema,
+    model: "seller",
+    zone: "edit",
+    data: seller,
     defaultValues: {
       name: seller.name ?? "",
       handle: seller.handle ?? "",
@@ -97,13 +119,26 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
       description: seller.description ?? "",
       website_url: stripWebsiteProtocol(seller.website_url),
       media: seller.logo
-        ? [{ id: "existing-logo", url: seller.logo, isThumbnail: false, file: null }]
+        ? [
+            {
+              id: "existing-logo",
+              url: seller.logo,
+              isThumbnail: false,
+              file: null,
+            },
+          ]
         : [],
       bannerMedia: seller.banner
-        ? [{ id: "existing-banner", url: seller.banner, isThumbnail: false, file: null }]
+        ? [
+            {
+              id: "existing-banner",
+              url: seller.banner,
+              isThumbnail: false,
+              file: null,
+            },
+          ]
         : [],
     },
-    resolver: zodResolver(EditStoreSchema),
   });
 
   const { fields: logoFields } = useFieldArray({
@@ -129,14 +164,18 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
 
     try {
       if (newLogoFile) {
-        const uploaded = await uploadFilesQuery([newLogoFile]);
+        const uploaded = await sdk.vendor.uploads.mutate({
+          files: [newLogoFile.file],
+        });
         logoUrl = uploaded.files?.[0]?.url || null;
       } else if (values.media?.length) {
         logoUrl = values.media[0].url;
       }
 
       if (newBannerFile) {
-        const uploaded = await uploadFilesQuery([newBannerFile]);
+        const uploaded = await sdk.vendor.uploads.mutate({
+          files: [newBannerFile.file],
+        });
         bannerUrl = uploaded.files?.[0]?.url || null;
       } else if (values.bannerMedia?.length) {
         bannerUrl = values.bannerMedia[0].url;
@@ -158,6 +197,7 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
         website_url: ensureWebsiteProtocol(values.website_url),
         logo: logoUrl,
         banner: bannerUrl,
+        additional_data: values.additional_data,
       },
       {
         onSuccess: () => {
@@ -319,7 +359,7 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
           </div>
           <div className="border-ui-border-base border-t" />
           <div className="flex flex-col gap-y-4">
-            <Heading level="h2">{t("store.mediaHeading", "Media")}</Heading>
+            <Heading level="h2">{t("store.edit.mediaHeading")}</Heading>
             <Form.Field
               name="media"
               control={form.control}
@@ -333,11 +373,14 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
                     <Form.Control>
                       <FileUpload
                         uploadedImage={previewUrl}
-                        fileName={logoFile?.file?.name}
+                        fileName={
+                          logoFile?.file?.name ??
+                          getFileNameFromUrl(logoFile?.url)
+                        }
                         fileSize={logoFile?.file?.size}
                         multiple={false}
-                        label={t("products.media.uploadImagesLabel")}
-                        hint={t("products.media.uploadImagesHint")}
+                        label={t("store.edit.uploadLogoLabel")}
+                        hint={t("store.edit.uploadLogoHint")}
                         hasError={!!form.formState.errors.media}
                         formats={SUPPORTED_FORMATS}
                         onUploaded={onLogoUploaded}
@@ -362,11 +405,14 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
                     <Form.Control>
                       <FileUpload
                         uploadedImage={previewUrl}
-                        fileName={bannerFile?.file?.name}
+                        fileName={
+                          bannerFile?.file?.name ??
+                          getFileNameFromUrl(bannerFile?.url)
+                        }
                         fileSize={bannerFile?.file?.size}
                         multiple={false}
-                        label={t("products.media.uploadImagesLabel")}
-                        hint={t("products.media.uploadImagesHint")}
+                        label={t("store.edit.uploadBannerLabel")}
+                        hint={t("store.edit.uploadBannerHint")}
                         hasError={!!form.formState.errors.bannerMedia}
                         formats={SUPPORTED_FORMATS}
                         onUploaded={onBannerUploaded}
@@ -378,18 +424,14 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
                 );
               }}
             />
-            <div className="bg-ui-bg-subtle border-l-2 border-ui-border-strong rounded-md px-4 py-3">
-              <Text size="small" className="text-ui-fg-base">
-                <span className="font-medium">
-                  {t("store.mediaTip.label", "Tip:")}
-                </span>{" "}
-                {t(
-                  "store.mediaTip.message",
-                  "This media will be visible on the storefront.",
-                )}
-              </Text>
-            </div>
+            <Hint>{t("store.edit.mediaTipBody")}</Hint>
           </div>
+          <FormExtensionZone
+            model="seller"
+            zone="edit"
+            control={form.control}
+            data={seller}
+          />
         </RouteDrawer.Body>
         <RouteDrawer.Footer>
           <div className="flex items-center justify-end gap-x-2">

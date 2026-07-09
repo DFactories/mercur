@@ -1,6 +1,8 @@
 {
   "$schema": "./$schema.json",
   "general": {
+    "unknownError": "An unknown error occurred",
+    "notAvailable": "N/A",
     "ascending": "Ascending",
     "descending": "Descending",
     "add": "Add",
@@ -96,12 +98,16 @@
     }
   },
   "validation": {
+    "requiredField": "Required field",
+    "valueRequired": "Value is required",
+    "currencyCodeNotFound": "Currency code not found",
+    "shippingOptionIdMissing": "Shipping Option ID parameter is missing",
     "mustBeInt": "The value must be a whole number.",
     "mustBePositive": "The value must be a positive number."
   },
   "actions": {
     "save": "Save",
-    "saveAsDraft": "Save as draft",
+    "saveAsDraft": "Save draft",
     "copy": "Copy",
     "copied": "Copied",
     "duplicate": "Duplicate",
@@ -165,7 +171,7 @@
       "groups": {
         "all": "All areas",
         "customer": "Customers",
-        "seller": "Sellers",
+        "seller": "Stores",
         "customerGroup": "Customer Groups",
         "product": "Products",
         "productVariant": "Product Variants",
@@ -209,7 +215,7 @@
         "goToPriceLists": "Price Lists",
         "goToPromotions": "Promotions",
         "goToCampaigns": "Campaigns",
-        "goToSellers": "Sellers",
+        "goToSellers": "Stores",
         "goToPayouts": "Payouts"
       },
       "settings": {
@@ -411,6 +417,19 @@
     "list": {
       "noRecordsMessage": "Create your first product to start selling."
     },
+    "bulkEdit": {
+      "title": "Bulk edit products",
+      "description": "Update status and discountable settings for the selected products.",
+      "action": "Edit",
+      "successToast_one": "{{count}} product updated successfully.",
+      "successToast_other": "{{count}} products updated successfully."
+    },
+    "bulkDelete": {
+      "warning_one": "You are about to delete {{count}} product. This action cannot be undone.",
+      "warning_other": "You are about to delete {{count}} products. This action cannot be undone.",
+      "successToast_one": "{{count}} product deleted successfully.",
+      "successToast_other": "{{count}} products deleted successfully."
+    },
     "edit": {
       "header": "Edit Product",
       "description": "Edit the product details.",
@@ -423,19 +442,53 @@
       "tabs": {
         "details": "Details",
         "organize": "Organize",
+        "attributes": "Attributes",
         "variants": "Variants",
         "inventory": "Inventory kits"
       },
       "errors": {
         "variants": "Please select at least one variant.",
         "options": "Please create at least one option.",
-        "uniqueSku": "SKU must be unique."
+        "uniqueSku": "SKU must be unique.",
+        "requiredAttribute": "This attribute is required.",
+        "requiredAttributeSelect": "This attribute is required by the marketplace. Please select value.",
+        "requiredAttributeEnter": "This attribute is required by the marketplace. Please enter value.",
+        "requiredAttributeMultiSelect": "This attribute is required by the marketplace. Please select at least one value.",
+        "requiredStore": "Please select at least one store",
+        "requiredTitle": "Please enter a title",
+        "requiredCategory": "Please select a category"
       },
       "inventory": {
         "heading": "Inventory kits",
         "label": "Add inventory items to the variant's inventory kit.",
         "itemPlaceholder": "Select inventory item",
         "quantityPlaceholder": "How many of these are needed for the kit?"
+      },
+      "attributes": {
+        "header": "Attributes",
+        "description": "Manage attributes and variations for your product, e.g. color, size, brand etc.\nSelect from attributes defined by the marketplace or create your own.",
+        "addExisting": "Add existing",
+        "createNew": "Create new",
+        "title": "Title",
+        "titlePlaceholder": "e.g. Color",
+        "values": "Values",
+        "selectValues": "Select values",
+        "valuePlaceholder": "Enter values",
+        "enterValuePlaceholder": "Enter value",
+        "selectValuePlaceholder": "Select value",
+        "requiredAttributes": "Required attributes",
+        "requiredAttributesHint": "These attributes are required by the marketplace. Select them before proceeding.",
+        "useForVariants": "Use for Variations",
+        "useForVariantsDescription": "If checked, you will be able to create variants using this attribute. If not, the attribute will be used for informational purposes only.",
+        "tip": "Tip",
+        "variantAxisTip": "This attribute will create variants. You can define them in the next step.",
+        "editVariantAxisTip": "You will be able to create variants using this attribute.",
+        "warning": "Warning",
+        "editWarning": "Changes to this attribute may affect existing product variants or details. Review your variants and product details after saving.",
+        "errors": {
+          "titleRequired": "Please enter a title",
+          "valuesRequired": "Please enter at least one value"
+        }
       },
       "variants": {
         "header": "Variants",
@@ -449,9 +502,10 @@
         },
         "productVariants": {
           "label": "Product variants",
-          "hint": "This ranking will affect the variants' order in your storefront.",
-          "alert": "Add options to create variants.",
-          "tip": "Variants left unchecked won't be created. You can always create and edit variants afterwards but this list fits the variations in your product options."
+          "hint": "This ranking will affect the variants' display order.",
+          "alert": "Add values to your variant attributes to generate variants.",
+          "noAxes": "Mark attributes as \"Use for Variations\" in the Attributes step to generate variants.",
+          "tip": "Variants left unchecked won't be created. You can always create and edit variants afterwards but this list fits the variations in your product attributes."
         },
         "productOptions": {
           "label": "Product options",
@@ -510,7 +564,17 @@
       }
     },
     "attributes": "Attributes",
+    "attributeVariations": "Variations",
+    "attributeVariantsDescription": "Attributes used for variants",
+    "attributeProductInformation": "Product Information",
+    "attributeProductInformationDescription": "Attributes used for informational purposes",
+    "attributeRequiredByMarketplace": "This attribute is required by the marketplace.",
+    "attributeRequiredDeleteDisabledTooltip": "Required attributes cannot be removed.",
+    "addAttribute": "Add Attribute",
+    "deleteAttributeWarning": "Are you sure you want to delete the attribute \"{{title}}\"? This action cannot be undone.",
     "editAttributes": "Edit Attributes",
+    "editAttribute": "Edit Attribute",
+    "editAttributeHint": "Update the values selected for this attribute on the product.",
     "editOptions": "Edit Options",
     "editPrices": "Edit prices",
     "media": {
@@ -544,9 +608,74 @@
     "deleteVariantWarning": "You are about to delete the variant {{title}}. This action cannot be undone.",
     "productStatus": {
       "draft": "Draft",
-      "published": "Published",
       "proposed": "Proposed",
-      "rejected": "Rejected"
+      "published": "Published",
+      "requires_action": "Requires Action",
+      "rejected": "Rejected",
+      "accepted": "Accepted"
+    },
+    "request": {
+      "panel": {
+        "title": "Product request",
+        "description": "{{store}} has submitted a product request. Review the details, make any necessary updates, and choose whether to confirm and publish the product, request the update or reject the request."
+      },
+      "fallbackStore": "The store",
+      "actions": {
+        "requestUpdate": "Request update",
+        "reject": "Reject"
+      },
+      "confirmPrompt": {
+        "title": "Confirm request",
+        "description": "You are about to confirm this product update request. Once confirmed, any offers created for this product will appear on the storefront. Only offers with stock levels and prices set will be visible.",
+        "noteLabel": "Note for store",
+        "notePlaceholder": "Specify changes you made or additional requests"
+      },
+      "requestUpdatePrompt": {
+        "title": "Request update",
+        "description": "Request update to this product before publishing. Add note to explain what needs to be updated.",
+        "noteLabel": "Note for store",
+        "notePlaceholder": "Describe what needs to be updated (e.g., missing images, incorrect price, incomplete description)",
+        "send": "Send"
+      },
+      "rejectPrompt": {
+        "title": "Reject request",
+        "description": "You are about to reject this product request.",
+        "noteLabel": "Note for store",
+        "notePlaceholder": "Explain why you reject the request",
+        "confirm": "Reject"
+      },
+      "toast": {
+        "publishedSuccessfully": "Product was confirmed and published",
+        "updateRequestedSuccessfully": "Update request sent to store",
+        "rejectedSuccessfully": "Product request was rejected"
+      }
+    },
+    "edits": {
+      "panel": {
+        "title": "Product update request",
+        "description": "{{store}} has submitted a product update request. Review the requested changes and choose whether to confirm and publish the updates or reject this request.",
+        "deleteRequested": "Product deletion is pending approval."
+      },
+      "actions": {
+        "reject": "Reject"
+      },
+      "confirmPrompt": {
+        "title": "Confirm request",
+        "description": "You are about to confirm this product update request. Once confirmed, the product will be updated on the storefront.",
+        "noteLabel": "Note for store",
+        "notePlaceholder": "Specify changes you made or additional requests"
+      },
+      "rejectPrompt": {
+        "title": "Reject request",
+        "description": "You are about to reject this product request.",
+        "noteLabel": "Note for store",
+        "notePlaceholder": "Explain why you reject the request or suggest changes",
+        "confirm": "Reject"
+      },
+      "toast": {
+        "confirmedSuccessfully": "Product update request confirmed",
+        "rejectedSuccessfully": "Product update request rejected"
+      }
     },
     "columns": {
       "product_display": "Product",
@@ -593,6 +722,13 @@
       },
       "collection": {
         "label": "Collection"
+      },
+      "stores": {
+        "label": "Stores"
+      },
+      "globally_available": {
+        "label": "Globally available",
+        "hint": "When unchecked, only the selected stores will be able to offer this product"
       },
       "categories": {
         "label": "Categories"
@@ -746,7 +882,12 @@
     "subtitle": "Organize products into collections.",
     "createCollection": "Create Collection",
     "createCollectionHint": "Create a new collection to organize your products.",
-    "createSuccess": "Collection created successfully.",
+    "createSuccess": "Collection was successfully created.",
+    "deleteSuccess": "Collection was successfully deleted.",
+    "updateSuccess": "Collection was successfully updated.",
+    "validation": {
+      "titleRequired": "Please enter a title"
+    },
     "editCollection": "Edit Collection",
     "handleTooltip": "The handle is used to reference the collection in your storefront. If not specified, the handle will be generated from the collection title.",
     "deleteWarning": "You are about to delete the collection {{title}}. This action cannot be undone.",
@@ -755,6 +896,7 @@
     "removeProductsWarning_other": "You are about to remove {{count}} products from the collection. This action cannot be undone.",
     "products": {
       "list": {
+        "noRecordsTitle": "No products yet",
         "noRecordsMessage": "There are no products in the collection."
       },
       "add": {
@@ -765,11 +907,66 @@
         "successToast_one": "Product was successfully removed from the collection.",
         "successToast_other": "Products were successfully removed from the collection."
       }
+    },
+    "media": {
+      "label": "Media",
+      "thumbnail": "Thumbnail",
+      "banner": "Banner",
+      "galleryLabel": "Gallery",
+      "editHint": "Add media to the collection to showcase it on the storefront.",
+      "deleteWarning": "You are about to delete this image. This action cannot be undone.",
+      "empty": {
+        "header": "No media yet",
+        "description": "Add media to showcase it on the storefront."
+      },
+      "upload": {
+        "title": "Upload images",
+        "hint": "Drag and drop images here or click to upload."
+      },
+      "tooltips": {
+        "thumbnail": "Shown as the collection thumbnail on the homepage.",
+        "banner": "Shown as the collection banner in the collection listing."
+      },
+      "actions": {
+        "setThumbnail": "Make thumbnail",
+        "removeThumbnail": "Remove thumbnail",
+        "setBanner": "Make banner",
+        "removeBanner": "Remove banner"
+      },
+      "edit": {
+        "header": "Edit Media",
+        "description": "Upload images and choose the thumbnail and banner shown on the storefront.",
+        "successToast": "Collection media was successfully updated."
+      }
+    },
+    "icon": {
+      "label": "Icon",
+      "empty": {
+        "header": "No icon yet",
+        "description": "Add icon to showcase it near the collection label on the storefront."
+      },
+      "tip": {
+        "label": "Tip:",
+        "text": "This icon will appear near the collection label on the storefront."
+      },
+      "upload": {
+        "title": "Upload file",
+        "hint": "Drag and drop file here or click to upload."
+      },
+      "edit": {
+        "header": "Edit Icon",
+        "description": "Upload a single icon shown near the collection label on the storefront.",
+        "successToast": "Collection icon was successfully updated."
+      }
     }
   },
   "categories": {
     "domain": "Categories",
     "subtitle": "Organize products into categories, and manage those categories' ranking and hierarchy.",
+    "handleTooltip": "The handle is used to reference the category on the storefront. If not specified, the handle will be generated from the category title.",
+    "validation": {
+      "titleRequired": "Please enter a title"
+    },
     "create": {
       "header": "Create Category",
       "hint": "Create a new category to organize your products.",
@@ -777,7 +974,7 @@
         "details": "Details",
         "organize": "Organize Ranking"
       },
-      "successToast": "Category {{name}} was successfully created."
+      "successToast": "Category was successfully created."
     },
     "edit": {
       "header": "Edit Category",
@@ -786,27 +983,80 @@
     },
     "delete": {
       "confirmation": "You are about to delete the category {{name}}. This action cannot be undone.",
-      "successToast": "Category {{name}} was successfully deleted."
+      "successToast": "Category was successfully deleted."
     },
     "products": {
       "add": {
         "disabledTooltip": "The product is already in this category.",
-        "successToast_one": "Added {{count}} product to the category.",
-        "successToast_other": "Added {{count}} products to the category."
+        "successToast_one": "Product was successfully added to the category.",
+        "successToast_other": "Products were successfully added to the category."
       },
       "remove": {
         "confirmation_one": "You are about to remove {{count}} product from the category. This action cannot be undone.",
         "confirmation_other": "You are about to remove {{count}} products from the category. This action cannot be undone.",
-        "successToast_one": "Removed {{count}} product from the category.",
-        "successToast_other": "Removed {{count}} products from the category."
+        "successToast_one": "Product was successfully removed from the category.",
+        "successToast_other": "Products were successfully removed from the category."
       },
       "list": {
+        "noRecordsTitle": "No products yet",
         "noRecordsMessage": "There are no products in the category."
       }
     },
     "organize": {
       "header": "Organize",
-      "action": "Edit ranking"
+      "action": "Edit ranking",
+      "successToast": "Ranking was successfully updated."
+    },
+    "media": {
+      "label": "Media",
+      "thumbnail": "Thumbnail",
+      "banner": "Banner",
+      "galleryLabel": "Gallery",
+      "editHint": "Add media to the category to showcase it on the storefront.",
+      "deleteWarning": "You are about to delete this image. This action cannot be undone.",
+      "empty": {
+        "header": "No media yet",
+        "description": "Add media to showcase it on the storefront."
+      },
+      "upload": {
+        "title": "Upload images",
+        "hint": "Drag and drop images here or click to upload."
+      },
+      "tooltips": {
+        "thumbnail": "Shown as the category thumbnail on the homepage.",
+        "banner": "Shown as the category banner in the category listing."
+      },
+      "actions": {
+        "setThumbnail": "Make thumbnail",
+        "removeThumbnail": "Remove thumbnail",
+        "setBanner": "Make banner",
+        "removeBanner": "Remove banner"
+      },
+      "edit": {
+        "header": "Edit Media",
+        "description": "Upload images and choose the thumbnail and banner shown on the storefront.",
+        "successToast": "Category media was successfully updated."
+      }
+    },
+    "icon": {
+      "label": "Icon",
+      "empty": {
+        "header": "No icon yet",
+        "description": "Add icon to showcase it near the category label on the storefront."
+      },
+      "tip": {
+        "label": "Tip:",
+        "text": "This icon will appear near the category label on the storefront."
+      },
+      "upload": {
+        "title": "Upload file",
+        "hint": "Drag and drop file here or click to upload."
+      },
+      "edit": {
+        "header": "Edit Icon",
+        "description": "Upload a single icon shown near the category label on the storefront.",
+        "successToast": "Category icon was successfully updated."
+      }
     },
     "fields": {
       "visibility": {
@@ -852,6 +1102,7 @@
       "attributes": "Attributes",
       "requiresShipping": "Requires shipping",
       "requiresShippingHint": "Does the inventory item require shipping?",
+      "descriptionPlaceholder": "The item description",
       "successToast": "Inventory item was successfully created."
     },
     "reservation": {
@@ -929,23 +1180,29 @@
     },
     "groups": {
       "label": "Customer groups",
-      "remove": "Are you sure you want to remove the customer from \"{{name}}\" customer group?",
-      "removeMany": "Are you sure you want to remove customer from following customer groups: {{groups}}?",
+      "removeTitle": "Remove customer",
+      "remove": "You are about to remove customer from {{name}} group. This action cannot be undone.",
+      "removeMany": "You are about to remove customer from {{groups}} groups. This action cannot be undone.",
       "alreadyAddedTooltip": "The customer is already in this customer group.",
       "list": {
+        "emptyTitle": "No customer groups yet",
         "noRecordsMessage": "This customer doesn't belong to any group."
       },
       "add": {
-        "success": "Customer added to: {{groups}}.",
+        "successOne": "Customer was successfully added to {{groups}} group.",
+        "successMany": "Customer was successfully added to {{groups}} groups.",
         "list": {
           "noRecordsMessage": "Please create a customer group first."
-        }
+        },
+        "success": "Customer added to: {{groups}}."
       },
       "removed": {
-        "success": "Customer removed from: {{groups}}.",
+        "successOne": "Customer was successfully removed from {{groups}} group.",
+        "successMany": "Customer was successfully removed from {{groups}} groups.",
         "list": {
           "noRecordsMessage": "Please create a customer group first."
-        }
+        },
+        "success": "Customer removed from: {{groups}}."
       }
     },
     "edit": {
@@ -968,6 +1225,8 @@
     "hasAccount": "Has account",
     "addresses": {
       "title": "Addresses",
+      "emptyTitle": "No addresses yet",
+      "emptyMessage": "This customer doesn't have any addresses",
       "fields": {
         "addressName": "Address name",
         "address1": "Address 1",
@@ -985,6 +1244,19 @@
         "header": "Create Address",
         "hint": "Create a new address for the customer.",
         "successToast": "Address was successfully created."
+      },
+      "edit": {
+        "header": "Edit Address",
+        "hint": "Edit the customer's address.",
+        "successToast": "Address was successfully updated."
+      },
+      "delete": {
+        "successToast": "Address was successfully deleted."
+      },
+      "validation": {
+        "addressNameRequired": "Please enter an address name",
+        "addressRequired": "Please enter an address",
+        "countryRequired": "Please select a country"
       }
     }
   },
@@ -1036,6 +1308,13 @@
     }
   },
   "orders": {
+    "group": {
+      "heading": "Orders in group",
+      "noOtherOrders": "No other orders in this group"
+    },
+    "commission": {
+      "total": "Total"
+    },
     "giftCardsStoreCreditLines": "Gift cards & credit lines",
     "creditLines": {
       "title": "Credit lines",
@@ -1065,11 +1344,16 @@
     "claim": "Claim",
     "exchange": "Exchange",
     "return": "Return",
+    "actions": {
+      "cancelDisabledFulfilled": "Cannot cancel an order that has fulfilled items."
+    },
     "cancelWarning": "You are about to cancel the order {{id}}. This action cannot be undone.",
     "orderCanceled": "Order canceled successfully",
     "onDateFromSalesChannel": "{{date}} from {{salesChannel}}",
     "list": {
-      "noRecordsMessage": "Your orders will show up here."
+      "noRecordsMessage": "Your orders will show up here.",
+      "expandAll": "Expand all rows",
+      "collapseAll": "Collapse all rows"
     },
     "status": {
       "not_paid": "Not paid",
@@ -1108,6 +1392,7 @@
       "title": "Payments",
       "isReadyToBeCaptured": "Payment <0/> is ready to be captured.",
       "totalPaidByCustomer": "Total paid by customer",
+      "totalPending": "Total pending",
       "totalStoreCreditRefunds": "Total store credit refunds",
       "capture": "Capture payment",
       "capture_short": "Capture",
@@ -1192,6 +1477,7 @@
       }
     },
     "returns": {
+      "restockPreview": "Receiving {{quantity}} × {{offerSku}} → +{{delta}} to {{inventoryItem}} at {{location}}",
       "create": "Create Return",
       "confirm": "Confirm Return",
       "confirmText": "You are about to confirm a Return. This action cannot be undone.",
@@ -1510,14 +1796,14 @@
       }
     },
     "fields": {
-      "displayId": "Display ID",
+      "displayId": "Order ID",
       "refundableAmount": "Refundable amount",
       "returnableQuantity": "Returnable quantity",
       "groupId": "Group ID",
-      "orderIds": "Order IDs",
-      "vendor": "Vendor",
-      "vendorsCount_one": "{{count}} vendor",
-      "vendorsCount_other": "{{count}} vendors"
+      "orderIds": "Order ID",
+      "vendor": "Store",
+      "vendorsCount_one": "{{count}} store",
+      "vendorsCount_other": "{{count}} stores"
     }
   },
   "payouts": {
@@ -2048,6 +2334,32 @@
     }
   },
   "promotions": {
+    "templates": {
+      "amountOffProducts": {
+        "title": "Amount off products",
+        "description": "Discount specific products or collection of products"
+      },
+      "amountOffOrder": {
+        "title": "Amount off order",
+        "description": "Discounts the total order amount"
+      },
+      "percentageOffProduct": {
+        "title": "Percentage off product",
+        "description": "Discounts a percentage off selected products"
+      },
+      "percentageOffOrder": {
+        "title": "Percentage off order",
+        "description": "Discounts a percentage of the total order amount"
+      },
+      "buyGet": {
+        "title": "Buy X Get Y",
+        "description": "Buy X product(s), get Y product(s)"
+      },
+      "freeShipping": {
+        "title": "Free shipping",
+        "description": "Applies a 100% discount to shipping fees"
+      }
+    },
     "domain": "Promotions",
     "sections": {
       "details": "Promotion Details"
@@ -2131,10 +2443,16 @@
     "campaign_currency": {
       "tooltip": "This is the promotion's currency. Change it from the Details tab."
     },
+    "campaignSection": {
+      "noRecordsTitle": "Not part of a campaign",
+      "noRecordsMessage": "Add this promotion to an existing campaign",
+      "addToCampaign": "Add to Campaign"
+    },
     "form": {
       "required": "Required",
       "and": "AND",
       "selectAttribute": "Select Attribute",
+      "selectOperator": "Select Operator",
       "campaign": {
         "existing": {
           "title": "Existing Campaign",
@@ -2391,7 +2709,9 @@
         "successToast_other": "Successfully deleted prices for {{count}} products."
       },
       "add": {
-        "successToast": "Prices were successfully added to the price list."
+        "successToast": "Prices were successfully added to the price list.",
+        "alreadyInPriceList": "This product is already in the price list",
+        "noVariants": "This product has no variants"
       },
       "edit": {
         "successToast": "Prices were successfully updated."
@@ -2502,14 +2822,15 @@
       }
     },
     "deleteUserWarning": "You are about to delete the user {{name}}. This action cannot be undone.",
-    "deleteUserSuccess": "User {{name}} deleted successfully",
+    "deleteUserSuccess": "User {{name}} was successfully removed.",
     "invite": "Invite"
   },
   "marketplace": {
     "domain": "Marketplace",
     "manageMarketplaceDetails": "Manage your marketplace's details",
     "edit": {
-      "header": "Edit Marketplace"
+      "header": "Edit Marketplace",
+      "namePlaceholder": "ACME"
     }
   },
   "store": {
@@ -2547,7 +2868,7 @@
       "edit": {
         "header": "Edit Address",
         "description": "Update the address for this store.",
-        "successToast": "Address updated"
+        "successToast": "Address was successfully updated."
       },
       "validation": {
         "nameRequired": "Please enter a name",
@@ -2563,7 +2884,7 @@
       "edit": {
         "header": "Edit Payment Details",
         "description": "Update the payment details for this store.",
-        "successToast": "Payment details updated"
+        "successToast": "Payment details was successfully updated."
       },
       "fields": {
         "countryCode": "Country",
@@ -2590,7 +2911,7 @@
       "edit": {
         "header": "Edit Company Details",
         "description": "Update the company details for this store.",
-        "successToast": "Company details updated"
+        "successToast": "Company details was successfully updated."
       },
       "fields": {
         "corporateName": "Company",
@@ -2607,6 +2928,10 @@
       }
     },
     "scheduledClosure": {
+      "validation": {
+        "closedFromRequired": "Close from date is required",
+        "closedFromInPast": "Close from date cannot be in the past"
+      },
       "header": "Scheduled Closure",
       "edit": {
         "header": "Schedule Store Closure",
@@ -2619,15 +2944,15 @@
         "closedToHint": "If empty, the store will remain closed indefinitely."
       }
     },
-    "subscription": {
-      "header": "Subscription Plan",
-      "month": "month"
-    },
     "toast": {
-      "update": "Store successfully updated",
+      "update": "Store was successfully updated.",
       "currenciesUpdated": "Currencies updated successfully",
       "currenciesRemoved": "Removed currencies from the store successfully",
       "updatedTaxInclusivitySuccessfully": "Tax inclusive pricing updated successfully"
+    },
+    "subscription": {
+      "header": "Subscription Plan",
+      "month": "month"
     },
     "documents": {
       "businessLicense": "Business license",
@@ -2878,12 +3203,21 @@
       "lastUsedAtLabel": "Last used at",
       "revokedByLabel": "Revoked by",
       "revokedAtLabel": "Revoked at",
-      "createdByLabel": "Created by"
+      "createdByLabel": "Created by",
+      "tokenLabel": "Token"
     }
   },
   "attributes": {
     "domain": "Product Attributes",
     "subtitle": "Manage product attributes and their possible values.",
+    "editRanking": {
+      "successToast": "Ranking updated successfully."
+    },
+    "possibleValues": {
+      "editRanking": "Edit ranking",
+      "noRecordsTitle": "No created values",
+      "noRecordsMessage": "Create attribute to organize your products"
+    },
     "list": {
       "title": "Product Attributes",
       "noRecordsMessage": "No product attributes have been created yet."
@@ -2895,9 +3229,11 @@
         "details": "Details",
         "type": "Type"
       },
-      "fillNameWarning": "Please fill in at least the name field before proceeding to Type configuration.",
-      "possibleValuesRequired": "At least one possible value is required for this type",
-      "successToast": "Attribute \"{{name}}\" was successfully created."
+      "titleRequired": "Please enter a title",
+      "possibleValuesRequired": "Please add at least one value",
+      "categoriesRequired": "Please select at least one category",
+      "successToast": "Attribute \"{{name}}\" was successfully created.",
+      "fillNameWarning": "Please fill in at least the name field before proceeding to Type configuration."
     },
     "edit": {
       "header": "Edit Attribute",
@@ -2942,13 +3278,22 @@
       "required": "Required",
       "global": "Global",
       "category": "Category",
-      "categories": "Product Categories",
+      "categories": "Categories",
       "productAttribute": "Product Attribute",
       "values": "Values",
-      "possibleValues": "Possible Values",
+      "possibleValues": "Possible values",
       "value": "Value",
+      "variantAxis": "Use for Variants",
       "rank": "Rank",
-      "metadata": "Metadata"
+      "metadata": "Metadata",
+      "isRequired": "Required attribute",
+      "isRequiredHint": "If checked, a value must be set to this attribute.",
+      "isFilterable": "Filterable attribute",
+      "isFilterableHint": "If checked, customers will be able to filter products using this attribute.",
+      "isGlobal": "Global attribute",
+      "isGlobalHint": "If checked, this attribute applies to all products across all categories.",
+      "isVariantAxis": "Use for variants",
+      "isVariantAxisHint": "If checked, this attribute will define product variants (e.g. size, color)."
     },
     "type": {
       "select": "Single Select",
@@ -3223,6 +3568,7 @@
     "inStock": "In stock",
     "added": "Added",
     "removed": "Removed",
+    "updated": "Updated",
     "from": "From",
     "to": "To",
     "beaware": "Be aware",
@@ -3231,12 +3577,16 @@
     "selectValues": "Select Values"
   },
   "fields": {
+    "yes": "Yes",
+    "no": "No",
     "amount": "Amount",
+    "commission": "Commission",
     "reference": "Reference",
     "reference_id": "Reference ID",
     "refundAmount": "Refund amount",
     "name": "Name",
     "note": "Note",
+    "owner": "Owner",
     "optional": "Optional",
     "selectPlaceholder": "Select",
     "default": "Default",
@@ -3264,6 +3614,7 @@
     "conditions": "Conditions",
     "category": "Category",
     "collection": "Collection",
+    "store": "Store",
     "discountable": "Discountable",
     "promotionCode": "Promotion code",
     "handle": "Handle",
@@ -3397,7 +3748,28 @@
     "startDate": "Start date",
     "endDate": "End date",
     "draft": "Draft",
-    "values": "Values"
+    "values": "Values",
+    "is_giftcard": "Gift card",
+    "origin_country": "Country of origin",
+    "hs_code": "HS code",
+    "mid_code": "MID code",
+    "external_id": "External ID",
+    "is_restricted": "Restricted",
+    "tag_ids": "Tags",
+    "category_ids": "Categories",
+    "allow_backorder": "Allow backorder",
+    "manage_inventory": "Manage inventory",
+    "variant_rank": "Variant rank",
+    "attribute_values": "Attribute values",
+    "isbn": "ISBN",
+    "asin": "ASIN",
+    "gtin": "GTIN",
+    "inventory_quantity": "Inventory quantity",
+    "requires_shipping": "Requires shipping",
+    "variant_attributes": "Variant attributes",
+    "product_attributes": "Product attributes",
+    "type_id": "Type",
+    "collection_id": "Collection"
   },
   "dateTime": {
     "years_one": "Year",
@@ -3416,10 +3788,21 @@
     "seconds_other": "Seconds"
   },
   "views": {
+    "toasts": {
+      "created": "View created",
+      "createFailed": "Failed to create view",
+      "updateActiveFailed": "Failed to update active view",
+      "updated": "View updated",
+      "updateFailed": "Failed to update view",
+      "deleted": "View deleted successfully",
+      "deleteFailed": "Failed to delete view"
+    },
     "save": "Save",
     "saveAsNew": "Save as new view",
+    "saveAsSystemDefault": "Save as system default",
     "updateDefaultForEveryone": "Update default for everyone",
     "updateViewName": "Update view",
+    "updateNamed": "Update \"{{name}}\"",
     "prompts": {
       "updateDefault": {
         "title": "Update default view",
@@ -3432,12 +3815,24 @@
         "description": "Are you sure you want to update \"{{name}}\"?",
         "confirmText": "Update",
         "cancelText": "Cancel"
+      },
+      "saveAsDefault": {
+        "title": "Save as system default",
+        "description": "This will save the current configuration as the system default. All users will see this configuration by default unless they have their own personal views. Are you sure?",
+        "confirmText": "Save as default",
+        "cancelText": "Cancel"
+      },
+      "updateExisting": {
+        "title": "Update existing view",
+        "description": "Update \"{{name}}\" with the current configuration?",
+        "confirmText": "Update",
+        "cancelText": "Cancel"
       }
     }
   },
   "requests": {
     "domain": "Requests",
-    "seller": "Seller",
+    "seller": "Store",
     "product": "Product",
     "review-remove": "Review Remove",
     "return": "Order Return",
@@ -3450,6 +3845,17 @@
   "stores": {
     "domain": "Stores",
     "handleTooltip": "The handle is used as the URL slug for the store. Leave empty to auto-generate from the name.",
+    "emptyStates": {
+      "users": {
+        "title": "No users yet"
+      },
+      "products": {
+        "title": "No products yet"
+      },
+      "orders": {
+        "title": "No orders yet"
+      }
+    },
     "fields": {
       "name": "Name",
       "handle": "Handle",
@@ -3464,7 +3870,7 @@
       "city": "City",
       "province": "Province",
       "country_code": "Country Code",
-      "seller": "Seller",
+      "seller": "Store",
       "premium": "Featured"
     },
     "status": {
@@ -3500,9 +3906,9 @@
         }
       },
       "invite": {
-        "resendSuccess": "Invite resent to {{email}}",
+        "resendSuccess": "Invite was successfully resent to {{email}}",
         "deleteSuccess": "Invite for {{email}} deleted",
-        "linkCopied": "Invite link copied to clipboard",
+        "linkCopied": "Invite link was successfully copied to clipboard.",
         "copyFailed": "Failed to copy invite link",
         "noVendorUrl": "Vendor URL is not configured on the backend (MERCUR_VENDOR_URL)"
       }
@@ -3529,7 +3935,7 @@
       "usersHintSecondary": "Once the store is created, the selected user will receive an invitation to join.",
       "ownerEmail": "Owner email",
       "ownerEmailHint": "The owner will be granted the Store Administration role.",
-      "successToast": "Store created successfully",
+      "successToast": "Store was successfully created.",
       "validation": {
         "nameRequired": "Please enter a name",
         "emailRequired": "Please enter an email",
@@ -3599,38 +4005,105 @@
   "commissionLines": {
     "domain": "Commission Lines"
   },
-  "notificationSettings": {
-    "domain": "Notification Settings",
-    "subtitle": "Choose how each event notifies users, map template variables, and toggle the in-panel feed.",
-    "systemManaged": "System",
-    "templateIdPlaceholder": "sms.ir template id",
-    "subjectPlaceholder": "Title override (optional)",
-    "audience": {
-      "customer": "Customer",
-      "vendor": "Vendor",
-      "admin": "Admin"
+  "commissions": {
+    "rulesTable": {
+      "name": "Rule Name",
+      "attribute": "Attribute",
+      "fee": "Fee"
     },
-    "channel": {
-      "email": "Email",
-      "sms": "SMS",
-      "feed": "Feed",
-      "seller_feed": "Seller feed"
+    "domain": "Commissions",
+    "create": {
+      "header": "Create Commission Rule",
+      "details": "Details",
+      "commission": "Commission",
+      "successToast": "Commission rule was successfully created."
     },
-    "variables": {
-      "title": "Template variables (use these names in your sms.ir template)",
-      "example": "e.g. {{example}}",
-      "copied": "Copied {{key}}"
+    "edit": {
+      "header": "Edit Commission Rule",
+      "successToast": "Commission rule was successfully updated."
     },
-    "params": {
-      "title": "Template parameters sent to sms.ir",
-      "hint": "Sent as your template's parameters. Rename a parameter to match your sms.ir placeholder, or remove any your template doesn't use.",
-      "add": "Add parameter",
-      "namePlaceholder": "Template parameter",
-      "variablePlaceholder": "Variable",
-      "unknownVar": "Unknown variable"
+    "commissionEdit": {
+      "header": "Edit Commission",
+      "successToast": "Commission was successfully updated."
     },
-    "toast": {
-      "saved": "Notification settings saved"
+    "delete": {
+      "title": "Delete commission rule",
+      "description": "You are about to delete commission rule {{name}}. This action cannot be undone.",
+      "successToast": "Commission rule was successfully deleted."
+    },
+    "fields": {
+      "code": "Code",
+      "value": "Value",
+      "status": "Status",
+      "enabled": "Enabled",
+      "enabledHint": "Enable or disable this commission rule.",
+      "stores": "Stores",
+      "productTypes": "Product Types",
+      "categories": "Categories",
+      "taxIncluded": "Tax included",
+      "taxIncludedHint": "If checked, commission is calculated on the total including tax. If unchecked, tax is excluded and goes entirely to the store.",
+      "shippingIncluded": "Shipping included",
+      "shippingIncludedHint": "If checked, commission is calculated on the total including shipping. If unchecked, shipping fees go entirely to the store.",
+      "type": {
+        "label": "Type",
+        "percentage": "Percentage",
+        "fixed": "Fixed",
+        "percentageHint": "Charge a percentage of the order total.",
+        "fixedHint": "Charge a fixed amount per order."
+      },
+      "scopeType": {
+        "label": "Type",
+        "store": "Store",
+        "productType": "Product Type",
+        "category": "Category",
+        "storeProductType": "Store + Product Type",
+        "storeCategory": "Store + Category",
+        "storeHint": "Apply to specific stores.",
+        "productTypeHint": "Apply to specific product types.",
+        "categoryHint": "Apply to specific categories.",
+        "storeProductTypeHint": "Apply to product types within specific stores.",
+        "storeCategoryHint": "Apply to categories within specific stores."
+      }
+    },
+    "global": {
+      "title": "Global Commission",
+      "code": "Code",
+      "type": "Type",
+      "value": "Value",
+      "tax": "Tax",
+      "shipping": "Shipping",
+      "included": "Included in commission",
+      "notIncluded": "Not included in commission",
+      "edit": {
+        "header": "Edit Global Commission",
+        "successToast": "Global commission was successfully updated."
+      }
+    },
+    "rules": {
+      "title": "Commission Rules",
+      "columns": {
+        "rule": "Rule",
+        "scope": "Scope",
+        "type": "Type",
+        "value": "Value",
+        "status": "Status"
+      },
+      "empty": {
+        "heading": "No commission rules yet",
+        "description": "Create a commission rule to override the global commission for\nspecific stores, product types, or categories."
+      }
+    },
+    "status": {
+      "enabled": "Active",
+      "disabled": "Inactive"
+    },
+    "validation": {
+      "titleRequired": "Please enter a title",
+      "codeRequired": "Please enter a code",
+      "value": "Please enter a value",
+      "storesRequired": "Please select at least one store",
+      "productTypesRequired": "Please select at least one product type",
+      "categoriesRequired": "Please select at least one category"
     }
   },
   "commissionRates": {
@@ -3682,6 +4155,107 @@
     "toggle": {
       "enabledToast": "Commission rate enabled successfully",
       "disabledToast": "Commission rate disabled successfully"
+    }
+  },
+  "offers": {
+    "domain": "Offers",
+    "empty": {
+      "heading": "No offers yet",
+      "description": "Stores haven't published any offers on this marketplace yet.",
+      "storeDescription": "This store doesn't have any offers"
+    },
+    "filtered": {
+      "heading": "No matching offers",
+      "description": "Adjust filters or search terms."
+    },
+    "actions": {
+      "openStore": "Open store",
+      "bulkDelete": "Delete selected"
+    },
+    "fields": {
+      "store": "Store",
+      "sku": "SKU",
+      "variant": "Master variant",
+      "ean": "EAN",
+      "upc": "UPC",
+      "shippingProfile": "Shipping profile",
+      "requiredQuantity": "Required quantity",
+      "stockStatus": "Stock status",
+      "variants": "Variants",
+      "variantsCount_one": "{{count}} variant",
+      "variantsCount_other": "{{count}} variants"
+    },
+    "detail": {
+      "offerLabel": "Offer",
+      "productVariant": "Product variant",
+      "store": "Store",
+      "inventoryItems": "Inventory items",
+      "goToInventoryItem": "Go to inventory item",
+      "manageKit": "Inventory kit",
+      "noInventoryItems": "This offer has no inventory items linked.",
+      "associatedProduct": "Associated product",
+      "offerVariant": "Offer Variant",
+      "shippingConfiguration": "Shipping Configuration"
+    },
+    "delete": {
+      "description": "You are about to delete offer {{sku}}. This cannot be undone.",
+      "successToast": "Offer was successfully deleted."
+    },
+    "bulkDelete": {
+      "description": "You are about to delete {{count}} offer(s) from {{storeName}}. This cannot be undone.",
+      "successToast": "Deleted {{count}} offer(s)",
+      "errorToast": "Bulk delete failed: {{message}}",
+      "crossStoreWarning": "Select offers from one store at a time. Bulk delete is scoped per store.",
+      "crossStoreTooltip": "Bulk delete only works within one store."
+    },
+    "bulkDeleteAll": {
+      "description": "You are about to delete every offer for {{storeName}}. This cannot be undone.",
+      "actionLabel": "Delete catalog"
+    },
+    "sellerSection": {
+      "heading": "Offers",
+      "viewAll": "View all",
+      "bulkDeleteAll": "Delete catalog",
+      "empty": "This store has no offers yet."
+    },
+    "stockStatus": {
+      "in_stock": "In stock",
+      "low_stock": "Low stock",
+      "out_of_stock": "Out of stock"
+    }
+  },
+  "notificationSettings": {
+    "domain": "Notification Settings",
+    "subtitle": "Choose how each event notifies users, map template variables, and toggle the in-panel feed.",
+    "systemManaged": "System",
+    "templateIdPlaceholder": "sms.ir template id",
+    "subjectPlaceholder": "Title override (optional)",
+    "audience": {
+      "customer": "Customer",
+      "vendor": "Vendor",
+      "admin": "Admin"
+    },
+    "channel": {
+      "email": "Email",
+      "sms": "SMS",
+      "feed": "Feed",
+      "seller_feed": "Seller feed"
+    },
+    "variables": {
+      "title": "Template variables (use these names in your sms.ir template)",
+      "example": "e.g. {{example}}",
+      "copied": "Copied {{key}}"
+    },
+    "params": {
+      "title": "Template parameters sent to sms.ir",
+      "hint": "Sent as your template's parameters. Rename a parameter to match your sms.ir placeholder, or remove any your template doesn't use.",
+      "add": "Add parameter",
+      "namePlaceholder": "Template parameter",
+      "variablePlaceholder": "Variable",
+      "unknownVar": "Unknown variable"
+    },
+    "toast": {
+      "saved": "Notification settings saved"
     }
   }
 }

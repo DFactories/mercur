@@ -1,4 +1,5 @@
 import {
+import components from "virtual:mercur/components";
   BuildingStorefront,
   Buildings,
   CogSixTooth,
@@ -26,8 +27,26 @@ import { Skeleton } from "../../common/skeleton";
 import { INavItem, NavItem } from "../../layout/nav-item";
 import { Shell } from "../../layout/shell";
 import { UserMenu } from "../user-menu";
-import components from "virtual:mercur/components";
 import menuItemsModule from "virtual:mercur/menu-items";
+import {
+  applyNavOverrides,
+  useExtension,
+  type CoreNavItem,
+} from "@mercurjs/dashboard-shared";
+
+const navId = (to: string) => to.replace(/^\//, "");
+
+const toCoreNavItem = (route: Omit<INavItem, "pathname">): CoreNavItem => ({
+  id: navId(route.to),
+  label: route.label,
+  to: route.to,
+  icon: route.icon,
+  items: route.items?.map((item) => ({
+    id: navId(item.to),
+    label: item.label,
+    to: item.to,
+  })),
+});
 import { getMenuItemsByType, getNestedMenuItems } from "../../../utils/routes";
 
 export const MainLayout = () => {
@@ -61,9 +80,13 @@ const addNestedItems = (
 
 const MainSidebar = () => {
   const coreRoutes = useCoreRoutes();
+  const navOverrides = useExtension().getNavOverrides();
   const customMenuItems = getMenuItemsByType(allMenuItems, "main");
 
-  const routesWithNested = coreRoutes.map((route) => ({
+  const routesWithNested = applyNavOverrides(
+    coreRoutes.map(toCoreNavItem),
+    navOverrides,
+  ).map((route) => ({
     ...route,
     items: addNestedItems(route.to, route.items),
   }));
@@ -286,6 +309,10 @@ const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       label: t("products.domain"),
       to: "/products",
       items: [
+        {
+          label: t("offers.domain"),
+          to: "/offers",
+        },
         {
           label: t("collections.domain"),
           to: "/collections",

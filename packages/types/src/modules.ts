@@ -1,8 +1,11 @@
 export enum MercurModules {
     SELLER = "seller",
-    SUBSCRIPTION = "subscription",
     COMMISSION = "commission",
     PAYOUT = "payout",
+    OFFER = "offer",
+    MEDIA = "media",
+    PRODUCT_ATTRIBUTE = "product_attribute",
+    PRODUCT_EDIT = "product_edit",
     CUSTOM_FIELDS = "custom_fields",
     VENDOR_UI = "vendor_ui",
     ADMIN_UI = "admin_ui",
@@ -11,4 +14,5 @@ export enum MercurModules {
     VENDOR_PRODUCT_ATTRIBUTE = "vendor_product_attribute",
     OTP = "otp",
     NOTIFICATION_SETTINGS = "notification_settings",
+    SEARCH = "search",
 }

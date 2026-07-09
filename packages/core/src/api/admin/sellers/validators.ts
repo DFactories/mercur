@@ -7,7 +7,6 @@ import {
 } from "@medusajs/medusa/api/utils/validators"
 import { booleanString } from "@medusajs/medusa/api/utils/common-validators/common"
 import { AdditionalData } from "@medusajs/framework/types"
-import { SellerRole } from "@mercurjs/types"
 
 export type AdminGetSellerParamsType = z.infer<typeof AdminGetSellerParams>
 export const AdminGetSellerParams = createSelectParams()
@@ -96,20 +95,35 @@ export const UpdateSeller = z.object({
 })
 export const AdminUpdateSeller = WithAdditionalData(UpdateSeller)
 
-export type AdminSuspendSellerType = z.infer<typeof AdminSuspendSeller>
-export const AdminSuspendSeller = z.object({
+const SuspendSeller = z.object({
   reason: z.string().optional(),
 })
+export type AdminSuspendSellerType = z.infer<typeof SuspendSeller> &
+  AdditionalData
+export const AdminSuspendSeller = WithAdditionalData(SuspendSeller)
 
-export type AdminTerminateSellerType = z.infer<typeof AdminTerminateSeller>
-export const AdminTerminateSeller = z.object({
+const TerminateSeller = z.object({
   reason: z.string().optional(),
 })
+export type AdminTerminateSellerType = z.infer<typeof TerminateSeller> &
+  AdditionalData
+export const AdminTerminateSeller = WithAdditionalData(TerminateSeller)
+
+const SellerLifecycleAction = z.object({})
+export type AdminApproveSellerType = z.infer<typeof SellerLifecycleAction> &
+  AdditionalData
+export const AdminApproveSeller = WithAdditionalData(SellerLifecycleAction)
+export type AdminUnsuspendSellerType = z.infer<typeof SellerLifecycleAction> &
+  AdditionalData
+export const AdminUnsuspendSeller = WithAdditionalData(SellerLifecycleAction)
+export type AdminUnterminateSellerType = z.infer<typeof SellerLifecycleAction> &
+  AdditionalData
+export const AdminUnterminateSeller = WithAdditionalData(SellerLifecycleAction)
 
 export type AdminAddSellerMemberType = z.infer<typeof AdminAddSellerMember>
 export const AdminAddSellerMember = z.object({
   member_id: z.string(),
-  role_id: z.nativeEnum(SellerRole),
+  role_id: z.string(),
 })
 
 export type AdminInviteSellerMemberType = z.infer<
@@ -118,7 +132,7 @@ export type AdminInviteSellerMemberType = z.infer<
 export const AdminInviteSellerMember = z.object({
   phone: z.string().min(1),
   email: z.string().email().optional(),
-  role_id: z.nativeEnum(SellerRole),
+  role_id: z.string(),
 })
 
 export type AdminUpsertSellerAddressType = z.infer<typeof UpsertSellerAddress> & AdditionalData

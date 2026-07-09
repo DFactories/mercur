@@ -12,10 +12,44 @@ import {
 import { sdk } from "../../lib/client";
 import { queryClient } from "../../lib/query-client";
 import { queryKeysFactory } from "../../lib/query-key-factory";
-import { membersQueryKeys } from "./members";
+import { membersQueryKeys, useMe } from "./members";
 
 const SELLERS_QUERY_KEY = "sellers" as const;
 export const sellersQueryKeys = queryKeysFactory(SELLERS_QUERY_KEY);
+
+export const useCurrentSeller = () => {
+  const { seller_member, isPending, isError, error, isFetching } = useMe();
+  const seller = seller_member?.seller;
+
+  return {
+    seller,
+    currency_code: seller?.currency_code,
+    isPending,
+    isFetching,
+    isError,
+    error,
+  };
+};
+
+export const useSeller = (
+  id: string,
+  query?: Omit<InferClientInput<typeof sdk.vendor.sellers.$id.query>, "$id">,
+  options?: Omit<
+    UseQueryOptions<
+      InferClientOutput<typeof sdk.vendor.sellers.$id.query>,
+      ClientError
+    >,
+    "queryFn" | "queryKey"
+  >,
+) => {
+  const { data, ...rest } = useQuery({
+    queryKey: sellersQueryKeys.detail(id, query),
+    queryFn: () => sdk.vendor.sellers.$id.query({ $id: id, ...query }),
+    ...options,
+  });
+
+  return { ...data, ...rest };
+};
 
 export const useSellers = (
   query?: InferClientInput<typeof sdk.vendor.sellers.query>,

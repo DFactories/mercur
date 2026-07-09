@@ -1,25 +1,28 @@
-import { ReactNode, Children } from "react"
-import { SingleColumnPage } from "../../../components/layout/pages"
+import { ReactNode, Children } from "react";
+
+import { WidgetZone } from "@mercurjs/dashboard-shared";
+
+import { SingleColumnPage } from "../../../components/layout/pages";
 import {
   ProductListTable,
   ProductListHeader,
   ProductListTitle,
   ProductListActions,
   ProductListCreateButton,
-  ProductListExportButton,
-  ProductListImportButton,
   ProductListDataTable,
-} from "./components/product-list-table"
+} from "./components/product-list-table";
 
 const Root = ({ children }: { children?: ReactNode }) => {
   return (
     <div data-testid="products-page">
       <SingleColumnPage>
-        {Children.count(children) > 0 ? children : <ProductListTable />}
+        <WidgetZone id="products.list">
+          {Children.count(children) > 0 ? children : <ProductListTable />}
+        </WidgetZone>
       </SingleColumnPage>
     </div>
-  )
-}
+  );
+};
 
 export const ProductListPage = Object.assign(Root, {
   Table: ProductListTable,
@@ -27,7 +30,5 @@ export const ProductListPage = Object.assign(Root, {
   HeaderTitle: ProductListTitle,
   HeaderActions: ProductListActions,
   HeaderCreateButton: ProductListCreateButton,
-  HeaderExportButton: ProductListExportButton,
-  HeaderImportButton: ProductListImportButton,
   DataTable: ProductListDataTable,
-})
+});

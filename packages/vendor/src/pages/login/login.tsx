@@ -8,6 +8,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as z from "zod";
 
 import { AuthConsent } from "@components/common/auth-consent";
+import { WidgetZone } from "@mercurjs/dashboard-shared";
 import { Form } from "@components/common/form";
 import AvatarBox from "@components/common/logo-box/avatar-box";
 import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form";
@@ -36,7 +37,11 @@ const LoginSchema = z.object({
 });
 
 const LoginLogo = () => {
-  return <AvatarBox />;
+  return (
+    <WidgetZone id="login.logo">
+      <AvatarBox />
+    </WidgetZone>
+  );
 };
 
 const LoginHeader = () => {
@@ -173,11 +178,16 @@ const LoginForm = () => {
 };
 
 const LoginFooter = () => {
+  const { t } = useTranslation();
   return (
+    // DFACTORIES: phone-OTP login has no password, so no forgot-password link.
+    // Registration stays config-driven (upstream's seller_registration feature
+    // flag defaults to false, which would hide the public register link).
     <div className="mt-auto flex flex-col gap-y-2 md:mt-8">
       {config.enableSellerRegistration !== false && (
         <span className="text-ui-fg-muted txt-small">
           <Trans
+            t={t}
             i18nKey="login.notSellerYet"
             components={[
               <Link
@@ -225,7 +235,9 @@ const Root = ({ children }: { children?: ReactNode }) => {
       ) : (
         <>
           <LoginLogo />
+          <WidgetZone id="login.before" />
           <LoginContent />
+          <WidgetZone id="login.after" />
           <LoginFooter />
         </>
       )}

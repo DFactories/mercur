@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button, Heading, Input, Text, toast } from "@medusajs/ui"
+import i18n from "i18next"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import * as zod from "zod"
@@ -12,10 +13,33 @@ import {
 } from "../../../../../components/modals"
 import { KeyboundForm } from "../../../../../components/utilities/keybound-form"
 import { useCreateCollection } from "../../../../../hooks/api/collections"
+import {
+  CollectionIconInput,
+  CollectionIconTip,
+  CollectionMediaInput,
+  uploadCollectionImages,
+} from "../../../common/components/collection-image-fields"
+
+const CollectionMediaSchema = zod.object({
+  url: zod.string(),
+  file: zod.any().nullable(),
+  is_thumbnail: zod.boolean(),
+  is_banner: zod.boolean(),
+  field_id: zod.string().optional(),
+})
+
+const CollectionIconSchema = zod.object({
+  url: zod.string(),
+  file: zod.any().nullable(),
+})
 
 const CreateCollectionSchema = zod.object({
-  title: zod.string().min(1),
+  title: zod
+    .string()
+    .min(1, { message: i18n.t("collections.validation.titleRequired") }),
   handle: zod.string().optional(),
+  media: zod.array(CollectionMediaSchema).optional(),
+  icon: CollectionIconSchema.nullable().optional(),
 })
 
 export const CreateCollectionForm = () => {
@@ -26,6 +50,8 @@ export const CreateCollectionForm = () => {
     defaultValues: {
       title: "",
       handle: "",
+      media: [],
+      icon: null,
     },
     resolver: zodResolver(CreateCollectionSchema),
   })
@@ -33,15 +59,25 @@ export const CreateCollectionForm = () => {
   const { mutateAsync, isPending } = useCreateCollection()
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    await mutateAsync(data, {
-      onSuccess: ({ collection }) => {
-        handleSuccess(`/collections/${collection.id}`)
-        toast.success(t("collections.createSuccess"))
-      },
-      onError: (error) => {
-        toast.error(error.message)
-      },
+    const { media, icon, ...rest } = data
+
+    const images = await uploadCollectionImages({
+      media: media ?? [],
+      icon: icon ?? null,
     })
+
+    await mutateAsync(
+      { ...rest, ...images },
+      {
+        onSuccess: ({ collection }) => {
+          handleSuccess(`/collections/${collection.id}`)
+          toast.success(t("collections.createSuccess"))
+        },
+        onError: (error) => {
+          toast.error(error.message)
+        },
+      }
+    )
   })
 
   return (
@@ -52,7 +88,7 @@ export const CreateCollectionForm = () => {
       >
         <RouteFocusModal.Header />
 
-        <RouteFocusModal.Body className="flex size-full flex-col items-center p-16" data-testid="collection-create-form-body">
+        <RouteFocusModal.Body className="flex size-full flex-col items-center overflow-auto p-16" data-testid="collection-create-form-body">
           <div className="flex w-full max-w-[720px] flex-col gap-y-8" data-testid="collection-create-form-content">
             <div data-testid="collection-create-form-header">
               <Heading data-testid="collection-create-form-heading">{t("collections.createCollection")}</Heading>
@@ -98,6 +134,43 @@ export const CreateCollectionForm = () => {
                 }}
               />
             </div>
+            <Form.Field
+              control={form.control}
+              name="media"
+              render={({ field: { value, onChange } }) => (
+                <Form.Item data-testid="collection-create-form-media-item">
+                  <Form.Label optional>{t("collections.media.label")}</Form.Label>
+                  <Form.Control>
+                    <CollectionMediaInput
+                      value={value ?? []}
+                      onChange={onChange}
+                      hasError={!!form.formState.errors.media}
+                    />
+                  </Form.Control>
+                  <Form.ErrorMessage />
+                </Form.Item>
+              )}
+            />
+            <Form.Field
+              control={form.control}
+              name="icon"
+              render={({ field: { value, onChange } }) => (
+                <Form.Item data-testid="collection-create-form-icon-item">
+                  <Form.Label optional>{t("collections.icon.label")}</Form.Label>
+                  <Form.Control>
+                    <div className="flex flex-col gap-y-2">
+                      <CollectionIconInput
+                        value={value ?? null}
+                        onChange={onChange}
+                        hasError={!!form.formState.errors.icon}
+                      />
+                      <CollectionIconTip />
+                    </div>
+                  </Form.Control>
+                  <Form.ErrorMessage />
+                </Form.Item>
+              )}
+            />
           </div>
         </RouteFocusModal.Body>
         <RouteFocusModal.Footer data-testid="collection-create-form-footer">

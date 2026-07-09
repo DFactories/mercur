@@ -1,4 +1,8 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { type ColumnDef } from "@tanstack/react-table";
+import { HttpTypes } from "@medusajs/types";
+import { useExtendableTable, useLinkQuery } from "@mercurjs/dashboard-shared";
 
 import { _DataTable } from "@components/table/data-table/data-table";
 import { useOrders } from "@hooks/api/orders";
@@ -15,8 +19,9 @@ export const OrderListDataTable = () => {
     pageSize: PAGE_SIZE,
   });
 
-  const { orders, count, isError, error, isLoading } = useOrders({
-    fields: [
+  const linkQuery = useLinkQuery(
+    "order",
+    [
       "id",
       "status",
       "created_at",
@@ -28,14 +33,31 @@ export const OrderListDataTable = () => {
       "total",
       "currency_code",
       "*customer",
-      "*sales_channel",
       "*payment_collections",
     ].join(","),
+  );
+
+  const { orders, count, isError, error, isLoading } = useOrders({
+    ...linkQuery,
     ...searchParams,
   });
 
-  const columns = useOrderTableColumns({});
-  const filters = useOrderTableFilters();
+  const baseColumns = useOrderTableColumns({});
+  const baseFilters = useOrderTableFilters();
+
+  const { columns, filters: extFilters } =
+    useExtendableTable<HttpTypes.AdminOrder>({
+      model: "order",
+      columns: baseColumns as unknown as ColumnDef<
+        HttpTypes.AdminOrder,
+        unknown
+      >[],
+    });
+
+  const filters = useMemo(
+    () => [...baseFilters, ...(extFilters as typeof baseFilters)],
+    [baseFilters, extFilters],
+  );
 
   const { table } = useDataTable({
     data: orders ?? [],
@@ -54,6 +76,7 @@ export const OrderListDataTable = () => {
       columns={columns}
       table={table}
       pagination
+      search
       filters={filters}
       navigateTo={(row) => `/orders/${row.original.id}`}
       count={count}
@@ -73,6 +96,7 @@ export const OrderListDataTable = () => {
           label: t("fields.updatedAt"),
         },
       ]}
+      defaultOrderBy="-display_id"
       queryObject={raw}
       noRecords={{
         message: t("orders.list.noRecordsMessage"),

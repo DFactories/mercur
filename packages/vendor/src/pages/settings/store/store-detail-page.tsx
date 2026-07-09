@@ -1,17 +1,16 @@
-import React, { Children, ReactNode } from "react";
+import { Children, ReactNode } from "react";
 import { Alert, Text } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
-import components from "virtual:mercur/components";
 
 import { TwoColumnPageSkeleton } from "@components/common/skeleton";
 import { TwoColumnPage } from "@components/layout/pages";
-import { useMe, useSubscription } from "@/hooks/api";
+import { WidgetZone, useLinkQuery } from "@mercurjs/dashboard-shared";
+import { useMe, useSeller } from "@/hooks/api";
 import { SellerStatus } from "@mercurjs/types";
 
 import { StoreAddressSection } from "./_components/store-address-section";
 import { StoreTimeOffSection } from "./_components/store-time-off-section";
 import { StoreGeneralSection } from "./_components/store-general-section";
-import { StoreSubscriptionSection } from "./_components/store-subscription-section";
 import { StorePaymentDetailsSection } from "./_components/store-payment-details-section";
 import { StoreProfessionalDetailsSection } from "./_components/store-professional-details-section";
 import { StoreDocumentsSection } from "./_components/store-documents-section";
@@ -22,23 +21,36 @@ import {
   StoreDetailEditButton,
 } from "./_components/store-detail-header";
 
+const ME_SELLER_FIELDS =
+  "+seller.*,+seller.address.*,+seller.payment_details.*,+seller.professional_details.*";
+const SELLER_DETAIL_FIELDS =
+  "+address.*,+payment_details.*,+professional_details.*";
+
 const Root = ({ children }: { children?: ReactNode }) => {
   const { t } = useTranslation();
-  const { seller_member, isPending, isError, error } = useMe();
-  const {
-    subscription_plan,
-    subscription_override,
-    isPending: isSubscriptionPending,
-  } = useSubscription();
+  const { seller_member, isPending, isError, error } = useMe({
+    fields: ME_SELLER_FIELDS,
+  });
 
-  const seller = seller_member?.seller;
+  const meSeller = seller_member?.seller;
 
-  if (isPending || isSubscriptionPending || !seller) {
-    return <TwoColumnPageSkeleton mainSections={3} sidebarSections={3} />;
-  }
+  const query = useLinkQuery("seller", SELLER_DETAIL_FIELDS);
+  const needsLinks = !!useLinkQuery("seller").fields;
+
+  const { seller: linkedSeller, isPending: linkedPending } = useSeller(
+    meSeller?.id ?? "",
+    query,
+    { enabled: needsLinks && !!meSeller?.id },
+  );
+
+  const seller = needsLinks ? linkedSeller : meSeller;
 
   if (isError) {
     throw error;
+  }
+
+  if (isPending || !seller || (needsLinks && linkedPending)) {
+    return <TwoColumnPageSkeleton mainSections={3} sidebarSections={3} />;
   }
 
   const statusAlert = (() => {
@@ -55,13 +67,9 @@ const Root = ({ children }: { children?: ReactNode }) => {
     }
   })();
 
-  const StoreSetup = components.StoreSetup as
-    | React.ComponentType<{ seller: any }>
-    | undefined;
-
   const StatusBanner = () => (
     <>
-      {StoreSetup && <StoreSetup seller={seller} />}
+      <WidgetZone id="seller.setup" data={seller} />
       {statusAlert && (
         <Alert variant={statusAlert.variant} dismissible className="p-5">
           <div className="text-ui-fg-subtle txt-small pb-2 font-medium leading-[20px]">
@@ -95,10 +103,6 @@ const Root = ({ children }: { children?: ReactNode }) => {
         <StoreProfessionalDetailsSection seller={seller} />
         <StorePaymentDetailsSection seller={seller} />
         <StoreDocumentsSection seller={seller} />
-        <StoreSubscriptionSection
-          subscription_plan={subscription_plan}
-          subscription_override={subscription_override}
-        />
       </TwoColumnPage.Sidebar>
     </TwoColumnPage>
   );
@@ -112,7 +116,6 @@ export const StoreDetailPage = Object.assign(Root, {
   MainProfessionalDetailsSection: StoreProfessionalDetailsSection,
   MainTimeOffSection: StoreTimeOffSection,
   SidebarAddressSection: StoreAddressSection,
-  SidebarSubscriptionSection: StoreSubscriptionSection,
   Header: StoreDetailHeader,
   HeaderTitle: StoreDetailTitle,
   HeaderActions: StoreDetailActions,

@@ -1,13 +1,17 @@
-import { zodResolver } from "@hookform/resolvers/zod"
 import type {
   AdminPromotion,
   ApplicationMethodAllocationValues,
 } from "@medusajs/types"
 import { Button, CurrencyInput, Input, RadioGroup, Text } from "@medusajs/ui"
-import { useForm, useWatch } from "react-hook-form"
+import { useWatch } from "react-hook-form"
 import { Trans, useTranslation } from "react-i18next"
 import { useEffect } from "react"
 import * as zod from "zod"
+
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared"
 
 import { Form } from "../../../../../components/common/form"
 import { DeprecatedPercentageInput } from "../../../../../components/inputs/percentage-input"
@@ -67,7 +71,11 @@ export const EditPromotionDetailsForm = ({
         ? "across"
         : "each"
 
-  const form = useForm<zod.infer<typeof EditPromotionSchema>>({
+  const form = useExtendableForm({
+    schema: EditPromotionSchema,
+    model: "promotion",
+    zone: "edit",
+    data: promotion,
     defaultValues: {
       is_automatic: promotion.is_automatic!.toString(),
       is_tax_inclusive: promotion.is_tax_inclusive,
@@ -79,7 +87,6 @@ export const EditPromotionDetailsForm = ({
       value_type: promotion.application_method!.type,
       target_type: promotion.application_method!.target_type,
     },
-    resolver: zodResolver(EditPromotionSchema),
   })
 
   const watchValueType = useWatch({
@@ -414,13 +421,8 @@ return (
 
                         <RadioGroup.ChoiceBox
                           value="once"
-                          label={t("promotions.form.allocation.once.title", {
-                            defaultValue: "Once",
-                          })}
-                          description={t(
-                            "promotions.form.allocation.once.description",
-                            { defaultValue: "Limit discount to max quantity" }
-                          )}
+                          label={t("promotions.form.allocation.once.title")}
+                          description={t("promotions.form.allocation.once.description")}
                           data-testid="promotion-edit-details-form-allocation-option-once"
                         />
                           </RadioGroup>
@@ -472,6 +474,13 @@ return (
             )}
               </>
             )}
+
+            <FormExtensionZone
+              model="promotion"
+              zone="edit"
+              control={form.control}
+              data={promotion}
+            />
           </div>
         </RouteDrawer.Body>
 

@@ -38,6 +38,7 @@ yarn-error.log*
 *.pem
 
 apps/backend/.medusa
+integration-tests/.medusa
 packages/modules/*
 .npmrc
 

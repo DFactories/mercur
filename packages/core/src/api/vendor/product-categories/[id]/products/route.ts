@@ -1,43 +1,58 @@
-import { batchLinkProductsToCategoryWorkflow } from "@medusajs/core-flows"
-import {
-  AdminProductCategoryResponse,
-  HttpTypes,
-} from "@medusajs/framework/types"
 import {
   AuthenticatedMedusaRequest,
   MedusaResponse,
-  refetchEntity,
 } from "@medusajs/framework/http"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+} from "@medusajs/framework/utils"
+import { HttpTypes } from "@mercurjs/types"
 
-import { validateSellerProducts } from "../../helpers"
+import { ensureSellerOwnsProduct } from "../../../products/helpers"
+import { VendorBatchLinkProductsToCategoryType } from "../../validators"
+import { assignProductsToCategoryWorkflow } from "../../../../../workflows/product/workflows/assign-products-to-category"
 
 export const POST = async (
-  req: AuthenticatedMedusaRequest<
-    HttpTypes.AdminBatchLink,
-    HttpTypes.AdminProductCategoryParams
-  >,
-  res: MedusaResponse<AdminProductCategoryResponse>
+  req: AuthenticatedMedusaRequest<VendorBatchLinkProductsToCategoryType>,
+  res: MedusaResponse<HttpTypes.VendorProductCategoryResponse>
 ) => {
-  const { id } = req.params
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const sellerId = req.seller_context!.seller_id
+  const { add, remove } = req.validatedBody
 
-  const productIdsToValidate = [
-    ...(req.validatedBody.add || []),
-    ...(req.validatedBody.remove || []),
-  ]
-
-  await validateSellerProducts(req.scope, sellerId, productIdsToValidate)
-
-  await batchLinkProductsToCategoryWorkflow(req.scope).run({
-    input: { id, ...req.validatedBody },
-  })
-
-  const category = await refetchEntity({
+  const {
+    data: [existing],
+  } = await query.graph({
     entity: "product_category",
-    idOrFilter: id,
-    scope: req.scope,
-    fields: req.queryConfig.fields,
+    fields: ["id"],
+    filters: { id: req.params.id },
   })
 
-  res.status(200).json({ product_category: category })
+  if (!existing) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
+      `Product category with id ${req.params.id} was not found`
+    )
+  }
+
+  const productIds = [...(add ?? []), ...(remove ?? [])]
+  await ensureSellerOwnsProduct(req.scope, sellerId, productIds)
+
+  await assignProductsToCategoryWorkflow(req.scope).run({
+    input: {
+      id: req.params.id,
+      add,
+      remove,
+    },
+  })
+
+  const {
+    data: [product_category],
+  } = await query.graph({
+    entity: "product_category",
+    fields: req.queryConfig.fields,
+    filters: { id: req.params.id },
+  })
+
+  res.status(200).json({ product_category })
 }

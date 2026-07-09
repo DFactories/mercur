@@ -32,7 +32,7 @@ type AllocationMode = "each" | "across" | "once"
 type PromotionDetailsTabProps = {
   currentTemplate?: {
     id: string
-    title: string
+    titleKey: string
     hiddenFields: string[]
   }
 }
@@ -87,7 +87,7 @@ const Root = ({ currentTemplate }: PromotionDetailsTabProps) => {
         >
           {t(`promotions.sections.details`)}
 
-          {currentTemplate?.title && (
+          {currentTemplate?.titleKey && (
             <Badge
               className="ml-2 align-middle"
               color="grey"
@@ -95,7 +95,7 @@ const Root = ({ currentTemplate }: PromotionDetailsTabProps) => {
               rounded="full"
               data-testid="promotion-create-form-promotion-template-badge"
             >
-              {currentTemplate?.title}
+              {t(currentTemplate.titleKey)}
             </Badge>
           )}
         </Heading>
@@ -587,16 +587,8 @@ const Root = ({ currentTemplate }: PromotionDetailsTabProps) => {
 
                       <RadioGroup.ChoiceBox
                         value="once"
-                        label={t("promotions.form.allocation.once.title", {
-                          defaultValue: "Once",
-                        })}
-                        description={t(
-                          "promotions.form.allocation.once.description",
-                          {
-                            defaultValue:
-                              "Limit discount to max quantity",
-                          }
-                        )}
+                        label={t("promotions.form.allocation.once.title")}
+                        description={t("promotions.form.allocation.once.description")}
                         className={clx("basis-1/2")}
                         data-testid="promotion-create-form-allocation-option-once"
                       />
