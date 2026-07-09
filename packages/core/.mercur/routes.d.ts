@@ -508,6 +508,10 @@ export type Routes = {
                 subscribe: typeof import("@medusajs/medusa/api/admin/workflows-executions/[workflow_id]/subscribe/route");
             };
         };
+        notificationSettings: typeof import("../src/api/admin/notification-settings/route");
+        shippingTemplates: typeof import("../src/api/admin/shipping-templates/route") & {
+            $id: typeof import("../src/api/admin/shipping-templates/[id]/route");
+        };
     };
     auth: {
         $actorType: {
@@ -628,12 +632,19 @@ export type Routes = {
             $id: typeof import("@medusajs/medusa/api/store/return-reasons/[id]/route");
         };
         returns: typeof import("@medusajs/medusa/api/store/returns/route");
+        search: typeof import("@mercurjs/core/api/store/search/route");
         sellers: typeof import("../src/api/store/sellers/route") & {
             $id: typeof import("../src/api/store/sellers/[id]/route");
         };
         shippingOptions: typeof import("../src/api/store/shipping-options/route") & {
             $id: {
                 calculate: typeof import("@medusajs/medusa/api/store/shipping-options/[id]/calculate/route");
+            };
+        };
+        auth: {
+            phone: {
+                requestOtp: typeof import("../src/api/store/auth/phone/request-otp/route");
+                verifyOtp: typeof import("../src/api/store/auth/phone/verify-otp/route");
             };
         };
     };
@@ -897,7 +908,12 @@ export type Routes = {
                 paymentDetails: typeof import("../src/api/vendor/sellers/[id]/payment-details/route");
                 professionalDetails: typeof import("../src/api/vendor/sellers/[id]/professional-details/route");
             };
-            me: typeof import("../src/api/vendor/sellers/me/route");
+            me: typeof import("../src/api/vendor/sellers/me/route") & {
+                phone: {
+                    requestOtp: typeof import("../src/api/vendor/sellers/me/phone/request-otp/route");
+                    verifyOtp: typeof import("../src/api/vendor/sellers/me/phone/verify-otp/route");
+                };
+            };
             select: typeof import("../src/api/vendor/sellers/select/route");
         };
         shippingOptionTypes: typeof import("../src/api/vendor/shipping-option-types/route") & {
@@ -922,5 +938,11 @@ export type Routes = {
         };
         stores: typeof import("../src/api/vendor/stores/route");
         uploads: typeof import("../src/api/vendor/uploads/route");
+        auth: {
+            phone: {
+                requestOtp: typeof import("../src/api/vendor/auth/phone/request-otp/route");
+                verifyOtp: typeof import("../src/api/vendor/auth/phone/verify-otp/route");
+            };
+        };
     };
 };

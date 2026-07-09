@@ -1,5 +1,4 @@
 import {
-import components from "virtual:mercur/components";
   BuildingStorefront,
   Buildings,
   CogSixTooth,
@@ -13,6 +12,7 @@ import components from "virtual:mercur/components";
   Tag,
   Users,
 } from "@medusajs/icons";
+import components from "virtual:mercur/components";
 import { Avatar, Divider, DropdownMenu, Text, clx } from "@medusajs/ui";
 
 import { useTranslation } from "react-i18next";
