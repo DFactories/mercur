@@ -1,5 +1,6 @@
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import { MedusaContainer } from "@medusajs/framework/types"
+import { Modules } from "@medusajs/framework/utils"
 import { createSellerUser } from "../../../helpers/create-seller-user"
 
 jest.setTimeout(50000)
@@ -375,6 +376,71 @@ medusaIntegrationTestRunner({
                     )
 
                     expect(getResponse.status).toEqual(200)
+                })
+            })
+
+            describe("global (admin-curated) shipping profiles", () => {
+                it("are visible to every vendor (pick-only): listed + readable, but not editable/deletable, and another seller's stays hidden", async () => {
+                    const fulfillment = appContainer.resolve(Modules.FULFILLMENT)
+
+                    // A global profile has NO seller link (created outside the
+                    // vendor route) — the marketplace's admin-curated catalog.
+                    const [globalProfile] = await fulfillment.createShippingProfiles([
+                        { name: "Marketplace Standard", type: "default" },
+                    ])
+
+                    const own = (
+                        await api.post(
+                            `/vendor/shipping-profiles`,
+                            { name: "Seller1 Own", type: "express" },
+                            seller1Headers
+                        )
+                    ).data.shipping_profile
+
+                    const other = (
+                        await api.post(
+                            `/vendor/shipping-profiles`,
+                            { name: "Seller2 Own", type: "express" },
+                            seller2Headers
+                        )
+                    ).data.shipping_profile
+
+                    // seller1's list = own + global, never another seller's.
+                    const list = (
+                        await api.get(
+                            `/vendor/shipping-profiles?limit=100`,
+                            seller1Headers
+                        )
+                    ).data.shipping_profiles
+                    const ids = list.map((p: any) => p.id)
+                    expect(ids).toContain(globalProfile.id)
+                    expect(ids).toContain(own.id)
+                    expect(ids).not.toContain(other.id)
+
+                    // Read-only view of a global profile is allowed.
+                    const view = await api.get(
+                        `/vendor/shipping-profiles/${globalProfile.id}`,
+                        seller1Headers
+                    )
+                    expect(view.status).toEqual(200)
+
+                    // ...but a vendor cannot edit or delete a global profile.
+                    const upd = await api
+                        .post(
+                            `/vendor/shipping-profiles/${globalProfile.id}`,
+                            { name: "Hijack" },
+                            seller1Headers
+                        )
+                        .catch((e) => e.response)
+                    expect(upd.status).toEqual(404)
+
+                    const del = await api
+                        .delete(
+                            `/vendor/shipping-profiles/${globalProfile.id}`,
+                            seller1Headers
+                        )
+                        .catch((e) => e.response)
+                    expect(del.status).toEqual(404)
                 })
             })
         })

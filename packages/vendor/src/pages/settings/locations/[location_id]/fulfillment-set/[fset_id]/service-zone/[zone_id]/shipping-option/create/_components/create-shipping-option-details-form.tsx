@@ -198,14 +198,11 @@ export const CreateShippingOptionDetailsForm = ({
                 <Form.Item>
                   <Form.Label
                     tooltip={t(
-                      "stockLocations.shippingOptions.fields.type.hint",
+                      "stockLocations.shippingOptions.fields.typeHint",
                       "The standard shipping method. Its delivery time (shown in parentheses) is set by the marketplace and starts the order return window."
                     )}
                   >
-                    {t(
-                      "stockLocations.shippingOptions.fields.type.label",
-                      "Shipping method"
-                    )}
+                    {t("stockLocations.shippingOptions.fields.type")}
                   </Form.Label>
                   <Form.Control>
                     <Combobox

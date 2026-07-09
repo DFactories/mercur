@@ -10,6 +10,7 @@ import { HttpTypes } from "@mercurjs/types"
 
 import {
   refetchShippingProfile,
+  validateSellerOrGlobalShippingProfile,
   validateSellerShippingProfile,
 } from "../helpers"
 import { VendorUpdateShippingProfileType } from "../validators"
@@ -20,7 +21,8 @@ export const GET = async (
 ) => {
   const sellerId = req.seller_context!.seller_id
 
-  await validateSellerShippingProfile(req.scope, sellerId, req.params.id)
+  // Read-only: own OR a global admin profile (writes below stay owner-only).
+  await validateSellerOrGlobalShippingProfile(req.scope, sellerId, req.params.id)
 
   const shippingProfile = await refetchShippingProfile(
     req.scope,

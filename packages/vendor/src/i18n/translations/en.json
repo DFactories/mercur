@@ -1898,6 +1898,7 @@
         "provider": "Fulfillment provider",
         "profile": "Shipping profile",
         "type": "Shipping option type",
+        "typeHint": "The standard shipping method. Its delivery time (shown in parentheses) is set by the marketplace and starts the order return window.",
         "fulfillmentOption": "Fulfillment option"
       }
     },

@@ -1,8 +1,4 @@
 import {
-  AuthenticatedMedusaRequest,
-  maybeApplyLinkFilter,
-  MedusaNextFunction,
-  MedusaResponse,
   MiddlewareRoute,
 } from "@medusajs/framework/http"
 import {
@@ -18,20 +14,6 @@ import {
   VendorUpdateShippingProfile,
 } from "./validators"
 
-const applySellerShippingProfileLinkFilter = (
-  req: AuthenticatedMedusaRequest,
-  res: MedusaResponse,
-  next: MedusaNextFunction
-) => {
-  req.filterableFields.seller_id = req.seller_context!.seller_id
-
-  return maybeApplyLinkFilter({
-    entryPoint: "shipping_profile_seller",
-    resourceId: "shipping_profile_id",
-    filterableField: "seller_id",
-  })(req, res, next)
-}
-
 export const vendorShippingProfilesMiddlewares: MiddlewareRoute[] = [
   {
     method: ["GET"],
@@ -41,7 +23,8 @@ export const vendorShippingProfilesMiddlewares: MiddlewareRoute[] = [
         VendorGetShippingProfilesParams,
         vendorShippingProfileQueryConfig.list
       ),
-      applySellerShippingProfileLinkFilter,
+      // NOTE: no seller link-filter here. The GET handler returns the seller's
+      // own profiles UNION the global (admin-curated) profiles — see route.ts.
     ],
   },
   {

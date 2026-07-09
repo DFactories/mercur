@@ -720,6 +720,67 @@ medusaIntegrationTestRunner({
                     expect(response.status).toEqual(200)
                 })
 
+                it("clears a stale stamped delivery time when the type changes to one without a delivery", async () => {
+                    const prerequisites = await createShippingPrerequisites(seller1Headers)
+                    const deliveryService: any = appContainer.resolve(
+                        "shipping_option_type_delivery"
+                    )
+                    const query = appContainer.resolve(ContainerRegistrationKeys.QUERY)
+
+                    // Type A has an admin delivery time (3 days); type B has none.
+                    const [typeA] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "A", code: `a-${Date.now()}`, description: "" },
+                    ])
+                    const [typeB] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "B", code: `b-${Date.now()}`, description: "" },
+                    ])
+                    await deliveryService.createShippingOptionTypeDeliveries({
+                        shipping_option_type_id: typeA.id,
+                        estimated_delivery_days: 3,
+                    })
+
+                    // Create the option with type A → metadata stamped with 3.
+                    const created = await api.post(
+                        `/vendor/shipping-options`,
+                        {
+                            name: "Stale Stamp Shipping",
+                            service_zone_id: prerequisites.serviceZone.id,
+                            shipping_profile_id: prerequisites.shippingProfile.id,
+                            provider_id: "manual_manual",
+                            price_type: "flat",
+                            type_id: typeA.id,
+                            prices: [{ currency_code: "usd", amount: 1000 }],
+                        },
+                        seller1Headers
+                    )
+                    expect(created.status).toEqual(201)
+                    const optionId = created.data.shipping_option.id
+                    const before = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: optionId },
+                    })
+                    expect(Number(before.data[0].metadata.estimated_delivery_days)).toBe(3)
+
+                    // Switch to type B (no admin delivery) → the stale 3 must be cleared.
+                    const updated = await api.post(
+                        `/vendor/shipping-options/${optionId}`,
+                        { type_id: typeB.id },
+                        seller1Headers
+                    )
+                    expect(updated.status).toEqual(200)
+                    const after = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: optionId },
+                    })
+                    // Cleared: null (Medusa merges metadata, so the stale value is
+                    // nulled, not deleted) — the settlement hold reads null as unset.
+                    expect(
+                        after.data[0].metadata?.estimated_delivery_days ?? null
+                    ).toBeNull()
+                })
+
                 it("should not allow seller to update another seller's shipping option", async () => {
                     const prerequisites = await createShippingPrerequisites(seller1Headers)
                     const shippingOption = await createShippingOption(seller1Headers, prerequisites)
