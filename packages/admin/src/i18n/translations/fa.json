@@ -31,6 +31,15 @@
         "confirmText": "به‌روزرسانی",
         "cancelText": "لغو"
       }
+    },
+    "toasts": {
+      "createFailed": "ایجاد نما ناموفق بود",
+      "created": "نما ایجاد شد",
+      "deleteFailed": "حذف نما ناموفق بود",
+      "deleted": "نما با موفقیت حذف شد",
+      "updateActiveFailed": "به‌روزرسانی نمای فعال ناموفق بود",
+      "updateFailed": "به‌روزرسانی نما ناموفق بود",
+      "updated": "نما به‌روزرسانی شد"
     }
   },
   "commissions": {
@@ -127,6 +136,11 @@
       "storesRequired": "لطفاً حداقل یک فروشگاه انتخاب کنید",
       "productTypesRequired": "لطفاً حداقل یک نوع محصول انتخاب کنید",
       "categoriesRequired": "لطفاً حداقل یک دسته‌بندی انتخاب کنید"
+    },
+    "rulesTable": {
+      "attribute": "ویژگی",
+      "fee": "کارمزد",
+      "name": "نام قانون"
     }
   },
   "$schema": "./$schema.json",
@@ -2959,6 +2973,10 @@
         "closedFrom": "تعطیلی از",
         "closedTo": "تعطیلی تا",
         "closedToHint": "در صورت خالی بودن، فروشگاه به‌طور نامحدود بسته باقی می‌ماند."
+      },
+      "validation": {
+        "closedFromInPast": "تاریخ شروع تعطیلی نمی‌تواند در گذشته باشد",
+        "closedFromRequired": "تاریخ شروع تعطیلی الزامی است"
       }
     },
     "domain": "فروشگاه",
@@ -3067,6 +3085,10 @@
       "header": "مدارک فروشگاه",
       "view": "مشاهده",
       "notProvided": "ثبت نشده"
+    },
+    "subscription": {
+      "header": "طرح اشتراک",
+      "month": "ماه"
     }
   },
   "regions": {
@@ -3778,7 +3800,8 @@
       "titleRequired": "لطفاً یک عنوان وارد کنید",
       "possibleValuesRequired": "لطفاً حداقل یک مقدار اضافه کنید",
       "categoriesRequired": "لطفاً حداقل یک دسته‌بندی انتخاب کنید",
-      "successToast": "ویژگی «{{name}}» با موفقیت ایجاد شد."
+      "successToast": "ویژگی «{{name}}» با موفقیت ایجاد شد.",
+      "fillNameWarning": "لطفاً پیش از رفتن به پیکربندی نوع، دست‌کم فیلد نام را پر کنید."
     },
     "edit": {
       "header": "ویرایش ویژگی",
@@ -4205,6 +4228,40 @@
       "in_stock": "در انبار",
       "low_stock": "موجودی کم",
       "out_of_stock": "ناموجود"
+    }
+  },
+  "notificationSettings": {
+    "audience": {
+      "admin": "ادمین",
+      "customer": "مشتری",
+      "vendor": "تامین‌کننده"
+    },
+    "channel": {
+      "email": "ایمیل",
+      "feed": "اعلان پنل",
+      "seller_feed": "اعلان پنل فروشنده",
+      "sms": "پیامک"
+    },
+    "domain": "تنظیمات اعلان‌ها",
+    "params": {
+      "add": "افزودن پارامتر",
+      "hint": "به‌عنوان پارامترهای قالب شما ارسال می‌شود. نام پارامتر را مطابق جای‌نگهدار قالب sms.ir تغییر دهید یا پارامترهایی را که قالب‌تان استفاده نمی‌کند حذف کنید.",
+      "namePlaceholder": "پارامتر قالب",
+      "title": "پارامترهای قالب ارسالی به sms.ir",
+      "unknownVar": "متغیر ناشناخته",
+      "variablePlaceholder": "متغیر"
+    },
+    "subjectPlaceholder": "عنوان جایگزین (اختیاری)",
+    "subtitle": "تعیین کنید هر رویداد چگونه به کاربران اطلاع‌رسانی شود، متغیرهای قالب را نگاشت کنید و اعلان داخل پنل را روشن/خاموش کنید.",
+    "systemManaged": "سیستمی",
+    "templateIdPlaceholder": "شناسه قالب sms.ir",
+    "toast": {
+      "saved": "تنظیمات اعلان‌ها ذخیره شد"
+    },
+    "variables": {
+      "copied": "{{key}} کپی شد",
+      "example": "مثلاً {{example}}",
+      "title": "متغیرهای قالب (همین نام‌ها را در قالب sms.ir استفاده کنید)"
     }
   }
 }
