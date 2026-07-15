@@ -4081,7 +4081,7 @@
         "accountNameRequired": "Silakan masukkan nama akun"
       },
       "preview": {
-        "title": "Selamat datang di Mercur",
+        "title": "Selamat datang di Dfactories",
         "description": "Portal vendor serba guna Anda untuk mengelola toko, produk, pesanan, dan pencairan dana.",
         "placeholder": "Pratinjau aplikasi"
       }
@@ -4146,7 +4146,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Autentikasi gagal",
-      "cloud": "Masuk dengan Mercur"
+      "cloud": "Masuk dengan Dfactories"
     }
   }
 }

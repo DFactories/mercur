@@ -4085,7 +4085,7 @@
         "accountNameRequired": "Моля, въведете име на сметка"
       },
       "preview": {
-        "title": "Добре дошли в Mercur",
+        "title": "Добре дошли в Dfactories",
         "description": "Вашият универсален портал за продавачи за управление на магазина, продуктите, поръчките и изплащанията.",
         "placeholder": "Преглед на приложението"
       }
@@ -4150,7 +4150,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Неуспешна автентикация",
-      "cloud": "Вход с Mercur"
+      "cloud": "Вход с Dfactories"
     }
   }
 }

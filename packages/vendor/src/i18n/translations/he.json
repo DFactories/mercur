@@ -4081,7 +4081,7 @@
         "accountNameRequired": "יש להזין שם חשבון"
       },
       "preview": {
-        "title": "ברוך הבא ל-Mercur",
+        "title": "ברוך הבא ל-Dfactories",
         "description": "פורטל הספקים הכל-באחד שלך לניהול החנות, המוצרים, ההזמנות והתשלומים.",
         "placeholder": "תצוגה מקדימה של האפליקציה"
       }
@@ -4146,7 +4146,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "האימות נכשל",
-      "cloud": "התחבר עם Mercur"
+      "cloud": "התחבר עם Dfactories"
     }
   }
 }

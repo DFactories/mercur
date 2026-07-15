@@ -4169,7 +4169,9 @@
         "postalCode": "کد پستی",
         "city": "شهر",
         "country": "کشور",
-        "state": "استان"
+        "state": "استان",
+        "selectProvince": "انتخاب استان",
+        "selectCity": "انتخاب شهر"
       },
       "company": {
         "title": "اطلاعات شرکت خود را وارد کنید",

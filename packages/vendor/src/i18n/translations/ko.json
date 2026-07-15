@@ -4081,7 +4081,7 @@
         "accountNameRequired": "계좌 예금주명을 입력해 주세요"
       },
       "preview": {
-        "title": "Mercur에 오신 것을 환영합니다",
+        "title": "Dfactories에 오신 것을 환영합니다",
         "description": "스토어, 상품, 주문, 정산을 관리하는 올인원 벤더 포털입니다.",
         "placeholder": "앱 미리보기"
       }
@@ -4146,7 +4146,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "인증에 실패했습니다",
-      "cloud": "Mercur로 로그인"
+      "cloud": "Dfactories로 로그인"
     }
   }
 }

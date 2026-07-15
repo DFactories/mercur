@@ -4086,7 +4086,7 @@
         "accountNameRequired": "Bitte geben Sie einen Kontoinhaber ein"
       },
       "preview": {
-        "title": "Willkommen bei Mercur",
+        "title": "Willkommen bei Dfactories",
         "description": "Ihr All-in-One-Vendor-Portal zur Verwaltung von Shop, Produkten, Bestellungen und Auszahlungen.",
         "placeholder": "App-Vorschau"
       }
@@ -4151,7 +4151,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Authentifizierung fehlgeschlagen",
-      "cloud": "Mit Mercur anmelden"
+      "cloud": "Mit Dfactories anmelden"
     }
   }
 }

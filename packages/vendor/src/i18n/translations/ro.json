@@ -4085,7 +4085,7 @@
         "accountNameRequired": "Vă rugăm introduceți un nume de cont"
       },
       "preview": {
-        "title": "Bine ați venit la Mercur",
+        "title": "Bine ați venit la Dfactories",
         "description": "Portalul dumneavoastră all-in-one pentru gestionarea magazinului, produselor, comenzilor și plăților.",
         "placeholder": "Previzualizare aplicație"
       }
@@ -4150,7 +4150,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Autentificare eșuată",
-      "cloud": "Autentificare cu Mercur"
+      "cloud": "Autentificare cu Dfactories"
     }
   }
 }

@@ -3390,7 +3390,7 @@
     "sessionExpired": "Session expired"
   },
   "invite": {
-    "title": "Welcome to Mercur Admin Panel",
+    "title": "Welcome to Dfactories Admin Panel",
     "hint": "Create your account below",
     "backToLogin": "Back to login",
     "createAccount": "Create account",

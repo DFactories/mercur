@@ -4137,7 +4137,7 @@
         "accountNameRequired": "請輸入帳戶名稱"
       },
       "preview": {
-        "title": "歡迎使用 Mercur",
+        "title": "歡迎使用 Dfactories",
         "description": "管理您商店、商品、訂單與撥款的全方位賣家後台。",
         "placeholder": "應用程式預覽"
       }
@@ -4146,7 +4146,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "驗證失敗",
-      "cloud": "使用 Mercur 登入"
+      "cloud": "使用 Dfactories 登入"
     }
   }
 }

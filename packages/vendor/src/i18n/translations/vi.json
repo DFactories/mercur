@@ -4081,7 +4081,7 @@
         "accountNameRequired": "Vui lòng nhập tên tài khoản"
       },
       "preview": {
-        "title": "Chào mừng đến với Mercur",
+        "title": "Chào mừng đến với Dfactories",
         "description": "Cổng thông tin nhà bán hàng toàn diện để quản lý cửa hàng, sản phẩm, đơn hàng và thanh toán của bạn.",
         "placeholder": "Xem trước ứng dụng"
       }
@@ -4146,7 +4146,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Xác thực thất bại",
-      "cloud": "Đăng nhập bằng Mercur"
+      "cloud": "Đăng nhập bằng Dfactories"
     }
   }
 }

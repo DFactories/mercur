@@ -4081,7 +4081,7 @@
         "accountNameRequired": "请输入账户名称"
       },
       "preview": {
-        "title": "欢迎使用 Mercur",
+        "title": "欢迎使用 Dfactories",
         "description": "一站式商家门户，助您管理店铺、商品、订单和结算。",
         "placeholder": "应用预览"
       }
@@ -4146,7 +4146,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "身份验证失败",
-      "cloud": "使用 Mercur 登录"
+      "cloud": "使用 Dfactories 登录"
     }
   }
 }

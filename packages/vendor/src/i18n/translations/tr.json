@@ -4085,7 +4085,7 @@
         "accountNameRequired": "Lütfen bir hesap adı girin"
       },
       "preview": {
-        "title": "Mercur'a Hoş Geldiniz",
+        "title": "Dfactories'a Hoş Geldiniz",
         "description": "Mağazanızı, ürünlerinizi, siparişlerinizi ve ödemelerinizi yönetmek için hepsi bir arada satıcı portalınız.",
         "placeholder": "Uygulama önizlemesi"
       }
@@ -4150,7 +4150,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Kimlik doğrulama başarısız oldu",
-      "cloud": "Mercur ile Giriş Yap"
+      "cloud": "Dfactories ile Giriş Yap"
     }
   }
 }

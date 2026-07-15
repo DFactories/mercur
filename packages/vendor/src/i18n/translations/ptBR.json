@@ -4086,7 +4086,7 @@
         "accountNameRequired": "Informe um nome de conta"
       },
       "preview": {
-        "title": "Bem-vindo ao Mercur",
+        "title": "Bem-vindo ao Dfactories",
         "description": "Seu portal completo para gerenciar sua loja, produtos, pedidos e pagamentos.",
         "placeholder": "Prévia do aplicativo"
       }
@@ -4151,7 +4151,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Falha na autenticação",
-      "cloud": "Entrar com o Mercur"
+      "cloud": "Entrar com o Dfactories"
     }
   }
 }

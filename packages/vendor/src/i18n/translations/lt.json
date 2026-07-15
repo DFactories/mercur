@@ -4085,7 +4085,7 @@
         "accountNameRequired": "Įveskite sąskaitos savininko vardą"
       },
       "preview": {
-        "title": "Sveiki atvykę į Mercur",
+        "title": "Sveiki atvykę į Dfactories",
         "description": "Jūsų visapusis pardavėjo portalas parduotuvei, produktams, užsakymams ir išmokoms valdyti.",
         "placeholder": "Programos peržiūra"
       }
@@ -4150,7 +4150,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Autentifikacija nepavyko",
-      "cloud": "Prisijungti su Mercur"
+      "cloud": "Prisijungti su Dfactories"
     }
   }
 }

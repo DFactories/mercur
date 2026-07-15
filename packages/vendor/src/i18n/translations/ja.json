@@ -4086,7 +4086,7 @@
         "accountNameRequired": "口座名義を入力してください"
       },
       "preview": {
-        "title": "Mercurへようこそ",
+        "title": "Dfactoriesへようこそ",
         "description": "ストア、商品、注文、支払いを一元管理できるベンダーポータルです。",
         "placeholder": "アプリプレビュー"
       }
@@ -4151,7 +4151,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "認証に失敗しました",
-      "cloud": "Mercurでログイン"
+      "cloud": "Dfactoriesでログイン"
     }
   }
 }

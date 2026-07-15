@@ -3767,7 +3767,9 @@
         "postalCode": "Postal Code",
         "city": "City",
         "country": "Country",
-        "state": "State"
+        "state": "State",
+        "selectProvince": "Select province",
+        "selectCity": "Select city"
       },
       "company": {
         "title": "Enter your company details",
@@ -3795,7 +3797,7 @@
         "handleInvalid": "Use lowercase letters, numbers and hyphens only (e.g. my-store)"
       },
       "preview": {
-        "title": "Welcome to Mercur",
+        "title": "Welcome to Dfactories",
         "description": "Your all-in-one vendor portal for managing your store, products, orders, and payouts.",
         "placeholder": "App preview"
       }
@@ -4241,7 +4243,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Authentication failed",
-      "cloud": "Log in with Mercur"
+      "cloud": "Log in with Dfactories"
     }
   },
   "attributes": {

@@ -4081,7 +4081,7 @@
         "accountNameRequired": "Zadejte prosím název účtu"
       },
       "preview": {
-        "title": "Vítejte v Mercur",
+        "title": "Vítejte v Dfactories",
         "description": "Váš univerzální prodejní portál pro správu obchodu, produktů, objednávek a výplat.",
         "placeholder": "Náhled aplikace"
       }
@@ -4146,7 +4146,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Ověření se nezdařilo",
-      "cloud": "Přihlásit se přes Mercur"
+      "cloud": "Přihlásit se přes Dfactories"
     }
   }
 }

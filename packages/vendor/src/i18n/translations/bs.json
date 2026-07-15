@@ -4083,7 +4083,7 @@
         "accountNameRequired": "Unesite naziv računa"
       },
       "preview": {
-        "title": "Dobrodošli u Mercur",
+        "title": "Dobrodošli u Dfactories",
         "description": "Vaš sveobuhvatni portal za prodavce za upravljanje prodavnicom, proizvodima, narudžbama i isplatama.",
         "placeholder": "Pregled aplikacije"
       }
@@ -4148,7 +4148,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Autentifikacija nije uspjela",
-      "cloud": "Prijavi se putem Mercur-a"
+      "cloud": "Prijavi se putem Dfactories-a"
     }
   }
 }

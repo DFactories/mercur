@@ -5,6 +5,8 @@ import { motion, type Variants } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 
+import { TOTAL_STEPS, WIZARD_STEPS } from "../../onboarding-wizard/constants";
+
 // DFACTORIES (isolated): animated "glowy waves" marketing aside that replaces
 // the static onboarding illustration on every auth/onboarding screen. Kept in
 // its own file so upstream merges only ever touch the tiny call sites in
@@ -237,9 +239,16 @@ export const AuthHero = ({ variant, currentStep = 0 }: AuthHeroProps) => {
 
   const base = `authHero.${resolved}`;
   const rawItems = t(`${base}.items`, { returnObjects: true });
-  const items = Array.isArray(rawItems) ? (rawItems as string[]) : [];
   const isOnboarding = resolved === "onboarding";
-  const total = items.length || 1;
+  // DFACTORIES: on the onboarding screen the pills must mirror the REAL wizard
+  // steps (store → address → company → payment), not the static marketing
+  // items — otherwise the highlighted pill never matches the current step.
+  const items = isOnboarding
+    ? WIZARD_STEPS.map((step) => t(step.labelKey))
+    : Array.isArray(rawItems)
+      ? (rawItems as string[])
+      : [];
+  const total = isOnboarding ? TOTAL_STEPS : items.length || 1;
   const percent = isOnboarding
     ? Math.round((Math.min(currentStep + 1, total) / total) * 100)
     : 0;

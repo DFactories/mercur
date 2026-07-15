@@ -4086,7 +4086,7 @@
         "accountNameRequired": "Inserisci il nome dell'intestatario"
       },
       "preview": {
-        "title": "Benvenuto in Mercur",
+        "title": "Benvenuto in Dfactories",
         "description": "Il tuo portale vendor completo per gestire negozio, prodotti, ordini e pagamenti.",
         "placeholder": "Anteprima app"
       }
@@ -4151,7 +4151,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Autenticazione non riuscita",
-      "cloud": "Accedi con Mercur"
+      "cloud": "Accedi con Dfactories"
     }
   }
 }

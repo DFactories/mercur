@@ -4086,7 +4086,7 @@
         "accountNameRequired": "กรุณากรอกชื่อบัญชี"
       },
       "preview": {
-        "title": "ยินดีต้อนรับสู่ Mercur",
+        "title": "ยินดีต้อนรับสู่ Dfactories",
         "description": "พอร์ทัลร้านค้าแบบครบวงจรสำหรับจัดการร้านค้า สินค้า คำสั่งซื้อ และการจ่ายเงินของคุณ",
         "placeholder": "ตัวอย่างแอป"
       }
@@ -4151,7 +4151,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "การยืนยันตัวตนล้มเหลว",
-      "cloud": "เข้าสู่ระบบด้วย Mercur"
+      "cloud": "เข้าสู่ระบบด้วย Dfactories"
     }
   }
 }

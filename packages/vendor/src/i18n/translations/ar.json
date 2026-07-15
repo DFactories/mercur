@@ -4085,7 +4085,7 @@
         "accountNameRequired": "يرجى إدخال اسم الحساب"
       },
       "preview": {
-        "title": "مرحبًا بك في Mercur",
+        "title": "مرحبًا بك في Dfactories",
         "description": "بوابة البائع الشاملة لإدارة متجرك ومنتجاتك وطلباتك ومدفوعاتك.",
         "placeholder": "معاينة التطبيق"
       }
@@ -4150,7 +4150,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "فشلت المصادقة",
-      "cloud": "تسجيل الدخول باستخدام Mercur"
+      "cloud": "تسجيل الدخول باستخدام Dfactories"
     }
   }
 }

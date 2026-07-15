@@ -3453,12 +3453,12 @@
   },
   "login": {
     "forgotPassword": "Zapomniałeś hasła? - <0>Resetuj</0>",
-    "title": "Witamy w Mercur",
+    "title": "Witamy w Dfactories",
     "hint": "Zaloguj się, aby uzyskać dostęp do obszaru konta",
     "sessionExpired": "Sesja wygasła"
   },
   "invite": {
-    "title": "Witamy w Mercur",
+    "title": "Witamy w Dfactories",
     "hint": "Utwórz swoje konto poniżej",
     "backToLogin": "Powrót do logowania",
     "createAccount": "Utwórz konto",

@@ -3733,14 +3733,14 @@
         "accountNameRequired": "Wprowadź nazwę właściciela konta"
       },
       "preview": {
-        "title": "Witamy w Mercur",
+        "title": "Witamy w Dfactories",
         "description": "Twój kompleksowy panel sklepu do zarządzania sklepem, produktami, zamówieniami i wypłatami.",
         "placeholder": "Podgląd aplikacji"
       }
     }
   },
   "invite": {
-    "title": "Witamy w Mercur",
+    "title": "Witamy w Dfactories",
     "hint": "Utwórz swoje konto poniżej",
     "backToLogin": "Powrót do logowania",
     "createAccount": "Utwórz konto",
@@ -4252,7 +4252,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Uwierzytelnianie nie powiodło się",
-      "cloud": "Zaloguj się przez Mercur"
+      "cloud": "Zaloguj się przez Dfactories"
     }
   }
 }

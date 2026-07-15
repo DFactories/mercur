@@ -4084,7 +4084,7 @@
         "accountNameRequired": "Kérjük, adja meg a számlatulajdonos nevét"
       },
       "preview": {
-        "title": "Üdvözöljük a Mercurban",
+        "title": "Üdvözöljük a Dfactoriesban",
         "description": "Egyablakos eladói portál az üzlete, termékei, rendelései és kifizetései kezeléséhez.",
         "placeholder": "Alkalmazás előnézete"
       }
@@ -4149,7 +4149,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Sikertelen hitelesítés",
-      "cloud": "Bejelentkezés Mercurral"
+      "cloud": "Bejelentkezés Dfactoriesral"
     }
   }
 }

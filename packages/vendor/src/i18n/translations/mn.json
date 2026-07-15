@@ -4085,7 +4085,7 @@
         "accountNameRequired": "Дансны нэр оруулна уу"
       },
       "preview": {
-        "title": "Mercur-т тавтай морил",
+        "title": "Dfactories-т тавтай морил",
         "description": "Дэлгүүр, бүтээгдэхүүн, захиалга, төлбөр шилжүүлгээ удирдах цогц худалдагчийн портал.",
         "placeholder": "Аппын урьдчилан харах"
       }
@@ -4150,7 +4150,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Нэвтрэлт амжилтгүй боллоо",
-      "cloud": "Mercur-р нэвтрэх"
+      "cloud": "Dfactories-р нэвтрэх"
     }
   }
 }

@@ -4084,7 +4084,7 @@
         "accountNameRequired": "Voer een naam voor de rekeninghouder in"
       },
       "preview": {
-        "title": "Welkom bij Mercur",
+        "title": "Welkom bij Dfactories",
         "description": "Je alles-in-één verkopersportaal voor het beheren van je winkel, producten, bestellingen en uitbetalingen.",
         "placeholder": "App-voorbeeld"
       }
@@ -4149,7 +4149,7 @@
   "auth": {
     "login": {
       "authenticationFailed": "Authenticatie mislukt",
-      "cloud": "Inloggen met Mercur"
+      "cloud": "Inloggen met Dfactories"
     }
   }
 }
