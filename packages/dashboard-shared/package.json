@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@mercurjs/types": "2.2.0-dfactories.3",
-    "@mercurjs/core": "2.2.0-dfactories.3",
+    "@mercurjs/core": "2.2.0-dfactories.5",
     "@mercurjs/dashboard-sdk": "2.2.0-dfactories.3",
     "tsup": "^8.0.2",
     "typescript": "5.9.3",
