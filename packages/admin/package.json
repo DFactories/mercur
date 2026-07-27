@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/admin",
-  "version": "2.2.0-dfactories.5",
+  "version": "2.2.0-dfactories.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/mercurjs/mercur",
@@ -34,7 +34,7 @@
     "lint": "oxlint --max-warnings 0"
   },
   "dependencies": {
-    "@mercurjs/dashboard-shared": "2.2.0-dfactories.3",
+    "@mercurjs/dashboard-shared": "2.2.0-dfactories.6",
     "@mercurjs/client": "2.2.0-dfactories.3",
     "@ariakit/react": "^0.4.15",
     "@babel/runtime": "^7.26.10",

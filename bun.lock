@@ -159,7 +159,7 @@
     },
     "packages/admin": {
       "name": "@mercurjs/admin",
-      "version": "2.2.0-dfactories.5",
+      "version": "2.2.0-dfactories.6",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
@@ -374,7 +374,7 @@
     },
     "packages/dashboard-shared": {
       "name": "@mercurjs/dashboard-shared",
-      "version": "2.2.0-dfactories.3",
+      "version": "2.2.0-dfactories.6",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
@@ -500,7 +500,7 @@
     },
     "packages/vendor": {
       "name": "@mercurjs/vendor",
-      "version": "2.2.0-dfactories.5",
+      "version": "2.2.0-dfactories.6",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
