@@ -908,7 +908,7 @@ const DataGridHeader = ({
           )}
         </div>
       )}
-      <div className="ml-auto flex items-center gap-x-2">
+      <div className="ms-auto flex items-center gap-x-2">
         {headerContent && (
           <div
             className="flex items-center"

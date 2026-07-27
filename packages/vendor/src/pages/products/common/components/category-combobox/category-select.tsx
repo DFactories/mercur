@@ -203,7 +203,7 @@ export const CategorySelect = forwardRef<
         }
       >
         <Select.Value aria-label={value[0]} />
-        <Select.Icon className="ml-auto">
+        <Select.Icon className="ms-auto">
           <TrianglesMini className="text-ui-fg-muted" />
         </Select.Icon>
       </Select.Trigger>
@@ -275,7 +275,7 @@ const SelectItem = ({
       )}
     >
       <Select.ItemText>{children}</Select.ItemText>
-      <Select.ItemIndicator className="ml-auto">
+      <Select.ItemIndicator className="ms-auto">
         <Check />
       </Select.ItemIndicator>
     </Select.Item>

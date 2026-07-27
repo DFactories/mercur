@@ -909,7 +909,7 @@ const DataGridHeader = ({
         </div>
       )}
       {headerContent}
-      <div className="ml-auto flex items-center gap-x-2">
+      <div className="ms-auto flex items-center gap-x-2">
         {errorCount > 0 && (
           <Button
             size="small"

@@ -3772,7 +3772,7 @@
     "manageMarketplaceDetails": "جزئیات بازار خود را مدیریت کنید",
     "edit": {
       "header": "ویرایش بازار",
-      "namePlaceholder": "ACME"
+      "namePlaceholder": "مثلاً فروشگاه نمونه"
     }
   },
   "attributes": {
