@@ -34,7 +34,7 @@ export const VendorCreateShippingProfile = z
   .object({
     name: z.string(),
     type: z.string(),
-    metadata: z.record(z.unknown()).nullish(),
+    metadata: z.record(z.string(), z.unknown()).nullish(),
   })
   .strict()
 
@@ -45,6 +45,6 @@ export const VendorUpdateShippingProfile = z
   .object({
     name: z.string().optional(),
     type: z.string().optional(),
-    metadata: z.record(z.unknown()).nullish(),
+    metadata: z.record(z.string(), z.unknown()).nullish(),
   })
   .strict()

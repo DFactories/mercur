@@ -63,7 +63,7 @@ export const CreateSellerAccount = z.object({
       account_number: z.string().nullable().optional(),
     })
     .optional(),
-  metadata: z.record(z.unknown()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 export const VendorCreateSellerAccount = WithAdditionalData(CreateSellerAccount)
 
@@ -80,7 +80,7 @@ export const UpdateSeller = z.object({
   closed_from: z.coerce.date().nullable().optional(),
   closed_to: z.coerce.date().nullable().optional(),
   closure_note: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 export const VendorUpdateSeller = WithAdditionalData(UpdateSeller)
 
@@ -109,7 +109,7 @@ export const UpsertSellerAddress = z.object({
   province: z.string().nullable().optional(),
   postal_code: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 export const VendorUpsertSellerAddress = WithAdditionalData(UpsertSellerAddress)
 

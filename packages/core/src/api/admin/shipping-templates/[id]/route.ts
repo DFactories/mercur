@@ -63,7 +63,7 @@ export async function POST(
   if (!parsed.success) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      parsed.error.errors.map((e) => e.message).join(", ")
+      parsed.error.issues.map((e) => e.message).join(", ")
     )
   }
 

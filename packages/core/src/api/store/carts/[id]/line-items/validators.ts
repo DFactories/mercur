@@ -6,8 +6,8 @@ export const StoreAddCartLineItem = z
     quantity: z.number().int().positive(),
     unit_price: z.number().optional(),
     compare_at_unit_price: z.number().optional(),
-    metadata: z.record(z.unknown()).optional(),
-    additional_data: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    additional_data: z.record(z.string(), z.unknown()).optional(),
   })
   .strict()
 
