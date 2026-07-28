@@ -630,7 +630,7 @@
         "enterValuePlaceholder": "وارد کردن مقدار",
         "selectValuePlaceholder": "انتخاب مقدار",
         "requiredAttributes": "ویژگی‌های الزامی",
-        "requiredAttributesHint": "These attributes are required by the Marketplace. Select them before proceeding.",
+        "requiredAttributesHint": "این ویژگی‌ها توسط بازارگاه الزامی شده‌اند. پیش از ادامه آن‌ها را انتخاب کنید.",
         "useForVariants": "استفاده برای تنوع‌ها",
         "useForVariantsDescription": "در صورت فعال بودن، می‌توانید با استفاده از این ویژگی، تنوع ایجاد کنید. در غیر این صورت، این ویژگی فقط جنبه اطلاعاتی خواهد داشت.",
         "tip": "نکته",
@@ -731,7 +731,7 @@
       "published": "منتشر شده",
       "proposed": "پیشنهادی",
       "rejected": "رد شده",
-      "requires_action": "Changes required",
+      "requires_action": "نیازمند اصلاح",
       "accepted": "پذیرفته شده"
     },
     "fields": {
@@ -3860,7 +3860,7 @@
       "isFilterableHint": "در صورت فعال بودن، مشتریان می‌توانند محصولات را با استفاده از این ویژگی فیلتر کنند.",
       "isGlobal": "ویژگی سراسری",
       "isGlobalHint": "در صورت فعال بودن، این ویژگی به همه محصولات در همه دسته‌بندی‌ها اعمال می‌شود.",
-      "isVariantAxis": "Use for Variations",
+      "isVariantAxis": "استفاده برای تنوع‌ها",
       "isVariantAxisHint": "در صورت فعال بودن، این ویژگی تنوع‌های محصول را تعریف می‌کند (مانند اندازه، رنگ)."
     },
     "type": {
