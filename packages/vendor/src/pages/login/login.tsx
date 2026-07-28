@@ -1,4 +1,4 @@
-import { Children, ReactNode } from "react";
+import { Children, ReactNode, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
 import { Alert, Button, Heading, Input, Text } from "@medusajs/ui";
@@ -79,6 +79,9 @@ const LoginForm = () => {
   });
 
   const { mutateAsync, isPending } = useSignInWithEmailPass();
+  // The redirect is deferred, so `isPending` goes false while the page is still
+  // here; without this the button is live again and re-submits.
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const translateAuthError = (message?: string) => {
     const key = message ? AUTH_ERROR_I18N[message.trim()] : undefined;
@@ -111,6 +114,7 @@ const LoginForm = () => {
         },
         onSuccess: () => {
           const email = form.getValues("email");
+          setIsRedirecting(true);
           setTimeout(() => {
             navigate("/store-select", {
               replace: true,
@@ -169,7 +173,11 @@ const LoginForm = () => {
             </Alert>
           )}
         </div>
-        <Button className="w-full" type="submit" isLoading={isPending}>
+        <Button
+          className="w-full"
+          type="submit"
+          isLoading={isPending || isRedirecting}
+        >
           {t("login.submit")}
         </Button>
       </form>

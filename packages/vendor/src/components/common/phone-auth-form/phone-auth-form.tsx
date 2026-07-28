@@ -59,6 +59,10 @@ export const PhoneAuthForm = ({
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [resendIn, setResendIn] = useState(0)
+  // `onVerified` hands off to a deferred navigation, so the verify mutation
+  // settles well before the page actually changes. Without this the form goes
+  // live again in that gap and a second click re-submits an already-used code.
+  const [isCompleting, setIsCompleting] = useState(false)
 
   const { mutateAsync: requestOtp, isPending: isRequesting } = useRequestOtp()
   const { mutateAsync: verifyOtp, isPending: isVerifying } = useVerifyOtp()
@@ -141,14 +145,20 @@ export const PhoneAuthForm = ({
     }
     try {
       await verifyOtp({ phone: normalizePhone(phone), code: code.trim() })
+      setIsCompleting(true)
       onVerified(normalizePhone(phone))
     } catch (e) {
       setError(toError(e))
     }
   }
 
+  const isBusy = isRequesting || isVerifying || isCompleting
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
+    if (isBusy) {
+      return
+    }
     if (step === "phone") {
       void handleRequest()
     } else {
@@ -193,13 +203,14 @@ export const PhoneAuthForm = ({
             <div className="flex items-center justify-between">
               <button
                 type="button"
+                disabled={isBusy}
                 onClick={() => {
                   setStep("phone")
                   setCode("")
                   setError(null)
                   setResendIn(0)
                 }}
-                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-left text-xs font-medium outline-none transition-fg"
+                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-left text-xs font-medium outline-none transition-fg disabled:opacity-50"
               >
                 {t("login.phone.changeNumber")}
               </button>
@@ -211,7 +222,7 @@ export const PhoneAuthForm = ({
                 <button
                   type="button"
                   onClick={handleResend}
-                  disabled={isRequesting}
+                  disabled={isBusy}
                   className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-xs font-medium outline-none transition-fg disabled:opacity-50"
                   data-testid="resend-code"
                 >
@@ -236,7 +247,7 @@ export const PhoneAuthForm = ({
       <Button
         className="w-full"
         type="submit"
-        isLoading={isRequesting || isVerifying}
+        isLoading={isBusy}
         data-testid="phone-submit"
       >
         {step === "phone"
