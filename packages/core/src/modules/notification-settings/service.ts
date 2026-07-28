@@ -5,7 +5,7 @@ import {
 } from "@mercurjs/types"
 
 import { listNotificationEvents } from "../../notification/catalog"
-import { NotificationChannelConfig } from "./models"
+import { NotificationChannelConfig, NotificationReadState } from "./models"
 
 /** Channels that may only be enabled once an approved template id is provided. */
 const TEMPLATE_REQUIRED_CHANNELS: NotificationChannel[] = ["sms"]
@@ -74,9 +74,54 @@ function effectiveEnabled(
   return base
 }
 
+export type NotificationActor = {
+  actor_type: "user" | "member"
+  actor_id: string
+}
+
 class NotificationSettingsModuleService extends MedusaService({
   NotificationChannelConfig,
+  NotificationReadState,
 }) {
+  /** When this actor last read their feed, or null if they never have. */
+  async getLastReadAt(actor: NotificationActor): Promise<Date | null> {
+    const [row] = (await this.listNotificationReadStates({
+      actor_type: actor.actor_type,
+      actor_id: actor.actor_id,
+    })) as unknown as { last_read_at: Date }[]
+
+    return row?.last_read_at ?? null
+  }
+
+  /** Mark this actor's feed read up to `readAt`. Never moves the marker backwards. */
+  async markReadAt(
+    actor: NotificationActor,
+    readAt: Date = new Date()
+  ): Promise<Date> {
+    const [row] = (await this.listNotificationReadStates({
+      actor_type: actor.actor_type,
+      actor_id: actor.actor_id,
+    })) as unknown as { id: string; last_read_at: Date }[]
+
+    if (!row) {
+      await this.createNotificationReadStates({
+        actor_type: actor.actor_type,
+        actor_id: actor.actor_id,
+        last_read_at: readAt,
+      })
+      return readAt
+    }
+
+    if (new Date(row.last_read_at) >= readAt) {
+      return new Date(row.last_read_at)
+    }
+
+    await this.updateNotificationReadStates({
+      id: row.id,
+      last_read_at: readAt,
+    })
+    return readAt
+  }
   private async loadConfigMap(): Promise<Map<string, StoredConfig>> {
     const rows = (await this.listNotificationChannelConfigs(
       {},
