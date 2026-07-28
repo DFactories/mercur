@@ -28,7 +28,10 @@ function getTranslationKeys(obj: any, prefix = ""): string[] {
 
   Object.entries(obj).forEach(([key, value]) => {
     const newPrefix = prefix ? `${prefix}.${key}` : key
-    if (value && typeof value === "object") {
+    // An array-valued translation (e.g. `authHero.login.items`) is one key, not
+    // one per element — the schema declares it as `type: "array"`, so counting
+    // `items.0`, `items.1`, … here would compare the two sides differently.
+    if (value && typeof value === "object" && !Array.isArray(value)) {
       keys.push(...getTranslationKeys(value, newPrefix))
     } else {
       keys.push(newPrefix)

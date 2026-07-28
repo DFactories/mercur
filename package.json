@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "oxlint --quiet",
+    "test:unit": "turbo run test --filter=@mercurjs/vendor --filter=@mercurjs/admin --filter=@mercurjs/dashboard-shared",
     "test:integration:http": "cd integration-tests && bun run test:integration:http"
   },
   "dependencies": {

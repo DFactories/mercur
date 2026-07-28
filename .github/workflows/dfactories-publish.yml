@@ -45,6 +45,15 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
+      # Publishing is irreversible on the registry (a version number cannot be
+      # reused), so the panel unit tests and the generated i18n schema are
+      # checked here too rather than relying on the Lint workflow racing this one.
+      - name: Run unit tests
+        run: bun run test:unit
+
+      - name: Check i18n schema is up to date
+        run: bun run scripts/generate-i18n-schema.ts --check
+
       - name: Build
         run: bun run build
 

@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "dev": "tsup --watch",
-    "build": "tsup"
+    "build": "tsup",
+    "test": "vitest run"
   },
   "dependencies": {
     "@mercurjs/client": "2.2.0-dfactories.3",
@@ -63,6 +64,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "vitest": "4.1.10",
     "@mercurjs/types": "2.2.0-dfactories.3",
     "@mercurjs/core": "2.2.0-dfactories.5",
     "@mercurjs/dashboard-sdk": "2.2.0-dfactories.3",

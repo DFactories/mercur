@@ -2,9 +2,11 @@ name: Lint
 
 on:
   pull_request:
-    branches: [canary, main]
+    branches: [canary, main, "dfactories/**"]
   push:
-    branches: [canary, main]
+    # dfactories/** is where the fork's work lands; without it these checks
+    # never ran on the branch that actually ships to the private registry.
+    branches: [canary, main, "dfactories/**"]
 
 permissions:
   contents: read
@@ -65,6 +67,12 @@ jobs:
 
       - name: Run lint
         run: bun run lint
+
+      - name: Run unit tests
+        run: bun run test:unit
+
+      - name: Check i18n schema is up to date
+        run: bun run scripts/generate-i18n-schema.ts --check
 
       - name: Check routes manifest is up to date
         run: |
