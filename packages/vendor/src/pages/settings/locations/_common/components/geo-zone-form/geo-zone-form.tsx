@@ -19,7 +19,7 @@ import { _DataTable } from "@components/table/data-table"
 import { useDataTable } from "@hooks/use-data-table"
 import {
   StaticCountry,
-  countries as staticCountries,
+  selectableCountries as staticCountries,
 } from "@lib/data/countries"
 import { useCountries } from "@pages/settings/regions/_common/hooks/use-countries"
 import { useCountryTableColumns } from "@pages/settings/regions/_common/hooks/use-country-table-columns"

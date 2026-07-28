@@ -1765,3 +1765,14 @@ export const countries: StaticCountry[] = [
     display_name: "Åland Islands",
   },
 ]
+
+/**
+ * The marketplace operates inside Iran only, so this — not `countries` — is what
+ * a producer may pick from. `countries` stays complete so historical records
+ * with another country still resolve to a name instead of rendering blank.
+ */
+export const SELECTABLE_COUNTRY_ISO2 = ["ir"]
+
+export const selectableCountries: StaticCountry[] = countries.filter((c) =>
+  SELECTABLE_COUNTRY_ISO2.includes(c.iso_2)
+)
