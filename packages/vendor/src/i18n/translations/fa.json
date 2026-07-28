@@ -4347,5 +4347,8 @@
       ]
     },
     "progress": "{{percent}}٪ تکمیل شده"
+  },
+  "currencies": {
+    "toman": "تومان"
   }
 }

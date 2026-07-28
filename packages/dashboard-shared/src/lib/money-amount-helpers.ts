@@ -1,4 +1,5 @@
 import { currencies } from "./data/currencies"
+import { formatTomanAmount, getTomanLabel, isTomanCurrency } from "./toman"
 
 export const getDecimalDigits = (currency: string) => {
   return currencies[currency.toUpperCase()]?.decimal_digits ?? 0
@@ -15,6 +16,10 @@ export const getDecimalDigits = (currency: string) => {
  * getFormattedAmount(10, "usd") // '10,00 $' if the browser's locale is fr-FR
  */
 export const getLocaleAmount = (amount: number, currencyCode: string) => {
+  if (isTomanCurrency(currencyCode)) {
+    return formatTomanAmount(amount)
+  }
+
   const formatter = new Intl.NumberFormat([], {
     style: "currency",
     currencyDisplay: "narrowSymbol",
@@ -25,6 +30,10 @@ export const getLocaleAmount = (amount: number, currencyCode: string) => {
 }
 
 export const getNativeSymbol = (currencyCode: string) => {
+  if (isTomanCurrency(currencyCode)) {
+    return getTomanLabel()
+  }
+
   const formatted = new Intl.NumberFormat([], {
     style: "currency",
     currency: currencyCode,
@@ -41,6 +50,10 @@ export const getNativeSymbol = (currencyCode: string) => {
  * currency code and symbol explicitly, e.g. for totals.
  */
 export const getStylizedAmount = (amount: number, currencyCode: string) => {
+  if (isTomanCurrency(currencyCode)) {
+    return formatTomanAmount(amount)
+  }
+
   const symbol = getNativeSymbol(currencyCode)
   const decimalDigits = getDecimalDigits(currencyCode)
 

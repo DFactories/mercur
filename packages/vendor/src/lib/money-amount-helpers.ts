@@ -1,3 +1,9 @@
+import {
+  formatTomanAmount,
+  getTomanLabel,
+  isTomanCurrency,
+} from "@mercurjs/dashboard-shared"
+
 import { currencies } from "./data/currencies"
 
 export const getDecimalDigits = (currency: string) => {
@@ -15,6 +21,10 @@ export const getDecimalDigits = (currency: string) => {
  * getFormattedAmount(10, "usd") // '10,00 $' if the browser's locale is fr-FR
  */
 export const getLocaleAmount = (amount: number, currencyCode: string) => {
+  if (isTomanCurrency(currencyCode)) {
+    return formatTomanAmount(amount)
+  }
+
   const formatter = new Intl.NumberFormat([], {
     style: "currency",
     currencyDisplay: "narrowSymbol",
@@ -25,6 +35,10 @@ export const getLocaleAmount = (amount: number, currencyCode: string) => {
 }
 
 export const getNativeSymbol = (currencyCode: string) => {
+  if (isTomanCurrency(currencyCode)) {
+    return getTomanLabel()
+  }
+
   const formatted = new Intl.NumberFormat([], {
     style: "currency",
     currency: currencyCode,
@@ -50,6 +64,11 @@ export const getStylizedAmount = (
   const safeAmount = typeof amount === "number" && Number.isFinite(amount)
     ? amount
     : 0
+
+  if (isTomanCurrency(currencyCode)) {
+    return formatTomanAmount(safeAmount)
+  }
+
   const symbol = getNativeSymbol(currencyCode)
   const decimalDigits = getDecimalDigits(currencyCode)
 

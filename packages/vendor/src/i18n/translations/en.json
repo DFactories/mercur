@@ -4340,5 +4340,8 @@
       ]
     },
     "progress": "{{percent}}% complete"
+  },
+  "currencies": {
+    "toman": "toman"
   }
 }

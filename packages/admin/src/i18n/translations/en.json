@@ -4257,5 +4257,8 @@
     "toast": {
       "saved": "Notification settings saved"
     }
+  },
+  "currencies": {
+    "toman": "toman"
   }
 }
