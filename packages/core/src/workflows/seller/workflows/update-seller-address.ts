@@ -8,6 +8,9 @@ import {
 import { SellerAddressDTO, UpdateSellerAddressDTO } from "@mercurjs/types"
 import { AdditionalData } from "@medusajs/framework/types"
 
+import { emitEventStep } from "@medusajs/medusa/core-flows"
+
+import { SellerWorkflowEvents } from "../../events"
 import { updateSellerAddressStep } from "../steps/update-seller-address"
 
 export const updateSellerAddressWorkflowId = "update-seller-address"
@@ -36,6 +39,14 @@ export const updateSellerAddressWorkflow: ReturnWorkflow<
   updateSellerAddressWorkflowId,
   function (input: UpdateSellerAddressWorkflowInput) {
     const address = updateSellerAddressStep(input)
+
+    // `seller.updated` was declared but never emitted, so anything reacting to a
+    // seller changing (e.g. re-deriving its geography links from the new
+    // address) silently never ran.
+    emitEventStep({
+      eventName: SellerWorkflowEvents.UPDATED,
+      data: { id: input.seller_id },
+    })
 
     const addressUpdated = createHook("addressUpdated", {
       address,
