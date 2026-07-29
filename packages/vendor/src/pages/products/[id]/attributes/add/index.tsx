@@ -51,14 +51,38 @@ const ATTRIBUTE_TYPE_LABELS: Record<string, string> = {
   text: "attributes.type.text_area",
 }
 
+type DerivesMap = Record<string, Record<string, string[]>>
+
+/**
+ * Defaults an attribute implies for other attributes, published by the backend
+ * on `metadata.derives` (`{ pp: { temperature_use: [...] } }`, keyed by value
+ * handle). Kept as data rather than a table in this package so the catalogue
+ * stays the single source of truth.
+ */
+const readDerives = (attribute: { metadata?: unknown }): DerivesMap | null => {
+  const derives = (attribute.metadata as { derives?: unknown } | null)?.derives
+  return derives && typeof derives === "object" ? (derives as DerivesMap) : null
+}
+
 const AttributeValueSchema = zod.object({
   attribute_id: zod.string(),
   name: zod.string(),
+  handle: zod.string().nullable(),
   type: zod.string(),
   is_variant_axis: zod.boolean(),
   available_values: zod.array(
-    zod.object({ id: zod.string(), name: zod.string() })
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      handle: zod.string().nullable(),
+    })
   ),
+  derives: zod
+    .record(
+      zod.string(),
+      zod.record(zod.string(), zod.array(zod.string()))
+    )
+    .nullable(),
   values: zod
     .union([zod.string(), zod.array(zod.string())])
     .refine(
@@ -99,16 +123,27 @@ const Content = ({ productId }: { productId: string }) => {
   const [rowSelection, setRowSelection] =
     useState<DataTableRowSelectionState>({})
 
+  const { product } = useProduct(productId, PRODUCT_DETAIL_QUERY)
+
   const { searchParams } = useAttributeTableQuery({
     pageSize: PAGE_SIZE,
     prefix: PREFIX,
   })
+
+  // Scope to the product's category, matching the create flow. Without it this
+  // list is the whole catalogue and a seller can attach `polymer` to a label.
+  const categoryId = (product as { categories?: { id: string }[] } | undefined)
+    ?.categories?.[0]?.id
+
+  const attributesQuery = useMemo(
+    () => ({ ...searchParams, category_id: categoryId || undefined }),
+    [searchParams, categoryId]
+  )
+
   const { product_attributes, count, isLoading, isError, error } =
-    useProductAttributes(searchParams, {
+    useProductAttributes(attributesQuery, {
       placeholderData: keepPreviousData,
     })
-
-  const { product } = useProduct(productId, PRODUCT_DETAIL_QUERY)
 
   const assignedIds = useMemo(
     () =>
@@ -155,6 +190,67 @@ const Content = ({ productId }: { productId: string }) => {
     name: "attributes",
   })
 
+  // Pre-fill what a chosen value implies (polymer → temperature/eco). These two
+  // are the fields sellers skip, and an unfilled multi-select is a dead facet.
+  // Only ever fills an EMPTY target: a seller's own answer is never overwritten.
+  const watchedAttributes = form.watch("attributes")
+
+  useEffect(() => {
+    if (step !== "values" || !watchedAttributes?.length) {
+      return
+    }
+
+    watchedAttributes.forEach((source) => {
+      if (!source?.derives) {
+        return
+      }
+      const picked = Array.isArray(source.values)
+        ? source.values
+        : source.values
+          ? [source.values]
+          : []
+      if (picked.length !== 1) {
+        return
+      }
+      const sourceHandle = source.available_values.find(
+        (v) => v.name === picked[0]
+      )?.handle
+      const implied = sourceHandle ? source.derives[sourceHandle] : undefined
+      if (!implied) {
+        return
+      }
+
+      watchedAttributes.forEach((target, targetIndex) => {
+        const wanted = target?.handle ? implied[target.handle] : undefined
+        if (!wanted?.length) {
+          return
+        }
+        const current = Array.isArray(target.values)
+          ? target.values
+          : target.values
+            ? [target.values]
+            : []
+        if (current.length) {
+          return
+        }
+        const names = wanted
+          .map(
+            (handle) =>
+              target.available_values.find((v) => v.handle === handle)?.name
+          )
+          .filter((name): name is string => !!name)
+        if (!names.length) {
+          return
+        }
+        form.setValue(
+          `attributes.${targetIndex}.values`,
+          target.type === "multi_select" ? names : names[0],
+          { shouldDirty: true, shouldValidate: true }
+        )
+      })
+    })
+  }, [step, watchedAttributes, form])
+
   const filters = useAttributeTableFilters()
   const columns = useColumns()
 
@@ -176,13 +272,18 @@ const Content = ({ productId }: { productId: string }) => {
       .map((attr) => ({
         attribute_id: attr!.id,
         name: attr!.name,
+        handle: attr!.handle ?? null,
         type: attr!.type,
         is_variant_axis: attr!.is_variant_axis,
+        derives: readDerives(attr!),
         available_values:
-          attr!.values?.map((v: { id: string; name: string }) => ({
-            id: v.id,
-            name: v.name,
-          })) ?? [],
+          attr!.values?.map(
+            (v: { id: string; name: string; handle?: string | null }) => ({
+              id: v.id,
+              name: v.name,
+              handle: v.handle ?? null,
+            })
+          ) ?? [],
         values:
           attr!.type === AttributeType.MULTI_SELECT
             ? ([] as string[])
