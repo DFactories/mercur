@@ -22,6 +22,9 @@ const StoreProductAttributesParamsFields = z.object({
   type: z.union([typeEnum, z.array(typeEnum)]).optional(),
   is_variant_axis: booleanString().optional(),
   is_filterable: booleanString().optional(),
+  // Matches attributes linked to the category PLUS every global one — an
+  // attribute with no category links at all counts as global. Mirrors vendor.
+  category_id: z.union([z.string(), z.array(z.string())]).optional(),
   created_at: createOperatorMap().optional(),
   updated_at: createOperatorMap().optional(),
 })
