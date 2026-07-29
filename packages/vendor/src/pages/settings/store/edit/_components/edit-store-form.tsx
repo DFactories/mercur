@@ -21,6 +21,7 @@ import {
 import { FileType, FileUpload } from "@components/common/file-upload";
 import { Form } from "@components/common/form";
 import { HandleInput } from "@components/inputs/handle-input";
+import { isValidHandle } from "@lib/handle";
 import { RouteDrawer, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
 import { sdk } from "@lib/client";
@@ -40,7 +41,7 @@ const EditStoreSchema = zod.object({
   handle: zod
     .string()
     .trim()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    .refine(isValidHandle, {
       message: i18n.t("store.validation.handleInvalid"),
     })
     .optional()

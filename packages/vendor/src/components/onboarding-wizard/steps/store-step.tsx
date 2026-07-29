@@ -11,6 +11,7 @@ import {
 
 import { Form } from "@components/common/form";
 import { HandleInput } from "@components/inputs/handle-input";
+import { isValidHandle } from "@lib/handle";
 import { useStore } from "@hooks/api";
 import { onboardingLoader } from "../../../pages/onboarding/loader";
 
@@ -27,7 +28,7 @@ const StoreStepSchema = z.object({
   handle: z
     .string()
     .trim()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    .refine(isValidHandle, {
       message: i18n.t("onboarding.wizard.validation.handleInvalid"),
     })
     .optional()
