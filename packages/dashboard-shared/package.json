@@ -66,7 +66,7 @@
   "devDependencies": {
     "vitest": "4.1.10",
     "@mercurjs/types": "2.2.0-dfactories.3",
-    "@mercurjs/core": "2.2.0-dfactories.8",
+    "@mercurjs/core": "2.2.0-dfactories.9",
     "@mercurjs/dashboard-sdk": "2.2.0-dfactories.3",
     "tsup": "^8.0.2",
     "typescript": "5.9.3",
