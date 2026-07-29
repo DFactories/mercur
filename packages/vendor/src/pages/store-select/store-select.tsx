@@ -141,9 +141,14 @@ const StoreSelectFooter = () => {
 const Root = ({ children }: { children?: ReactNode }) => {
   const location = useLocation();
   const state = location.state as { email?: string; phone?: string } | null;
-  const email = state?.email ?? "";
-  const phone = state?.phone ?? "";
   const { seller_members, isLoading } = useSellers();
+
+  // Router state is lost on reload (and on any direct navigation here), which
+  // would send "add new store" to /login. The member rows carry the same
+  // identity, so fall back to those.
+  const member = seller_members?.[0]?.member;
+  const email = state?.email ?? member?.email ?? "";
+  const phone = state?.phone ?? member?.phone ?? "";
 
   if (isLoading) {
     return (

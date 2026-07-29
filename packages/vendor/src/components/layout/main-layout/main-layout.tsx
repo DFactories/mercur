@@ -183,8 +183,14 @@ const StoreList = ({ currentSellerId }: { currentSellerId: string }) => {
       {!!seller_members?.length && <DropdownMenu.Separator />}
       <DropdownMenu.Item
         onClick={() =>
+          // Phone is the primary identity for OTP sign-ups (where `email` is
+          // null), so both must travel — the onboarding wizard bounces to
+          // /login when it receives neither.
           navigate("/onboarding", {
-            state: { email: seller_member?.member.email },
+            state: {
+              email: seller_member?.member.email ?? undefined,
+              phone: seller_member?.member.phone ?? undefined,
+            },
           })
         }
         className="gap-x-2"
