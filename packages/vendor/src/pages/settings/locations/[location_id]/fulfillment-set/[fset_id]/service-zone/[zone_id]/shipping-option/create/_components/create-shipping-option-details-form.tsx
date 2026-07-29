@@ -12,6 +12,7 @@ import { fetchQuery } from "@lib/client"
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
+  providerSupportsCalculatedPricing,
 } from "@pages/settings/locations/_common/constants"
 import { CreateShippingOptionSchema } from "./schema"
 
@@ -31,6 +32,12 @@ export const CreateShippingOptionDetailsForm = ({
   const { t } = useTranslation()
 
   const isPickup = type === FulfillmentSetType.Pickup
+
+  // Calculated pricing is only offered when the provider can actually price the
+  // option; otherwise the create call fails server-side (see the constant).
+  const supportsCalculated = providerSupportsCalculatedPricing(
+    form.watch("provider_id")
+  )
 
   const shippingProfiles = useComboboxData({
     queryFn: () =>
@@ -132,16 +139,18 @@ export const CreateShippingOptionDetailsForm = ({
                           "stockLocations.shippingOptions.fields.priceType.options.fixed.hint"
                         )}
                       />
-                      <RadioGroup.ChoiceBox
-                        className="flex-1"
-                        value={ShippingOptionPriceType.Calculated}
-                        label={t(
-                          "stockLocations.shippingOptions.fields.priceType.options.calculated.label"
-                        )}
-                        description={t(
-                          "stockLocations.shippingOptions.fields.priceType.options.calculated.hint"
-                        )}
-                      />
+                      {supportsCalculated && (
+                        <RadioGroup.ChoiceBox
+                          className="flex-1"
+                          value={ShippingOptionPriceType.Calculated}
+                          label={t(
+                            "stockLocations.shippingOptions.fields.priceType.options.calculated.label"
+                          )}
+                          description={t(
+                            "stockLocations.shippingOptions.fields.priceType.options.calculated.hint"
+                          )}
+                        />
+                      )}
                     </RadioGroup>
                   </Form.Control>
                   <Form.ErrorMessage />
