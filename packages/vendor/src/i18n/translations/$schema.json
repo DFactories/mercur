@@ -1205,7 +1205,8 @@
         "time": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "addresses": {
       "type": "object",
