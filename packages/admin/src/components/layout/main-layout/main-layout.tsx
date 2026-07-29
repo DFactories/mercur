@@ -150,16 +150,22 @@ const Logout = () => {
 
   const { mutateAsync: logoutMutation } = useLogout();
 
+  /**
+   * A 401 from DELETE /auth/session means the session is already gone — the
+   * goal state, not a failure — so logout must still complete locally.
+   * Navigate out of the protected tree BEFORE clearing the cache, or every
+   * mounted `useMe` observer refetches against the destroyed session and the
+   * resulting 401s hit the error boundary.
+   */
   const handleLogout = async () => {
-    await logoutMutation(undefined, {
-      onSuccess: () => {
-        /**
-         * When the user logs out, we want to clear the query cache
-         */
-        queryClient.clear();
-        navigate("/login");
-      },
-    });
+    try {
+      await logoutMutation();
+    } catch {
+      // Session already invalid server-side; local cleanup still runs.
+    }
+
+    navigate("/login", { replace: true });
+    queryClient.clear();
   };
 
   return (

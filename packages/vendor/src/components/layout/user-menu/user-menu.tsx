@@ -253,16 +253,25 @@ const Logout = () => {
 
   const { mutateAsync: logoutMutation } = useLogout();
 
+  /**
+   * Logging out must always land the user on /login, including when the server
+   * refuses the request. A 401 from DELETE /auth/session means the session is
+   * already gone — that is the goal state, not a failure — and previously it
+   * rejected unhandled, leaving the user stranded on an "Unauthorized" screen.
+   *
+   * Order matters: navigate away from the protected tree BEFORE clearing the
+   * cache. Clearing first makes every mounted `useMe` observer refetch against
+   * the just-destroyed session, and those 401s hit the error boundary.
+   */
   const handleLogout = async () => {
-    await logoutMutation(undefined, {
-      onSuccess: () => {
-        /**
-         * When the user logs out, we want to clear the query cache
-         */
-        queryClient.clear();
-        navigate("/login");
-      },
-    });
+    try {
+      await logoutMutation();
+    } catch {
+      // Session already invalid server-side; the local cleanup below still runs.
+    }
+
+    navigate("/login", { replace: true });
+    queryClient.clear();
   };
 
   return (
