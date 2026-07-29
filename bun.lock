@@ -159,7 +159,7 @@
     },
     "packages/admin": {
       "name": "@mercurjs/admin",
-      "version": "2.2.0-dfactories.8",
+      "version": "2.2.0-dfactories.10",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
@@ -502,7 +502,7 @@
     },
     "packages/vendor": {
       "name": "@mercurjs/vendor",
-      "version": "2.2.0-dfactories.9",
+      "version": "2.2.0-dfactories.10",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^7.26.10",
