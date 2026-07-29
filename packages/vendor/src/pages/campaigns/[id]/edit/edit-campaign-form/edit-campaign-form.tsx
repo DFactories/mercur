@@ -1,5 +1,5 @@
 import { AdminCampaign } from "@medusajs/types"
-import { Button, DatePicker, Input, toast } from "@medusajs/ui"
+import { Button, Input, toast } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 import * as zod from "zod"
 import {
@@ -10,6 +10,7 @@ import { Form } from "@components/common/form"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { useUpdateCampaign } from "@hooks/api/campaigns"
+import { JalaliDatePicker } from "@components/inputs/jalali-date-picker"
 
 type EditCampaignFormProps = {
   campaign: AdminCampaign
@@ -137,7 +138,7 @@ export const EditCampaignForm = ({ campaign }: EditCampaignFormProps) => {
                     <Form.Label>{t("campaigns.fields.start_date")}</Form.Label>
 
                     <Form.Control>
-                      <DatePicker
+                      <JalaliDatePicker
                         granularity="minute"
                         hourCycle={12}
                         shouldCloseOnSelect={false}
@@ -160,7 +161,7 @@ export const EditCampaignForm = ({ campaign }: EditCampaignFormProps) => {
                     <Form.Label>{t("campaigns.fields.end_date")}</Form.Label>
 
                     <Form.Control>
-                      <DatePicker
+                      <JalaliDatePicker
                         granularity="minute"
                         shouldCloseOnSelect={false}
                         {...field}

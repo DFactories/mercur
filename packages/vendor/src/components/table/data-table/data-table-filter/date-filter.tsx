@@ -1,5 +1,5 @@
 import { EllipseMiniSolid } from "@medusajs/icons"
-import { DatePicker, Text, clx } from "@medusajs/ui"
+import { Text, clx } from "@medusajs/ui"
 import isEqual from "lodash.isequal"
 import { Popover as RadixPopover } from "radix-ui"
 import { useMemo, useState } from "react"
@@ -11,6 +11,7 @@ import { useSelectedParams } from "../hooks"
 import { useDataTableFilterContext } from "./context"
 import FilterChip from "./filter-chip"
 import { IFilter } from "./types"
+import { JalaliDatePicker } from "@components/inputs/jalali-date-picker"
 
 type DateFilterProps = IFilter
 
@@ -218,7 +219,7 @@ export const DateFilter = ({
                     </Text>
                   </div>
                   <div className="px-2 py-1">
-                    <DatePicker
+                    <JalaliDatePicker
                       modal
                       maxValue={customEndValue}
                       value={customStartValue}
@@ -233,7 +234,7 @@ export const DateFilter = ({
                     </Text>
                   </div>
                   <div className="px-2 py-1">
-                    <DatePicker
+                    <JalaliDatePicker
                       modal
                       minValue={customStartValue}
                       value={customEndValue || undefined}

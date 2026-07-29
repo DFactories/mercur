@@ -1,5 +1,4 @@
 import {
-  DatePicker,
   Divider,
   Heading,
   Input,
@@ -15,6 +14,7 @@ import { Form } from "@components/common/form"
 import type {
   PricingCreateSchemaType,
 } from "./schema"
+import { JalaliDatePicker } from "@components/inputs/jalali-date-picker"
 
 type PriceListDetailsFormProps = {
   form: UseFormReturn<PricingCreateSchemaType>
@@ -163,7 +163,7 @@ export const PriceListDetailsForm = ({ form }: PriceListDetailsFormProps) => {
                     </Form.Hint>
                   </div>
                   <Form.Control>
-                    <DatePicker
+                    <JalaliDatePicker
                       granularity="minute"
                       shouldCloseOnSelect={false}
                       {...field}
@@ -190,7 +190,7 @@ export const PriceListDetailsForm = ({ form }: PriceListDetailsFormProps) => {
                     <Form.Hint>{t("priceLists.fields.endsAt.hint")}</Form.Hint>
                   </div>
                   <Form.Control>
-                    <DatePicker
+                    <JalaliDatePicker
                       granularity="minute"
                       shouldCloseOnSelect={false}
                       {...field}

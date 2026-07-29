@@ -393,6 +393,14 @@
     "noMatchMessage": "The page you are looking for does not exist.",
     "backToDashboard": "Back to dashboard"
   },
+  "jalaliDatePicker": {
+    "placeholder": "Select a date",
+    "ariaLabel": "Select a date",
+    "clear": "Clear date",
+    "previous": "Previous",
+    "next": "Next",
+    "time": "Time"
+  },
   "addresses": {
     "title": "Addresses",
     "shippingAddress": {
@@ -3083,7 +3091,7 @@
       "emailInvalid": "Please enter a valid email",
       "nameTooLong": "Name must be at most 100 characters",
       "phoneRequired": "Please enter a phone number",
-      "handleInvalid": "Use lowercase letters, numbers and hyphens only (e.g. my-store)"
+      "handleInvalid": "Only lowercase letters (any script), numbers and hyphens — no spaces, and no leading or trailing hyphen"
     },
     "profileCompletion": {
       "title": "Complete store profile",
@@ -3794,7 +3802,7 @@
         "countryRequired": "Please select a country",
         "accountNameRequired": "Please enter an account name",
         "phoneRequired": "Please enter a phone number",
-        "handleInvalid": "Use lowercase letters, numbers and hyphens only (e.g. my-store)"
+        "handleInvalid": "Only lowercase letters (any script), numbers and hyphens — no spaces, and no leading or trailing hyphen"
       },
       "preview": {
         "title": "Welcome to Dfactories",

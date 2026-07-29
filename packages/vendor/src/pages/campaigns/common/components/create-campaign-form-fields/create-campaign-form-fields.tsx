@@ -1,6 +1,5 @@
 import {
   CurrencyInput,
-  DatePicker,
   Heading,
   Input,
   RadioGroup,
@@ -19,6 +18,7 @@ import {
   getCurrencySymbol,
 } from "@lib/data/currencies"
 import { CampaignFormFields, WithNestedCampaign } from "@custom-types/campaign"
+import { JalaliDatePicker } from "@components/inputs/jalali-date-picker"
 
 
 type CreateCampaignFormFieldsProps<T extends CampaignFormFields | WithNestedCampaign> = {
@@ -162,7 +162,7 @@ export const CreateCampaignFormFields = <T extends CampaignFormFields | WithNest
                 </Form.Label>
 
                 <Form.Control>
-                  <DatePicker
+                  <JalaliDatePicker
                     granularity="minute"
                     shouldCloseOnSelect={false}
                     {...field}
@@ -187,7 +187,7 @@ export const CreateCampaignFormFields = <T extends CampaignFormFields | WithNest
                 </Form.Label>
 
                 <Form.Control>
-                  <DatePicker
+                  <JalaliDatePicker
                     granularity="minute"
                     shouldCloseOnSelect={false}
                     {...field}

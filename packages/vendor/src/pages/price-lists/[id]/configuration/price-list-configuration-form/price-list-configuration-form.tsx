@@ -2,7 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { HttpTypes } from "@medusajs/types"
 import {
   Button,
-  DatePicker,
   Divider,
   toast,
 } from "@medusajs/ui"
@@ -14,6 +13,7 @@ import { Form } from "@components/common/form"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { useUpdatePriceList } from "@hooks/api/price-lists"
+import { JalaliDatePicker } from "@components/inputs/jalali-date-picker"
 
 type PriceListConfigurationFormProps = {
   priceList: HttpTypes.AdminPriceList
@@ -114,7 +114,7 @@ export const PriceListConfigurationForm = ({
                       </Form.Hint>
                     </div>
                     <Form.Control>
-                      <DatePicker
+                      <JalaliDatePicker
                         granularity="minute"
                         shouldCloseOnSelect={false}
                         {...field}
@@ -143,7 +143,7 @@ export const PriceListConfigurationForm = ({
                       </Form.Hint>
                     </div>
                     <Form.Control>
-                      <DatePicker
+                      <JalaliDatePicker
                         granularity="minute"
                         shouldCloseOnSelect={false}
                         {...field}

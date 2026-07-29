@@ -1184,6 +1184,29 @@
       },
       "additionalProperties": false
     },
+    "jalaliDatePicker": {
+      "type": "object",
+      "properties": {
+        "placeholder": {
+          "type": "string"
+        },
+        "ariaLabel": {
+          "type": "string"
+        },
+        "clear": {
+          "type": "string"
+        },
+        "previous": {
+          "type": "string"
+        },
+        "next": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        }
+      }
+    },
     "addresses": {
       "type": "object",
       "properties": {
