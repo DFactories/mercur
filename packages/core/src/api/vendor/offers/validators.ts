@@ -48,9 +48,14 @@ const VendorOfferInventoryItem = z
   })
   .strict()
 
+// An offer's price must be a real amount. `0` is what the panel used to send
+// for a row the producer left blank, and it reaches the storefront as a
+// buyable «۰ تومان» that also wins every "cheapest" comparison in the catalogue.
+const OfferAmount = z.number().positive()
+
 const VendorOfferPrice = z
   .object({
-    amount: z.number(),
+    amount: OfferAmount,
     currency_code: z.string(),
     min_quantity: z.number().int().positive().nullish(),
     max_quantity: z.number().int().positive().nullish(),
@@ -61,7 +66,7 @@ const VendorOfferPrice = z
 const VendorOfferUpsertPrice = z
   .object({
     id: z.string().optional(),
-    amount: z.number(),
+    amount: OfferAmount,
     currency_code: z.string(),
     min_quantity: z.number().int().positive().nullish(),
     max_quantity: z.number().int().positive().nullish(),

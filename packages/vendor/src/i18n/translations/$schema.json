@@ -3845,6 +3845,9 @@
             "shippingProfileRequired": {
               "type": "string"
             },
+            "priceRequired": {
+              "type": "string"
+            },
             "duplicateSku": {
               "type": "string"
             },

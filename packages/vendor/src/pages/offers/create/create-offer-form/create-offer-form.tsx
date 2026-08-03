@@ -12,11 +12,7 @@ import { useCurrentSeller } from "../../../../hooks/api/sellers";
 import { useStockLocations } from "../../../../hooks/api/stock-locations";
 import { CreateOfferCatalogueTab } from "./create-offer-catalogue";
 import { CreateOfferStockLevelsAndPricesTab } from "./create-offer-stock-levels-and-prices";
-import {
-  CreateOfferFormValues,
-  CreateOfferSchema,
-  OfferVariantRow,
-} from "./schema";
+import { CreateOfferFormValues, CreateOfferSchema, OfferVariantRow, variantRowHasPrice } from "./schema";
 
 const DEFAULTS: CreateOfferFormValues = {
   selected_product_ids: [],
@@ -187,6 +183,14 @@ export const CreateOfferForm = () => {
         });
         hasValidationError = true;
       }
+
+      if (currency_code && !variantRowHasPrice(row, currency_code)) {
+        form.setError(`variants.${i}.prices.${currency_code}`, {
+          type: "manual",
+          message: t("offers.validation.priceRequired"),
+        });
+        hasValidationError = true;
+      }
     }
 
     if (hasValidationError) return;
@@ -203,6 +207,8 @@ export const CreateOfferForm = () => {
     const payloadOffers = rows.map(({ row, sku }) => {
       const prices: { amount: number; currency_code: string }[] = [];
       if (currency_code) {
+        // Guaranteed positive by the validation loop above; the backend
+        // rejects anything else outright.
         prices.push({
           amount: numericOrZero(row.prices?.[currency_code]),
           currency_code,

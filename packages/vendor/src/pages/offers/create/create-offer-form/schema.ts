@@ -60,3 +60,17 @@ export const variantRowRequiresSku = (row: OfferVariantRow): boolean => {
   )
   return hasEnabledLocation || hasNonZeroPrice
 }
+
+/**
+ * Does this row carry a real price in the store's currency?
+ *
+ * The submit path used to coerce a blank field to `0` so the backend's
+ * "at least one price" rule was satisfied — which is how a producer who priced
+ * one variant of three shipped two 0-rial offers. The storefront then read
+ * those as the cheapest price in the catalogue and printed «۰ تومان» on every
+ * card. An unpriced offer cannot be sold, so the row is rejected here instead.
+ */
+export const variantRowHasPrice = (
+  row: OfferVariantRow,
+  currencyCode: string,
+): boolean => numericOrZero(row.prices?.[currencyCode]) > 0
