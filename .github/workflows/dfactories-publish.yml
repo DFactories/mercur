@@ -173,14 +173,39 @@ jobs:
       # Publishing is irreversible on the registry (a version number cannot be
       # reused), so the panel unit tests and the generated i18n schema are
       # checked here too rather than relying on the Lint workflow racing this one.
+      # Both this step and the Build below run turbo, which builds packages/core,
+      # whose build script shells out to `bunx @mercurjs/cli codegen` and pulls
+      # roughly 1800 transitive dependencies from npmjs every single time. A
+      # shared runner IP gets `429` on @medusajs/* and the job dies before it has
+      # tested or published anything — it has now happened on three consecutive
+      # runs. Retrying is the containable fix; the real one is upstream, in a
+      # build script that should not hit the network at all.
       - name: Run unit tests
-        run: bun run test:unit
+        run: |
+          for attempt in 1 2 3; do
+            if bun run test:unit; then
+              exit 0
+            fi
+            echo "::warning::unit tests attempt $attempt failed (likely an npm 429); retrying"
+            sleep $((attempt * 30))
+          done
+          echo "::error::unit tests failed three times"
+          exit 1
 
       - name: Check i18n schema is up to date
         run: bun run scripts/generate-i18n-schema.ts --check
 
       - name: Build
-        run: bun run build
+        run: |
+          for attempt in 1 2 3; do
+            if bun run build; then
+              exit 0
+            fi
+            echo "::warning::build attempt $attempt failed (likely an npm 429); retrying"
+            sleep $((attempt * 30))
+          done
+          echo "::error::build failed three times"
+          exit 1
 
       - name: Publish changed -dfactories.* packages
         run: |
