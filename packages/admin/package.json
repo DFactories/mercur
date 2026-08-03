@@ -91,7 +91,7 @@
     "tsup": "^8.0.2",
     "typescript": "5.9.3",
     "@medusajs/types": "2.17.2",
-    "@mercurjs/core": "2.2.0-dfactories.9",
+    "@mercurjs/core": "2.2.0-dfactories.11",
     "@mercurjs/dashboard-sdk": "2.2.0-dfactories.3",
     "@mercurjs/types": "2.2.0-dfactories.3"
   }
