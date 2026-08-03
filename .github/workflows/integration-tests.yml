@@ -2,9 +2,14 @@ name: Build & Integration Test
 
 on:
   pull_request:
-    branches: [canary, main]
+    branches: [canary, main, "dfactories/**"]
   push:
-    branches: [canary, main]
+    # dfactories/** is the branch that actually ships to the private registry,
+    # so the full suite has to see it too. The publish workflow does not wait on
+    # this one (it gates on its own fast `regression` job — cross-workflow
+    # `needs` does not exist); this is the broad net that catches a fork change
+    # breaking upstream behaviour it never meant to touch.
+    branches: [canary, main, "dfactories/**"]
 
 permissions:
   contents: read

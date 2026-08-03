@@ -22,7 +22,110 @@ env:
   REGISTRY: https://registry.dfactories.ir:4873
 
 jobs:
+  # The publish gate for THIS fork's own regressions.
+  #
+  # `integration-tests.yml` only ever runs on canary/main, so nothing DB-backed
+  # has ever guarded a `dfactories/**` push — and a published version number can
+  # never be reused, so a bad publish is not something you walk back. Running
+  # that whole suite here is not an option either (4 shards × up to 40 min).
+  #
+  # So this runs exactly the specs under `integration-tests/http/dfactories/`:
+  # one file per production bug this fork has had, each of which must stay red
+  # if the defect comes back. Every future fix in this repo adds its spec there
+  # and is gated automatically.
+  regression:
+    name: Dfactories regression specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mercur
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Mirrors integration-tests.yml exactly. @medusajs/test-utils builds its
+    # Postgres URL from the DB_* vars, NOT from DATABASE_URL — drop DB_PASSWORD
+    # and SCRAM auth fails with "client password must be a string".
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mercur
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      REDIS_URL: redis://localhost:6379
+      MEDUSA_FF_SELLER_REGISTRATION: "true"
+      MEDUSA_FF_PRODUCT_REQUEST: "false"
+      JWT_SECRET: supersecret
+      COOKIE_SECRET: supersecret
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2
+        with:
+          bun-version: 1.3.8
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock', 'bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+            packages/providers/*/node_modules
+            integration-tests/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('bun.lock', 'bun.lockb') }}
+
+      - name: Install
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Run dfactories regression specs
+        # `--testPathPatterns` (plural): jest 30 renamed the flag and hard-errors
+        # on the old singular form, which would fail this gate for the wrong
+        # reason — verified locally before wiring it up.
+        run: cd integration-tests && bun run test:integration:http -- --testPathPatterns="http/dfactories/"
+
   publish:
+    # Publishing is irreversible, so it does not start until the regressions
+    # this fork has already shipped once are proven fixed.
+    needs: regression
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
