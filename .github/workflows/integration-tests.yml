@@ -1,15 +1,16 @@
 name: Build & Integration Test
 
 on:
+  # dfactories/** on pull_request only, deliberately not on push: a push to that
+  # branch already runs Lint AND the publish workflow, both of which build the
+  # whole monorepo, and adding four more shards tripled the concurrent npm
+  # resolution that is already rate-limiting these runners. The publish path has
+  # its own fast regression gate; this is the broad net, and a PR is where there
+  # is time for it.
   pull_request:
     branches: [canary, main, "dfactories/**"]
   push:
-    # dfactories/** is the branch that actually ships to the private registry,
-    # so the full suite has to see it too. The publish workflow does not wait on
-    # this one (it gates on its own fast `regression` job — cross-workflow
-    # `needs` does not exist); this is the broad net that catches a fork change
-    # breaking upstream behaviour it never meant to touch.
-    branches: [canary, main, "dfactories/**"]
+    branches: [canary, main]
 
 permissions:
   contents: read

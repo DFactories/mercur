@@ -113,8 +113,25 @@ jobs:
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
 
+      # `packages/core`'s build shells out to `bunx @mercurjs/cli codegen`, which
+      # resolves the CLI and ~1800 transitive deps from npmjs on EVERY run. A
+      # shared runner IP hits npm's anonymous rate limit and the build dies on
+      # `429 GET @medusajs/js-sdk` before a single test has run — twice in a row
+      # on this branch, once even with no other workflow racing it. Retrying is
+      # the honest fix here: the failure is upstream infrastructure, and a gate
+      # that goes red for a reason unrelated to the code is a gate people learn
+      # to ignore.
       - name: Build
-        run: bun run build
+        run: |
+          for attempt in 1 2 3; do
+            if bun run build; then
+              exit 0
+            fi
+            echo "::warning::build attempt $attempt failed (likely an npm 429); retrying"
+            sleep $((attempt * 30))
+          done
+          echo "::error::build failed three times"
+          exit 1
 
       - name: Run dfactories regression specs
         # `--testPathPatterns` (plural): jest 30 renamed the flag and hard-errors
