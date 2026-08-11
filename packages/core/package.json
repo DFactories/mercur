@@ -49,17 +49,19 @@
   "scripts": {
     "build": "node ../cli/dist/index.js codegen && rm -rf .medusa && tsc --declaration --outDir .medusa/server",
     "dev": "medusa plugin:develop",
-    "prepublishOnly": "tsc --declaration --outDir .medusa/server"
+    "prepublishOnly": "tsc --declaration --outDir .medusa/server",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "cors": "^2.8.5",
-    "@medusajs/core-flows": "2.17.2",
     "@medusajs/cli": "2.17.2",
+    "@medusajs/core-flows": "2.17.2",
     "@medusajs/framework": "2.17.2",
     "@medusajs/icons": "2.17.2",
     "@medusajs/medusa": "2.17.2",
     "@medusajs/test-utils": "2.17.2",
+    "@medusajs/types": "2.17.2",
     "@medusajs/ui": "4.1.19",
+    "@mercurjs/cli": "2.2.0-dfactories.3",
     "@mercurjs/types": "2.2.0-dfactories.3",
     "@swc/core": "^1.7.28",
     "@types/cors": "^2.8.17",
@@ -68,19 +70,19 @@
     "@types/node": "^26.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^18.2.25",
+    "cors": "^2.8.5",
+    "http-proxy-middleware": "^3.0.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
     "typescript": "5.9.3",
+    "vitest": "4.1.10",
     "yalc": "^1.0.0-pre.53",
-    "@medusajs/types": "2.17.2",
-    "zod": "4.4.3",
-    "multer": "^2.0.2",
-    "http-proxy-middleware": "^3.0.3",
-    "jsonwebtoken": "^9.0.2",
-    "@mercurjs/cli": "2.2.0-dfactories.3"
+    "zod": "4.4.3"
   },
   "peerDependencies": {
     "@medusajs/admin-sdk": ">=2.17.2",

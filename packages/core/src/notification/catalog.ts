@@ -141,7 +141,14 @@ async function resolveOrderCustomer(
       "total",
       "customer.phone",
       "customer.first_name",
-      "items.id",
+      // `items.*`, NOT `items.id`. A narrow sub-selection of items silently
+      // zeroes the order's computed totals: asking for `total` alongside
+      // `items.id` returns `total: 0`, and adding `items.quantity` to that does
+      // not rescue it — `items.id` alone is enough to poison the calculation.
+      // That is how every order-placed SMS came to quote a total of 0 (measured
+      // against order #1 on production, whose real total is 120,000 rial).
+      // `items.*` is also what makes `quantity` available for the count below.
+      "items.*",
     ],
     filters: { id },
   })
@@ -151,13 +158,14 @@ async function resolveOrderCustomer(
         email?: string | null
         currency_code?: string | null
         total?: number | null
-        items?: Array<{ id: string }>
+        items?: Array<{ id: string; quantity?: number | null }>
         customer?: { phone?: string | null; first_name?: string | null }
       }
     | undefined
   if (!order) {
     return []
   }
+  const money = orderNotificationMoney(order.total, order.currency_code)
   return [
     {
       email: order.email ?? null,
@@ -165,12 +173,53 @@ async function resolveOrderCustomer(
       data: {
         display_id: order.display_id,
         first_name: order.customer?.first_name,
-        total: order.total,
-        currency: order.currency_code,
-        items_count: order.items?.length ?? 0,
+        total: money.total,
+        currency: money.currency,
+        // How many UNITS the customer bought, not how many rows the order has.
+        // A single line of 12 packs is "12" to the person reading the message;
+        // the old row count told them they had ordered one thing.
+        items_count: (order.items ?? []).reduce(
+          (sum, item) => sum + (Number(item?.quantity) || 0),
+          0
+        ),
       },
     },
   ]
+}
+
+/**
+ * How an order total is written into a customer-facing notification.
+ *
+ * Medusa stores Iranian amounts in RIAL, but nobody in Iran quotes prices in
+ * rial — the storefront divides by ten and says «تومان» everywhere, and a
+ * message that says "120000 irr" for a 12,000-toman order is wrong twice: the
+ * number is off by a factor of ten and the unit is an ISO code the reader does
+ * not use. This is the notification-side twin of the storefront's `formatToman`.
+ *
+ * Only IRR is converted. Any other currency is passed through with its code
+ * upper-cased, so a non-Iranian deployment is unaffected rather than silently
+ * having its amounts divided by ten.
+ */
+export function orderNotificationMoney(
+  total: number | null | undefined,
+  currencyCode: string | null | undefined
+): { total: string; currency: string } {
+  const amount = Number(total) || 0
+  const isRial = (currencyCode ?? "").toLowerCase() === "irr"
+
+  if (!isRial) {
+    return {
+      total: amount.toLocaleString("en-US"),
+      currency: (currencyCode ?? "").toUpperCase(),
+    }
+  }
+
+  // Grouped rather than bare digits: an SMS reader has to parse this at a
+  // glance, and "12,000" is read correctly where "12000" invites a miscount.
+  return {
+    total: Math.round(amount / 10).toLocaleString("en-US"),
+    currency: "تومان",
+  }
 }
 
 async function resolveMemberInvite(
@@ -224,9 +273,12 @@ function registerDefaultNotificationEvents(): void {
     variables: [
       { key: "first_name", label: "First name", source: "recipient", example: "Sara" },
       { key: "display_id", label: "Order number", source: "recipient", example: "1042" },
-      { key: "total", label: "Order total", source: "recipient", example: "1250000" },
-      { key: "currency", label: "Currency", source: "recipient", example: "irr" },
-      { key: "items_count", label: "Item count", source: "recipient", example: "3" },
+      // Examples are what the admin sees when wiring a template, so they show
+      // the SHAPE actually sent: a grouped toman figure, the Persian unit, and
+      // a count of units rather than of order rows.
+      { key: "total", label: "Order total", source: "recipient", example: "125,000" },
+      { key: "currency", label: "Currency", source: "recipient", example: "تومان" },
+      { key: "items_count", label: "Item count (units)", source: "recipient", example: "12" },
     ],
   })
 
