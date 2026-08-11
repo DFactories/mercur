@@ -4715,7 +4715,8 @@
                 "pp_system_default": {
                   "type": "string"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
