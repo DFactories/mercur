@@ -382,7 +382,7 @@ export function OrderCreateFulfillmentForm({
                                     ref={ref}
                                   >
                                     {isShippingOptionsLoading ? (
-                                      <span className="text-right">
+                                      <span className="text-start">
                                         {t("labels.loading")}
                                         ...
                                       </span>
@@ -480,7 +480,7 @@ export function OrderCreateFulfillmentForm({
                 </div>
 
                 <div className="pt-8">
-                  <div className="bg-ui-bg-field rounded-lg border py-2 pl-2 pr-4">
+                  <div className="bg-ui-bg-field rounded-lg border py-2 ps-2 pe-4">
                     <Form.Field
                       control={form.control}
                       name="send_notification"
@@ -488,7 +488,7 @@ export function OrderCreateFulfillmentForm({
                         return (
                           <Form.Item>
                             <div className="flex items-center">
-                              <Form.Control className="mr-4 self-start">
+                              <Form.Control className="me-4 self-start">
                                 <Switch
                                   className="mt-[2px]"
                                   checked={!!value}
