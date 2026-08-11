@@ -17,6 +17,10 @@ import DisplayId from "@components/common/display-id/display-id"
 import { getLocaleAmount, getStylizedAmount } from "@lib/money-amount-helpers"
 import { getOrderPaymentStatus } from "@lib/order-helpers"
 import { getTotalCaptured, getTotalPending } from "@lib/payment"
+import {
+  paymentProviderFallback,
+  paymentProviderLabelKey,
+} from "@lib/payment-provider-label"
 import { useDate } from "@hooks/use-date"
 
 type PaymentRefund = {
@@ -159,8 +163,12 @@ const PaymentRow = ({
         </div>
 
         <div className="hidden items-center justify-end sm:flex">
-          <Text size="small" leading="compact" className="capitalize">
-            {payment.provider_id}
+          {/* Never the raw id. `capitalize` on `pp_vandar_vandar` only ever
+              produced `Pp_vandar_vandar` — see `payment-provider-label`. */}
+          <Text size="small" leading="compact">
+            {t(paymentProviderLabelKey(payment.provider_id), {
+              defaultValue: paymentProviderFallback(payment.provider_id),
+            })}
           </Text>
         </div>
 

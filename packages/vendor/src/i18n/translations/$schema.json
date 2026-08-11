@@ -4699,6 +4699,23 @@
             },
             "markAsPaidPaymentSuccess": {
               "type": "string"
+            },
+            "providers": {
+              "type": "object",
+              "properties": {
+                "pp_jibit_jibit": {
+                  "type": "string"
+                },
+                "pp_vandar_vandar": {
+                  "type": "string"
+                },
+                "pp_zarinpal_zarinpal": {
+                  "type": "string"
+                },
+                "pp_system_default": {
+                  "type": "string"
+                }
+              }
             }
           },
           "additionalProperties": false

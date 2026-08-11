@@ -1395,7 +1395,13 @@
       "copyPaymentLink": "لینک پرداخت برای {{amount}} را کپی کنید",
       "copyLinkSuccess": "پیوند پرداخت در کلیپ‌بورد کپی شد",
       "copyLinkError": "کپی پیوند پرداخت ناموفق بود",
-      "outstandingAmount": "مبلغ باقی‌مانده"
+      "outstandingAmount": "مبلغ باقی‌مانده",
+      "providers": {
+        "pp_jibit_jibit": "جیبیت",
+        "pp_vandar_vandar": "وندار",
+        "pp_zarinpal_zarinpal": "زرین‌پال",
+        "pp_system_default": "پرداخت دستی"
+      }
     },
     "edits": {
       "title": "ویرایش سفارش",

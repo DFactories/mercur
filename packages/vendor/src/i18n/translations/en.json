@@ -1564,7 +1564,13 @@
       "outstandingAmount": "Outstanding amount",
       "markAsPaid": "Mark as paid",
       "markAsPaidPayment": "Payment of {{amount}} will be marked as paid.",
-      "markAsPaidPaymentSuccess": "Payment of {{amount}} successfully marked as paid"
+      "markAsPaidPaymentSuccess": "Payment of {{amount}} successfully marked as paid",
+      "providers": {
+        "pp_jibit_jibit": "Jibit",
+        "pp_vandar_vandar": "Vandar",
+        "pp_zarinpal_zarinpal": "Zarinpal",
+        "pp_system_default": "Manual payment"
+      }
     },
     "edits": {
       "title": "Edit order",
