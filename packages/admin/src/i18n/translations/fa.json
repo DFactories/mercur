@@ -405,7 +405,8 @@
         "description": "منوی ناوبری برای داشبورد."
       },
       "common": {
-        "extensions": "افزونه‌ها"
+        "extensions": "افزونه‌ها",
+        "advanced": "پیشرفته"
       },
       "main": {
         "store": "فروشگاه",

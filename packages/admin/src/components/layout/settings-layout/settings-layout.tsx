@@ -25,6 +25,16 @@ export const SettingsLayout = () => {
 
 const allMenuItems = menuItemsModule.menuItems ?? [];
 const customSettingsItems = getMenuItemsByType(allMenuItems, "settings");
+
+/**
+ * Settings pages this installation added, as their own section.
+ *
+ * They used to be appended to the end of "General", where they were
+ * indistinguishable from the platform's own settings — which is misleading in
+ * both directions: an operator cannot tell which screens are theirs, and a
+ * screen that disappears after an upgrade looks like a platform regression
+ * rather than a missing extension.
+ */
 const extensionNavItems: INavItem[] = customSettingsItems
   .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
   .map((item) => ({
@@ -90,7 +100,6 @@ const useSettingRoutes = (): INavItem[] => {
         label: t("notificationSettings.domain"),
         to: "/settings/notifications",
       },
-      ...extensionNavItems,
     ],
     [t],
   );
@@ -161,6 +170,17 @@ const SettingsSidebar = () => {
             label={t("app.nav.settings.general")}
             items={routes}
           />
+          {extensionNavItems.length > 0 && (
+            <>
+              <div className="flex items-center justify-center px-3">
+                <Divider variant="dashed" />
+              </div>
+              <RadixCollapsibleSection
+                label={t("app.nav.common.advanced")}
+                items={extensionNavItems}
+              />
+            </>
+          )}
           <div className="flex items-center justify-center px-3">
             <Divider variant="dashed" />
           </div>

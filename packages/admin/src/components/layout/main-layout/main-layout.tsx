@@ -6,6 +6,7 @@ import {
   CurrencyDollar,
   EllipsisHorizontal,
   MagnifyingGlass,
+  MinusMini,
   OpenRectArrowOut,
   ReceiptPercent,
   ShoppingCart,
@@ -13,8 +14,16 @@ import {
   Users,
 } from "@medusajs/icons";
 import components from "virtual:mercur/components";
-import { Avatar, Divider, DropdownMenu, Text, clx } from "@medusajs/ui";
+import {
+  Avatar,
+  Divider,
+  DropdownMenu,
+  IconButton,
+  Text,
+  clx,
+} from "@medusajs/ui";
 
+import { Collapsible as RadixCollapsible } from "radix-ui";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -79,6 +88,7 @@ const addNestedItems = (
 };
 
 const MainSidebar = () => {
+  const { t } = useTranslation();
   const coreRoutes = useCoreRoutes();
   const navOverrides = useExtension().getNavOverrides();
   const customMenuItems = getMenuItemsByType(allMenuItems, "main");
@@ -126,10 +136,18 @@ const MainSidebar = () => {
               {routesWithNested.map((route) => {
                 return <NavItem key={route.to} {...route} />;
               })}
-              {customRoutesWithNested.map((route) => (
-                <NavItem key={route.to} {...route} />
-              ))}
             </nav>
+            {customRoutesWithNested.length > 0 && (
+              <>
+                <div className="px-3">
+                  <Divider variant="dashed" />
+                </div>
+                <AdvancedSection
+                  label={t("app.nav.common.advanced")}
+                  items={customRoutesWithNested}
+                />
+              </>
+            )}
           </div>
           <UtilitySection />
         </div>
@@ -141,6 +159,51 @@ const MainSidebar = () => {
         </div>
       </div>
     </aside>
+  );
+};
+
+/**
+ * Routes this installation added, under a heading of their own.
+ *
+ * They used to sit directly under the platform's own routes with nothing
+ * separating them, so the sidebar read as one list in which half the entries
+ * came from somewhere else. This is the same shape the settings sidebar
+ * already uses for its sections, collapsible included, so the two navigations
+ * stay recognisably the same thing.
+ */
+const AdvancedSection = ({
+  label,
+  items,
+}: {
+  label: string;
+  items: INavItem[];
+}) => {
+  return (
+    <RadixCollapsible.Root
+      defaultOpen
+      className="py-3"
+      data-testid="sidebar-advanced-routes"
+    >
+      <div className="px-3">
+        <div className="flex h-7 items-center justify-between px-2 text-ui-fg-muted">
+          <Text size="small" leading="compact">
+            {label}
+          </Text>
+          <RadixCollapsible.Trigger asChild>
+            <IconButton size="2xsmall" variant="transparent" className="static">
+              <MinusMini className="text-ui-fg-muted" />
+            </IconButton>
+          </RadixCollapsible.Trigger>
+        </div>
+      </div>
+      <RadixCollapsible.Content>
+        <nav className="flex flex-col gap-y-1 pt-0.5">
+          {items.map((route) => (
+            <NavItem key={route.to} {...route} />
+          ))}
+        </nav>
+      </RadixCollapsible.Content>
+    </RadixCollapsible.Root>
   );
 };
 

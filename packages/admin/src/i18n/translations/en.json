@@ -261,7 +261,8 @@
         "description": "Navigation menu for the dashboard."
       },
       "common": {
-        "extensions": "Extensions"
+        "extensions": "Extensions",
+        "advanced": "Advanced"
       },
       "main": {
         "store": "Store",
