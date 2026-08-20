@@ -92,29 +92,48 @@ npm install @mercurjs/<name>@dfactories
 
 ## Server notes (registry.dfactories.ir)
 
-HTTPS is terminated by **stunnel** in front of Verdaccio (Verdaccio 6 native
-HTTPS does not work reliably). Layout:
+The registry moved to a new VPS on **2026-08-19** (`202.155.8.110` →
+`212.115.103.26`). Storage, the `dfactories` htpasswd user and verdaccio's
+token-signing secret all came across, so **existing tokens keep working** — the
+`VERDACCIO_TOKEN` repo secret did not need rotating.
+
+HTTPS is terminated by **nginx** in front of Verdaccio (Verdaccio 6 native HTTPS
+does not work reliably). Layout:
 
 ```
-client → HTTPS :4873 → stunnel → HTTP 127.0.0.1:4874 → verdaccio
+client → HTTPS :4873 → nginx → HTTP 127.0.0.1:4874 → verdaccio
 ```
 
 - Verdaccio config: `/opt/verdaccio/config.yaml` — listens on `127.0.0.1:4874`
-- stunnel config: `/etc/stunnel/verdaccio.conf` — accepts `:4873`, connects to `127.0.0.1:4874`
+- nginx site: `/etc/nginx/sites-available/verdaccio` — accepts `:4873`, proxies to `127.0.0.1:4874`
 - TLS cert: Let's Encrypt at `/etc/letsencrypt/live/registry.dfactories.ir/`
-- DNS: A record `registry → 202.155.8.110` (Parspack, CDN/proxy disabled)
+- DNS: A record `registry → 212.115.103.26` (Parspack, CDN/proxy disabled)
 - Port 443 is occupied by x-ui (REALITY), so the registry stays on `:4873`
+- nginx deliberately does **not** listen on `:80` — certbot renews this cert with
+  the `standalone` authenticator, which needs to bind `:80` itself.
 
 Restart after changes:
 
 ```bash
 systemctl restart verdaccio
-systemctl restart stunnel4
+systemctl reload nginx
 ```
 
-Renew certs (stunnel must be restarted to pick up new cert):
+Renewal is automatic (`certbot.timer`); the deploy hook
+`/etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh` reloads nginx when the
+cert rolls. Verify with `certbot renew --dry-run`.
 
-```bash
-certbot renew
-systemctl restart stunnel4
-```
+### Why nginx and not stunnel
+
+The old server terminated TLS with stunnel, which had two faults worth not
+repeating:
+
+1. `stunnel4.service` sat in `failed` state — `:4873` was held only by an
+   orphaned process from the last successful boot, so the next restart would
+   have dropped the registry with no way back up via systemd.
+2. Its cert path was pinned to `/etc/letsencrypt/archive/…1.pem`, the *first*
+   issued cert. certbot had already renewed to `…2.pem`, but stunnel never saw
+   it, so TLS was set to break on **2026-09-09** with a valid cert sitting
+   unused on disk.
+
+nginx follows the `live/` symlinks, so renewals apply on reload.

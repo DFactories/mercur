@@ -179,3 +179,17 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+## Branch workflow (non-negotiable)
+
+**All code is written on `develop`. Never commit directly to `main`.**
+
+`main` is a deliberate production snapshot, not a working branch. It changes in exactly one way: the user asks to ship, and `develop` is merged into `main` and pushed. Nothing else touches it — no hotfixes, no "just this once", no release commits authored on `main`.
+
+**How to apply:**
+- Work, commit and push on `develop` (or a feature branch merged into `develop`).
+- Merge `develop` → `main` only when the user explicitly asks to deploy.
+- Before that merge, bring `develop` up to date and re-run the project's verification, so what ships is what was tested.
+- If `main` ever does contain a commit that is not in `develop`, merge `main` back into `develop` before doing anything else — the two must never diverge in content.
+
+**Note on "main is N commits ahead":** after every `develop` → `main` merge, `main` gains a merge commit that `develop` does not have, so the count grows by one each release. That is normal bookkeeping and does NOT mean code was written on `main`. Check the actual content before concluding anything: `git diff --stat develop origin/main` — empty means the branches agree.
