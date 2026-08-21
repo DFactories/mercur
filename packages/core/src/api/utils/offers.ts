@@ -16,6 +16,7 @@ import type {
   TaxableItemDTO,
   TaxCalculationContext,
 } from "@medusajs/framework/types"
+import { resolveVisibleSellerIds } from "./sellers"
 
 const OFFER_WRAP_FIELDS = [
   "id",
@@ -257,10 +258,22 @@ export const wrapProductVariantsWithOfferPrice = async (
   }
 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  // Only offers a shopper could actually buy may set a product's price. 2.3.1
+  // dropped the visible-seller filter from `/store/products` so a master product
+  // stays listed while one of its sellers is closed — correct for a shared
+  // catalogue, but it means this is now the only place that still knows a
+  // closed seller's price must not surface. Without this, a suspended or
+  // mid-closure store's product renders a price nobody can sell at.
+  const visibleSellerIds = await resolveVisibleSellerIds(req.scope)
+  if (!visibleSellerIds.length) {
+    return
+  }
+
   const { data: offers } = await query.graph({
     entity: "offer",
     fields: ["id", "variant_id", "product_variant.price_set.id", "prices.id"],
-    filters: { variant_id: variantIds },
+    filters: { variant_id: variantIds, seller_id: visibleSellerIds },
   })
   if (!offers.length) {
     return

@@ -332,6 +332,40 @@ medusaIntegrationTestRunner({
                     expect(response.data.offers).toHaveLength(0)
                 })
 
+                /**
+                 * 2.3.1 dropped the visible-seller filter from `/store/products`,
+                 * leaving only `status: published`. That is defensible for a shared
+                 * master catalogue -- a product two sellers offer should not vanish
+                 * because one of them closed -- but it means the catalogue route no
+                 * longer answers "is this buyable". `/store/offers` is now the only
+                 * gate, so a closed seller's product must not carry a price through
+                 * the product route either, or the storefront will render a price
+                 * nobody can actually sell at.
+                 */
+                it("gives a not-open seller's product no price on /store/products", async () => {
+                    const seed = await seedSellerOffer({
+                        email: "notopen-price@test.com",
+                        name: "Not Open Priced",
+                        stocked: 10,
+                        offerPrice: 1000,
+                        approve: false,
+                    })
+
+                    const response = await api.get(
+                        `/store/products?id=${seed.productId}&fields=*variants.calculated_price&region_id=${region.id}`,
+                        storeHeaders
+                    )
+
+                    expect(response.status).toEqual(200)
+
+                    const priced = (response.data.products ?? []).flatMap(
+                        (p: any) => (p.variants ?? []).filter(
+                            (v: any) => v.calculated_price != null
+                        )
+                    )
+                    expect(priced).toHaveLength(0)
+                })
+
                 it("excludes offers on unpublished products", async () => {
                     const seed = await seedSellerOffer({
                         email: "draft@test.com",
