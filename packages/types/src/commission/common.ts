@@ -74,6 +74,18 @@ export interface CommissionCalculationItemLine {
   tax_total?: BigNumberInput
 
   /**
+   * The part of this line's discount that the marketplace absorbs, derived from
+   * the promotion's `cost_bearer`. It is subtracted from the subtotal before the
+   * rate applies, so commission is charged on what the seller actually keeps.
+   *
+   * `marketplace` puts the whole discount here (base becomes the post-discount
+   * amount), `store` puts none of it here (the seller absorbs it, the marketplace
+   * is made whole), and `shared` puts the marketplace's declared percentage here.
+   * Absent, the line is treated as undiscounted.
+   */
+  marketplace_borne_discount?: BigNumberInput
+
+  /**
    * The product of the line item.
    */
   product?: {
@@ -101,6 +113,18 @@ export interface CommissionCalculationShippingLine {
    * The tax total of the shipping method (used when include_tax is true).
    */
   tax_total?: BigNumberInput
+
+  /**
+   * The part of this line's discount that the marketplace absorbs, derived from
+   * the promotion's `cost_bearer`. It is subtracted from the subtotal before the
+   * rate applies, so commission is charged on what the seller actually keeps.
+   *
+   * `marketplace` puts the whole discount here (base becomes the post-discount
+   * amount), `store` puts none of it here (the seller absorbs it, the marketplace
+   * is made whole), and `shared` puts the marketplace's declared percentage here.
+   * Absent, the line is treated as undiscounted.
+   */
+  marketplace_borne_discount?: BigNumberInput
 }
 
 export interface CommissionCalculationContext {

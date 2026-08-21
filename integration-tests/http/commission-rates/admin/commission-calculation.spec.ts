@@ -46,6 +46,106 @@ medusaIntegrationTestRunner({
         })
       })
 
+      /**
+       * Commission is charged on what the seller actually receives. A discount is
+       * shared between the seller and the marketplace in proportion to the rate,
+       * unless the promotion's `cost_bearer` says otherwise: `store` puts the whole
+       * discount on the seller (so the marketplace is made whole and charges on the
+       * full price), `shared` splits it by the marketplace's declared percentage.
+       * The base never falls below the post-discount amount, so a commission can
+       * never reach zero or go negative.
+       */
+      describe("discounted lines", () => {
+        const line = (marketplaceBorneDiscount?: number) => ({
+          currency_code: "usd",
+          items: [
+            {
+              id: "item_disc",
+              subtotal: 100,
+              marketplace_borne_discount: marketplaceBorneDiscount,
+            },
+          ],
+          shipping_methods: [],
+        })
+
+        beforeEach(async () => {
+          const def = await getDefaultRate()
+          await commissionService.updateCommissionRates({
+            id: def.id,
+            value: 10,
+            include_shipping: false,
+          })
+        })
+
+        it("charges on the post-discount amount when the marketplace bears its share", async () => {
+          // item 100, discount 20, marketplace bears all of it -> base 80 -> 8
+          const lines = await commissionService.getCommissionLines(line(20))
+          expect(lines[0].amount).toEqual(8)
+        })
+
+        it("charges on the full price when the store bears the whole discount", async () => {
+          // store bearer -> marketplace bears none -> base stays 100 -> 10
+          const lines = await commissionService.getCommissionLines(line(0))
+          expect(lines[0].amount).toEqual(10)
+        })
+
+        it("splits the base when the discount is shared", async () => {
+          // 20 discount, marketplace covers 50% -> base 90 -> 9
+          const lines = await commissionService.getCommissionLines(line(10))
+          expect(lines[0].amount).toEqual(9)
+        })
+
+        it("is unchanged for a line with no discount at all", async () => {
+          const lines = await commissionService.getCommissionLines(line(undefined))
+          expect(lines[0].amount).toEqual(10)
+        })
+
+        it("never lets a discount drive the commission below zero", async () => {
+          // a discount larger than the line cannot make the marketplace owe money
+          const lines = await commissionService.getCommissionLines({
+            currency_code: "usd",
+            items: [
+              { id: "item_huge", subtotal: 100, marketplace_borne_discount: 250 },
+            ],
+            shipping_methods: [],
+          })
+          expect(lines[0].amount).toBeGreaterThanOrEqual(0)
+        })
+
+        it("still charges the full price on a fully discounted store-borne line", async () => {
+          // A 100%-off promotion whose cost_bearer is `store`: the seller gave the
+          // item away AND the marketplace stays whole, so commission is charged on
+          // the list price against a gross of nothing. That is what `store` means,
+          // but it drives the vendor net negative — the operator has to opt in.
+          const lines = await commissionService.getCommissionLines({
+            currency_code: "usd",
+            items: [
+              { id: "item_free", subtotal: 100, marketplace_borne_discount: 0 },
+            ],
+            shipping_methods: [],
+          })
+          expect(lines[0].amount).toEqual(10)
+        })
+
+        it("applies the same rule to a discounted shipping method", async () => {
+          const def = await getDefaultRate()
+          await commissionService.updateCommissionRates({
+            id: def.id,
+            include_shipping: true,
+          })
+
+          const lines = await commissionService.getCommissionLines({
+            currency_code: "usd",
+            items: [],
+            shipping_methods: [
+              { id: "sm_disc", subtotal: 50, marketplace_borne_discount: 10 },
+            ],
+          })
+          // 50 - 10 = 40, at 10% -> 4
+          expect(lines[0].amount).toEqual(4)
+        })
+      })
+
       it("emits a shipping line from the default rate only when include_shipping is on", async () => {
         const def = await getDefaultRate()
         await commissionService.updateCommissionRates({

@@ -175,6 +175,30 @@ class CommissionModuleService extends MedusaService({
     return currencyCode?.toLowerCase() === "irr" ? Math.round(value) : value
   }
 
+  /**
+   * Strip the marketplace's share of a line's discount off the commission base.
+   *
+   * Commission is charged on what the seller actually keeps, so a discount the
+   * marketplace absorbs must not be charged to the seller. `cost_bearer` decides
+   * how much of it lands here: all of it for `marketplace`, none for `store`
+   * (the seller absorbs the discount and the marketplace stays whole), the
+   * declared percentage for `shared`.
+   *
+   * Floored at zero so an oversized discount can never invert the base and turn
+   * a commission into a debt owed to the seller.
+   */
+  private applyMarketplaceBorneDiscount(
+    subtotal: BigNumberInput,
+    marketplaceBorneDiscount?: BigNumberInput
+  ): BigNumberInput {
+    if (marketplaceBorneDiscount === undefined) {
+      return subtotal
+    }
+
+    const reduced = MathBN.sub(subtotal, marketplaceBorneDiscount)
+    return MathBN.lt(reduced, 0) ? 0 : reduced
+  }
+
   @InjectManager()
   async getCommissionLines(
     context: CommissionCalculationContext,
@@ -224,9 +248,13 @@ class CommissionModuleService extends MedusaService({
 
       const matchedRate = candidates[0]
 
-      let baseAmount = item.subtotal
+      const itemBase = this.applyMarketplaceBorneDiscount(
+        item.subtotal,
+        item.marketplace_borne_discount
+      )
+      let baseAmount = itemBase
       if (matchedRate.include_tax && item.tax_total) {
-        baseAmount = MathBN.add(item.subtotal, item.tax_total)
+        baseAmount = MathBN.add(itemBase, item.tax_total)
       }
 
       const { rate, amount } = this.computeCommission(
@@ -250,12 +278,13 @@ class CommissionModuleService extends MedusaService({
     // of the items the method ships).
     if (defaultRate?.include_shipping) {
       for (const shippingMethod of shipping_methods as CommissionCalculationShippingLine[]) {
-        let baseAmount = shippingMethod.subtotal
+        const shippingBase = this.applyMarketplaceBorneDiscount(
+          shippingMethod.subtotal,
+          shippingMethod.marketplace_borne_discount
+        )
+        let baseAmount = shippingBase
         if (defaultRate.include_tax && shippingMethod.tax_total) {
-          baseAmount = MathBN.add(
-            shippingMethod.subtotal,
-            shippingMethod.tax_total
-          )
+          baseAmount = MathBN.add(shippingBase, shippingMethod.tax_total)
         }
 
         const { rate, amount } = this.computeCommission(
