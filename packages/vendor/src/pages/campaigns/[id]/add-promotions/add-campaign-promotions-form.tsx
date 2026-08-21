@@ -153,7 +153,7 @@ export const AddCampaignPromotionsForm = ({
             <Text
               size="small"
               leading="compact"
-              className="text-ui-fg-subtle border-ui-border-strong border-l-2 pl-3"
+              className="text-ui-fg-subtle border-ui-border-strong border-s-2 ps-3"
             >
               <span className="text-ui-fg-base txt-compact-small-plus">
                 {t("general.tip")}:

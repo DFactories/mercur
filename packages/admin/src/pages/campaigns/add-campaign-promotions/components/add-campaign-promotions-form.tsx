@@ -146,7 +146,7 @@ export const AddCampaignPromotionsForm = ({
         <RouteFocusModal.Footer data-testid="campaign-add-promotions-form-footer">
           <div className="flex flex-1 items-center justify-between gap-x-2">
             <Text
-              className="text-ui-fg-subtle border-ui-border-strong border-l-2 ps-3"
+              className="text-ui-fg-subtle border-ui-border-strong border-s-2 ps-3"
               size="small"
               leading="compact"
               data-testid="campaign-add-promotions-form-tip"

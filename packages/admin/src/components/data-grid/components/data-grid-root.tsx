@@ -756,7 +756,7 @@ export const DataGridRoot = <
                               onTouchStart={header.getResizeHandler()}
                               onClick={(e) => e.stopPropagation()}
                               className={clx(
-                                "hover:bg-ui-fg-interactive absolute right-0 top-0 z-[2] h-full w-1 cursor-col-resize touch-none select-none",
+                                "hover:bg-ui-fg-interactive absolute end-0 top-0 z-[2] h-full w-1 cursor-col-resize touch-none select-none",
                                 {
                                   "bg-ui-fg-interactive":
                                     header.column.getIsResizing(),
