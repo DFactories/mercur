@@ -1502,6 +1502,7 @@ medusaIntegrationTestRunner({
           const response = await api.post(
             `/admin/sellers/${sellerA.id}/members/invite`,
             {
+              phone: "09120000501",
               email: "newinvite@test.com",
               role_id: "role_test",
             },
@@ -1516,6 +1517,7 @@ medusaIntegrationTestRunner({
           const response = await api.post(
             `/admin/sellers/${sellerA.id}/members/invite`,
             {
+              phone: "09120000502",
               email: "invitee@test.com",
               role_id: "role_admin",
             },
@@ -1525,6 +1527,7 @@ medusaIntegrationTestRunner({
           expect(response.status).toEqual(201)
           expect(response.data.member_invite).toEqual(
             expect.objectContaining({
+              phone: "09120000502",
               email: "invitee@test.com",
               role_id: "role_admin",
             })
@@ -1536,6 +1539,7 @@ medusaIntegrationTestRunner({
             .post(
               `/admin/sellers/${sellerA.id}/members/invite`,
               {
+                phone: "09120000503",
                 email: "not-an-email",
                 role_id: "role_test",
               },
@@ -1551,6 +1555,7 @@ medusaIntegrationTestRunner({
             .post(
               `/admin/sellers/${sellerA.id}/members/invite`,
               {
+                phone: "09120000504",
                 email: "missingrole@test.com",
               },
               adminHeaders
