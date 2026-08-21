@@ -114,18 +114,10 @@ const UpdateProductVariant = z
     origin_country: z.string().nullish(),
     material: z.string().nullish(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
-    prices: z
-      .array(
-        z.object({
-          id: z.string().optional(),
-          currency_code: z.string().optional(),
-          amount: z.number().optional(),
-          min_quantity: z.number().nullish(),
-          max_quantity: z.number().nullish(),
-          rules: z.record(z.string(), z.string()).optional(),
-        })
-      )
-      .optional(),
+    // Prices are offer-owned: an offer writes into the variant's price set with
+    // an `offer_id` rule. A price sent here would land in the same set with no
+    // rule at all, matching every pricing context — a price belonging to no
+    // seller. Variant create has always refused them; update now agrees.
     options: z.record(z.string(), z.string()).optional(),
   })
   .strict()
