@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { Container, Heading } from "@medusajs/ui"
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
 import { createColumnHelper } from "@tanstack/react-table"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -80,7 +81,7 @@ export const OrderRemainingOrdersGroupSection = () => {
         data-testid="order-remaining-orders-group-header"
       >
         <Heading level="h2" data-testid="order-remaining-orders-group-heading">
-          {t("orders.domain")} in group
+          {t("orders.group.heading")}
         </Heading>
       </div>
       <_DataTable
@@ -91,8 +92,13 @@ export const OrderRemainingOrdersGroupSection = () => {
         isLoading={isLoading}
         pageSize={orders.length}
         noRecords={{
-          message: "No other orders in this group",
+          message: t("orders.group.noOtherOrders"),
         }}
+      />
+      <DisplayExtensionZone
+        model="order"
+        zone="order-group"
+        data={order_group}
       />
     </Container>
   )
@@ -101,6 +107,8 @@ export const OrderRemainingOrdersGroupSection = () => {
 const columnHelper = createColumnHelper<HttpTypes.AdminOrder>()
 
 const useColumns = () => {
+  const { t } = useTranslation()
+
   return useMemo(
     () => [
       columnHelper.accessor("display_id", {
@@ -109,7 +117,7 @@ const useColumns = () => {
       }),
       columnHelper.display({
         id: "seller",
-        header: () => <TextHeader text="Seller" />,
+        header: () => <TextHeader text={t("fields.store")} />,
         cell: ({ row }) => {
           const seller = (row.original as any).seller
           return <TextCell text={seller?.name ?? "-"} />
@@ -137,6 +145,6 @@ const useColumns = () => {
         ),
       }),
     ],
-    []
+    [t]
   )
 }

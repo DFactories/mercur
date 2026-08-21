@@ -1,9 +1,11 @@
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import {
+    IProductModuleService,
     ISalesChannelModuleService,
     MedusaContainer,
 } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { MercurModules } from "@mercurjs/types"
 import {
     adminHeaders,
     createAdminUser,
@@ -24,9 +26,11 @@ medusaIntegrationTestRunner({
             let approvedSellerHeaders: any
             let suspendedSeller: any
             let suspendedSellerHeaders: any
+            let productModuleService: IProductModuleService
 
             beforeAll(async () => {
                 appContainer = getContainer()
+                productModuleService = appContainer.resolve(Modules.PRODUCT)
             })
 
             beforeEach(async () => {
@@ -81,6 +85,11 @@ medusaIntegrationTestRunner({
                 )
             })
 
+            // Products are master records. The `product_seller` allowlist is
+            // opt-in (empty = open to every seller), so it no longer gates
+            // store visibility; the store lists any published product. The
+            // helper still assigns each product to the seller whose headers
+            // created it to mirror how vendors submit against a master product.
             const createProduct = async (
                 headers: any,
                 overrides: Record<string, any> = {}
@@ -90,22 +99,25 @@ medusaIntegrationTestRunner({
                     {
                         title: "Test Product",
                         status: "published",
-                        options: [{ title: "Size", values: ["M"] }],
-                        variants: [
-                            {
-                                title: "M",
-                                options: { Size: "M" },
-                                prices: [
-                                    { currency_code: "usd", amount: 1000 },
-                                ],
-                            },
-                        ],
-                        sales_channels: [{ id: salesChannel.id }],
                         ...overrides,
                     },
                     headers
                 )
-                return response.data.product
+                const product = response.data.product
+
+                const seller =
+                    headers === suspendedSellerHeaders
+                        ? suspendedSeller
+                        : approvedSeller
+                const link = appContainer.resolve(
+                    ContainerRegistrationKeys.LINK
+                )
+                await link.create({
+                    [Modules.PRODUCT]: { product_id: product.id },
+                    [MercurModules.SELLER]: { seller_id: seller.id },
+                })
+
+                return product
             }
 
             describe("GET /store/products", () => {
@@ -155,7 +167,10 @@ medusaIntegrationTestRunner({
                     expect(ids).not.toContain(draftProduct.id)
                 })
 
-                it("should not return products from suspended sellers", async () => {
+                // The `product_seller` allowlist is opt-in and no longer gates
+                // store visibility, so a published product stays listed even
+                // when its assigned seller is suspended.
+                it("should still list published products from suspended sellers", async () => {
                     const product = await createProduct(
                         suspendedSellerHeaders,
                         { title: "Suspended Seller Product" }
@@ -173,10 +188,10 @@ medusaIntegrationTestRunner({
                     )
 
                     const ids = response.data.products.map((p: any) => p.id)
-                    expect(ids).not.toContain(product.id)
+                    expect(ids).toContain(product.id)
                 })
 
-                it("should not return products from sellers within closure window", async () => {
+                it("should still list published products from sellers within a closure window", async () => {
                     const product = await createProduct(approvedSellerHeaders, {
                         title: "Closed Seller Product",
                     })
@@ -204,7 +219,7 @@ medusaIntegrationTestRunner({
                     )
 
                     const ids = response.data.products.map((p: any) => p.id)
-                    expect(ids).not.toContain(product.id)
+                    expect(ids).toContain(product.id)
                 })
 
                 it("should filter products by id", async () => {
@@ -224,6 +239,75 @@ medusaIntegrationTestRunner({
                     expect(response.status).toEqual(200)
                     expect(response.data.products).toHaveLength(1)
                     expect(response.data.products[0].id).toEqual(productA.id)
+                })
+
+                // Regression for https://github.com/mercurjs/mercur/issues/974
+                // `category_id` is a Medusa-standard store filter param but is
+                // not a column on `Product`; the override route used to forward
+                // it straight to `query.graph`, raising
+                // `Trying to query by not existing property Product.category_id`.
+                it("should filter products by category_id", async () => {
+                    const [category] =
+                        await productModuleService.createProductCategories([
+                            {
+                                name: "Filterable Category",
+                                is_active: true,
+                            },
+                        ])
+
+                    const inCategory = await createProduct(
+                        approvedSellerHeaders,
+                        { title: "In Category" }
+                    )
+                    const outOfCategory = await createProduct(
+                        approvedSellerHeaders,
+                        { title: "Out Of Category" }
+                    )
+
+                    await api.post(
+                        `/vendor/product-categories/${category.id}/products`,
+                        { add: [inCategory.id] },
+                        approvedSellerHeaders
+                    )
+
+                    const response = await api.get(
+                        `/store/products?category_id=${category.id}`,
+                        storeHeaders
+                    )
+
+                    expect(response.status).toEqual(200)
+                    const ids = response.data.products.map((p: any) => p.id)
+                    expect(ids).toContain(inCategory.id)
+                    expect(ids).not.toContain(outOfCategory.id)
+                })
+
+                it("should not return products from an inactive category", async () => {
+                    const [inactiveCategory] =
+                        await productModuleService.createProductCategories([
+                            {
+                                name: "Inactive Category",
+                                is_active: false,
+                            },
+                        ])
+
+                    const product = await createProduct(approvedSellerHeaders, {
+                        title: "Hidden Category Product",
+                    })
+
+                    await api.post(
+                        `/vendor/product-categories/${inactiveCategory.id}/products`,
+                        { add: [product.id] },
+                        approvedSellerHeaders
+                    )
+
+                    const response = await api.get(
+                        `/store/products?category_id=${inactiveCategory.id}`,
+                        storeHeaders
+                    )
+
+                    expect(response.status).toEqual(200)
+                    const ids = response.data.products.map((p: any) => p.id)
+                    expect(ids).not.toContain(product.id)
                 })
 
                 it("should support limit and offset", async () => {
@@ -276,6 +360,35 @@ medusaIntegrationTestRunner({
                     )
                 })
 
+                it("surfaces linked attributes on product.attributes", async () => {
+                    const product = await createProduct(approvedSellerHeaders, {
+                        title: "Product with attribute",
+                        attributes: [
+                            {
+                                title: "Size",
+                                type: "multi_select",
+                                values: ["M"],
+                            },
+                        ],
+                    })
+
+                    const response = await api.get(
+                        `/store/products/${product.id}`,
+                        storeHeaders
+                    )
+
+                    expect(response.status).toEqual(200)
+                    const attrs = response.data.product.attributes
+                    expect(Array.isArray(attrs)).toBe(true)
+                    const sizeAttr = attrs.find(
+                        (a: any) => a.name === "Size"
+                    )
+                    expect(sizeAttr).toBeDefined()
+                    expect(
+                        sizeAttr.values.map((v: any) => v.name)
+                    ).toEqual(["M"])
+                })
+
                 it("should return 404 for a non-existent product", async () => {
                     const response = await api
                         .get(`/store/products/prod_nonexistent`, storeHeaders)
@@ -303,7 +416,9 @@ medusaIntegrationTestRunner({
                     expect(response.status).toEqual(404)
                 })
 
-                it("should return 404 for a product from a suspended seller", async () => {
+                // Suspending the assigned seller no longer hides a published
+                // product from the store detail route.
+                it("should still retrieve a published product from a suspended seller", async () => {
                     const product = await createProduct(
                         suspendedSellerHeaders,
                         { title: "Suspended Seller Product" }
@@ -315,11 +430,13 @@ medusaIntegrationTestRunner({
                         adminHeaders
                     )
 
-                    const response = await api
-                        .get(`/store/products/${product.id}`, storeHeaders)
-                        .catch((e) => e.response)
+                    const response = await api.get(
+                        `/store/products/${product.id}`,
+                        storeHeaders
+                    )
 
-                    expect(response.status).toEqual(404)
+                    expect(response.status).toEqual(200)
+                    expect(response.data.product.id).toEqual(product.id)
                 })
             })
         })

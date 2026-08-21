@@ -4,6 +4,9 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 
 import { ProductVariantDTO } from "@medusajs/types"
+
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
+
 import { Thumbnail } from "@components/common/thumbnail"
 
 type InventoryItemVariantsSectionProps = {
@@ -46,7 +49,7 @@ export const InventoryItemVariantsSection = ({
                   </span>
                 </div>
                 <div className="size-7 flex items-center justify-center">
-                  <TriangleRightMini className="text-ui-fg-muted" />
+                  <TriangleRightMini className="text-ui-fg-muted rtl:-scale-x-100 " />
                 </div>
               </div>
             </div>
@@ -67,6 +70,11 @@ export const InventoryItemVariantsSection = ({
           )
         })}
       </div>
+      <DisplayExtensionZone
+        model="inventory_item"
+        zone="variants"
+        data={variants}
+      />
     </Container>
   )
 }

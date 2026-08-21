@@ -7,7 +7,6 @@ import {
 } from "@medusajs/medusa/api/utils/validators"
 import { booleanString } from "@medusajs/medusa/api/utils/common-validators/common"
 import { AdditionalData } from "@medusajs/framework/types"
-import { SellerRole } from "@mercurjs/types"
 
 export type AdminGetSellerParamsType = z.infer<typeof AdminGetSellerParams>
 export const AdminGetSellerParams = createSelectParams()
@@ -68,7 +67,7 @@ export const CreateSeller = z.object({
   closed_from: z.coerce.date().nullable().optional(),
   closed_to: z.coerce.date().nullable().optional(),
   closure_note: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
   member: z.object({
     email: z.string().email(),
   }),
@@ -92,32 +91,48 @@ export const UpdateSeller = z.object({
   closed_from: z.coerce.date().nullable().optional(),
   closed_to: z.coerce.date().nullable().optional(),
   closure_note: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 export const AdminUpdateSeller = WithAdditionalData(UpdateSeller)
 
-export type AdminSuspendSellerType = z.infer<typeof AdminSuspendSeller>
-export const AdminSuspendSeller = z.object({
+const SuspendSeller = z.object({
   reason: z.string().optional(),
 })
+export type AdminSuspendSellerType = z.infer<typeof SuspendSeller> &
+  AdditionalData
+export const AdminSuspendSeller = WithAdditionalData(SuspendSeller)
 
-export type AdminTerminateSellerType = z.infer<typeof AdminTerminateSeller>
-export const AdminTerminateSeller = z.object({
+const TerminateSeller = z.object({
   reason: z.string().optional(),
 })
+export type AdminTerminateSellerType = z.infer<typeof TerminateSeller> &
+  AdditionalData
+export const AdminTerminateSeller = WithAdditionalData(TerminateSeller)
+
+const SellerLifecycleAction = z.object({})
+export type AdminApproveSellerType = z.infer<typeof SellerLifecycleAction> &
+  AdditionalData
+export const AdminApproveSeller = WithAdditionalData(SellerLifecycleAction)
+export type AdminUnsuspendSellerType = z.infer<typeof SellerLifecycleAction> &
+  AdditionalData
+export const AdminUnsuspendSeller = WithAdditionalData(SellerLifecycleAction)
+export type AdminUnterminateSellerType = z.infer<typeof SellerLifecycleAction> &
+  AdditionalData
+export const AdminUnterminateSeller = WithAdditionalData(SellerLifecycleAction)
 
 export type AdminAddSellerMemberType = z.infer<typeof AdminAddSellerMember>
 export const AdminAddSellerMember = z.object({
   member_id: z.string(),
-  role_id: z.nativeEnum(SellerRole),
+  role_id: z.string(),
 })
 
 export type AdminInviteSellerMemberType = z.infer<
   typeof AdminInviteSellerMember
 >
 export const AdminInviteSellerMember = z.object({
-  email: z.string().email(),
-  role_id: z.nativeEnum(SellerRole),
+  phone: z.string().min(1),
+  email: z.string().email().optional(),
+  role_id: z.string(),
 })
 
 export type AdminUpsertSellerAddressType = z.infer<typeof UpsertSellerAddress> & AdditionalData
@@ -133,7 +148,7 @@ export const UpsertSellerAddress = z.object({
   province: z.string().nullable().optional(),
   postal_code: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
 export const AdminUpsertSellerAddress = WithAdditionalData(UpsertSellerAddress)
 
@@ -154,5 +169,7 @@ export const UpsertSellerProfessionalDetails = z.object({
   corporate_name: z.string().nullable().optional(),
   registration_number: z.string().nullable().optional(),
   tax_id: z.string().nullable().optional(),
+  business_license: z.string().nullable().optional(),
+  health_permit: z.string().nullable().optional(),
 })
 export const AdminUpsertSellerProfessionalDetails = WithAdditionalData(UpsertSellerProfessionalDetails)

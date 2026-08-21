@@ -138,7 +138,7 @@ export const SelectFilter = ({
                       value={search}
                       onValueChange={setSearch}
                       className="txt-compact-small placeholder:text-ui-fg-muted bg-transparent outline-none"
-                      placeholder="Search"
+                      placeholder={t("general.search")}
                     />
                     <div className="flex h-5 w-5 items-center justify-center">
                       <button
@@ -171,7 +171,7 @@ export const SelectFilter = ({
                   return (
                     <Command.Item
                       key={String(option.value)}
-                      className="bg-ui-bg-base hover:bg-ui-bg-base-hover aria-selected:bg-ui-bg-base-pressed focus-visible:bg-ui-bg-base-pressed text-ui-fg-base data-[disabled]:text-ui-fg-disabled txt-compact-small relative flex cursor-pointer select-none items-center gap-x-2 rounded-md px-2 py-1.5 outline-none transition-colors data-[disabled]:pointer-events-none"
+                      className="bg-ui-bg-base hover:bg-ui-bg-base-hover aria-selected:bg-ui-bg-base-pressed focus-visible:bg-ui-bg-base-pressed text-ui-fg-base data-[disabled=true]:text-ui-fg-disabled txt-compact-small relative flex cursor-pointer select-none items-center gap-x-2 rounded-md px-2 py-1.5 outline-none transition-colors data-[disabled=true]:pointer-events-none"
                       value={option.label}
                       onSelect={() => {
                         handleSelect(option.value)

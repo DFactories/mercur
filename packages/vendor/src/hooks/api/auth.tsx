@@ -190,3 +190,46 @@ export const useUpdateProviderForEmailPass = (
     ...options,
   });
 };
+
+// --- Phone (OTP) authentication --------------------------------------------
+
+export const useRequestOtp = (
+  options?: UseMutationOptions<
+    unknown,
+    ClientError,
+    { phone: string; mode?: "login" | "register" }
+  >,
+) => {
+  return useMutation({
+    mutationFn: (payload: { phone: string; mode?: "login" | "register" }) =>
+      sdk.vendor.auth.phone.requestOtp.mutate(payload),
+    ...options,
+  });
+};
+
+export const useVerifyOtp = (
+  options?: UseMutationOptions<
+    { token: string },
+    ClientError,
+    { phone: string; code: string }
+  >,
+) => {
+  return useMutation({
+    mutationFn: async (payload: { phone: string; code: string }) => {
+      const data = (await sdk.vendor.auth.phone.verifyOtp.mutate(payload)) as {
+        token: string;
+      };
+
+      await sdk.auth.session.mutate({
+        fetchOptions: {
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        },
+      });
+
+      return data;
+    },
+    ...options,
+  });
+};

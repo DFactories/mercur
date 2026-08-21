@@ -6,6 +6,9 @@ const ProfessionalDetails = model.define("ProfessionalDetails", {
   corporate_name: model.text().nullable(),
   registration_number: model.text().nullable(),
   tax_id: model.text().nullable(),
+  // Uploaded store documents (file URLs): business activity license + health permit.
+  business_license: model.text().nullable(),
+  health_permit: model.text().nullable(),
   seller: model.belongsTo(() => Seller, {
     mappedBy: "professional_details",
   }),

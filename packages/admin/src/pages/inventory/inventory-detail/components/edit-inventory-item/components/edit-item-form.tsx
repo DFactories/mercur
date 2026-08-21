@@ -1,12 +1,12 @@
-import type * as zod from "zod"
-
 import { Button, Input, toast } from "@medusajs/ui"
 
-import { zodResolver } from "@hookform/resolvers/zod"
 import type { HttpTypes } from "@medusajs/types"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { Form } from "@components/common/form"
 import { RouteDrawer, useRouteModal } from "@components/modals"
@@ -17,14 +17,9 @@ type EditInventoryItemFormProps = {
   item: HttpTypes.AdminInventoryItem
 }
 
-const EditInventoryItemSchema = z.object({
-  title: z.string().optional(),
-  sku: z.string().min(1),
-})
-
 const getDefaultValues = (item: HttpTypes.AdminInventoryItem) => {
   return {
-    title: item.title ?? undefined,
+    title: item.title ?? "",
     sku: item.sku ?? undefined,
   }
 }
@@ -33,15 +28,23 @@ export const EditInventoryItemForm = ({ item }: EditInventoryItemFormProps) => {
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
 
-  const form = useForm<zod.infer<typeof EditInventoryItemSchema>>({
+  const EditInventoryItemSchema = z.object({
+    title: z.string().min(1, t("validation.requiredField")),
+    sku: z.string().optional(),
+  })
+
+  const form = useExtendableForm({
+    schema: EditInventoryItemSchema,
+    model: "inventory_item",
+    zone: "edit",
+    data: item,
     defaultValues: getDefaultValues(item),
-    resolver: zodResolver(EditInventoryItemSchema),
   })
 
   const { mutateAsync, isPending: isLoading } = useUpdateInventoryItem(item.id)
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    mutateAsync(values, {
+    mutateAsync({ title: values.title, sku: values.sku }, {
       onSuccess: () => {
         toast.success(t("inventory.toast.updateItem"))
         handleSuccess()
@@ -81,7 +84,7 @@ export const EditInventoryItemForm = ({ item }: EditInventoryItemFormProps) => {
             render={({ field }) => {
               return (
                 <Form.Item data-testid="inventory-edit-item-form-sku-item">
-                  <Form.Label data-testid="inventory-edit-item-form-sku-label">{t("fields.sku")}</Form.Label>
+                  <Form.Label optional data-testid="inventory-edit-item-form-sku-label">{t("fields.sku")}</Form.Label>
                   <Form.Control data-testid="inventory-edit-item-form-sku-control">
                     <div data-testid="inventory-edit-item-form-sku-input-wrapper">
                       <Input {...field} data-testid="inventory-edit-item-form-sku-input" />
@@ -91,6 +94,12 @@ export const EditInventoryItemForm = ({ item }: EditInventoryItemFormProps) => {
                 </Form.Item>
               )
             }}
+          />
+          <FormExtensionZone
+            model="inventory_item"
+            zone="edit"
+            control={form.control}
+            data={item}
           />
         </RouteDrawer.Body>
         <RouteDrawer.Footer data-testid="inventory-edit-item-form-footer">

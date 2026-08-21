@@ -5,11 +5,6 @@ export enum CommissionRateType {
   PERCENTAGE = "percentage",
 }
 
-export enum CommissionRateTarget {
-  ITEM = "item",
-  SHIPPING = "shipping",
-}
-
 export type CommissionRuleDTO = {
   id: string
   reference: string
@@ -20,9 +15,20 @@ export type CommissionRuleDTO = {
   deleted_at: Date | null
 }
 
+export type CommissionRateValueDTO = {
+  id: string
+  currency_code: string
+  amount: number
+  commission_rate_id: string
+  created_at: Date
+  updated_at: Date
+  deleted_at: Date | null
+}
+
 export type CommissionLineDTO = {
   id: string
-  item_id: string
+  item_id: string | null
+  shipping_method_id: string | null
   commission_rate_id: string | null
   code: string
   rate: number
@@ -38,14 +44,14 @@ export type CommissionRateDTO = {
   name: string
   code: string
   type: CommissionRateType
-  target: CommissionRateTarget
   value: number
   currency_code: string | null
-  min_amount: number | null
   include_tax: boolean
+  include_shipping: boolean
   is_enabled: boolean
-  priority: number
+  is_default: boolean
   rules?: CommissionRuleDTO[]
+  values?: CommissionRateValueDTO[]
   created_at: Date
   updated_at: Date
   deleted_at: Date | null
@@ -68,6 +74,18 @@ export interface CommissionCalculationItemLine {
   tax_total?: BigNumberInput
 
   /**
+   * The part of this line's discount that the marketplace absorbs, derived from
+   * the promotion's `cost_bearer`. It is subtracted from the subtotal before the
+   * rate applies, so commission is charged on what the seller actually keeps.
+   *
+   * `marketplace` puts the whole discount here (base becomes the post-discount
+   * amount), `store` puts none of it here (the seller absorbs it, the marketplace
+   * is made whole), and `shared` puts the marketplace's declared percentage here.
+   * Absent, the line is treated as undiscounted.
+   */
+  marketplace_borne_discount?: BigNumberInput
+
+  /**
    * The product of the line item.
    */
   product?: {
@@ -82,7 +100,7 @@ export interface CommissionCalculationItemLine {
 
 export interface CommissionCalculationShippingLine {
   /**
-   * The ID of the shipping line.
+   * The ID of the shipping method.
    */
   id: string
 
@@ -97,14 +115,16 @@ export interface CommissionCalculationShippingLine {
   tax_total?: BigNumberInput
 
   /**
-   * The shipping option type associated with the shipping method.
+   * The part of this line's discount that the marketplace absorbs, derived from
+   * the promotion's `cost_bearer`. It is subtracted from the subtotal before the
+   * rate applies, so commission is charged on what the seller actually keeps.
+   *
+   * `marketplace` puts the whole discount here (base becomes the post-discount
+   * amount), `store` puts none of it here (the seller absorbs it, the marketplace
+   * is made whole), and `shared` puts the marketplace's declared percentage here.
+   * Absent, the line is treated as undiscounted.
    */
-  shipping_option?: {
-    /**
-     * The ID of the shipping option type associated with the shipping method.
-     */
-    shipping_option_type_id?: string
-  }
+  marketplace_borne_discount?: BigNumberInput
 }
 
 export interface CommissionCalculationContext {
@@ -125,7 +145,8 @@ export interface CommissionCalculationContext {
 }
 
 export interface CreateCommissionLineDTO {
-  item_id: string
+  item_id?: string | null
+  shipping_method_id?: string | null
   commission_rate_id: string
   code: string
   rate: number

@@ -17,6 +17,7 @@ type EditUserFormProps = {
 const EditUserFormSchema = zod.object({
   first_name: zod.string().optional(),
   last_name: zod.string().optional(),
+  phone: zod.string().optional(),
 })
 
 export const EditUserForm = ({ user }: EditUserFormProps) => {
@@ -27,18 +28,27 @@ export const EditUserForm = ({ user }: EditUserFormProps) => {
     defaultValues: {
       first_name: user.first_name || "",
       last_name: user.last_name || "",
+      phone:
+        (user.metadata as { phone?: string } | null)?.phone || "",
     },
     resolver: zodResolver(EditUserFormSchema),
   })
 
   const { mutateAsync, isPending } = useUpdateUser(user.id)
 
-  const handleSubmit = form.handleSubmit(async (values) => {
-    await mutateAsync(values, {
-      onSuccess: () => {
-        handleSuccess()
+  // Admin users have no native phone column — store it on metadata.phone.
+  const handleSubmit = form.handleSubmit(async ({ phone, ...rest }) => {
+    await mutateAsync(
+      {
+        ...rest,
+        metadata: { ...(user.metadata ?? {}), phone: phone || null },
       },
-    })
+      {
+        onSuccess: () => {
+          handleSuccess()
+        },
+      },
+    )
   })
 
   return (
@@ -74,6 +84,28 @@ export const EditUserForm = ({ user }: EditUserFormProps) => {
                     <Input {...field} data-testid="user-edit-form-last-name-input" />
                   </Form.Control>
                   <Form.ErrorMessage data-testid="user-edit-form-last-name-error" />
+                </Form.Item>
+              )
+            }}
+          />
+          <Form.Field
+            control={form.control}
+            name="phone"
+            render={({ field }) => {
+              return (
+                <Form.Item data-testid="user-edit-form-phone-item">
+                  <Form.Label optional data-testid="user-edit-form-phone-label">
+                    {t("fields.phone")}
+                  </Form.Label>
+                  <Form.Control data-testid="user-edit-form-phone-control">
+                    <Input
+                      type="tel"
+                      dir="ltr"
+                      {...field}
+                      data-testid="user-edit-form-phone-input"
+                    />
+                  </Form.Control>
+                  <Form.ErrorMessage data-testid="user-edit-form-phone-error" />
                 </Form.Item>
               )
             }}

@@ -8,7 +8,6 @@ import {
   TextHeader,
 } from "@components/table/table-cells/common/text-cell"
 import { getPriceListStatus } from "@pages/price-lists/common/utils"
-import { PriceListListTableActions } from "./price-list-list-table-actions"
 import { ExtendedPriceList } from "@custom-types/price-list"
 
 const columnHelper = createColumnHelper<ExtendedPriceList>()
@@ -24,26 +23,34 @@ export const usePricingTableColumns = () => {
           return row.original?.title || "-"
         },
       }),
-      columnHelper.accessor("status", {
-        header: t("priceLists.fields.status.label"),
+      columnHelper.accessor("type", {
+        header: () => <TextHeader text={t("priceLists.fields.type.label")} />,
         cell: ({ row }) => {
-          const { color, text } = getPriceListStatus(t, row.original)
-
-          return <StatusCell color={color}>{text}</StatusCell>
+          const type = row.original?.type
+          const text = type
+            ? t(`priceLists.fields.type.options.${type}.label`)
+            : "-"
+          return <TextCell text={text} />
         },
       }),
       columnHelper.accessor("prices", {
-        header: t("priceLists.fields.priceOverrides.header"),
+        header: () => (
+          <TextHeader text={t("priceLists.fields.priceOverrides.header")} />
+        ),
         cell: ({ row }) => {
           const prices = row.original?.prices?.length || "-"
           return <TextCell text={prices} />
         },
       }),
-      columnHelper.display({
-        id: "actions",
-        cell: ({ row }) => (
-          <PriceListListTableActions priceList={row.original} />
+      columnHelper.accessor("status", {
+        header: () => (
+          <TextHeader text={t("priceLists.fields.status.label")} />
         ),
+        cell: ({ row }) => {
+          const { color, text } = getPriceListStatus(t, row.original)
+
+          return <StatusCell color={color}>{text}</StatusCell>
+        },
       }),
     ],
     [t]

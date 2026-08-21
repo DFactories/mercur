@@ -10,7 +10,7 @@ import { z } from "zod";
 import { RouteFocusModal, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
 import { useBatchPriceListPrices } from "@hooks/api/price-lists";
-import { exctractPricesFromProducts } from "../../../../common/utils";
+import { extractPricesFromOffers } from "../../../../common/utils";
 import { PriceListPricesAddPricesForm } from "./price-list-prices-add-prices-form";
 import { PriceListPricesAddProductIdsForm } from "./price-list-prices-add-product-ids-form";
 import {
@@ -22,7 +22,7 @@ import {
 
 type PriceListPricesAddFormProps = {
   priceList: HttpTypes.AdminPriceList;
-  currencies: HttpTypes.AdminStoreCurrency[];
+  currencies: string[];
   regions: HttpTypes.AdminRegion[];
   pricePreferences: HttpTypes.AdminPricePreference[];
 };
@@ -55,8 +55,9 @@ export const PriceListPricesAddForm = ({
 
   const form = useForm<PriceListPricesAddSchema>({
     defaultValues: {
-      products: {},
+      offers: {},
       product_ids: [],
+      offer_ids: [],
     },
     resolver: zodResolver(PriceListPricesAddSchema),
   });
@@ -65,9 +66,9 @@ export const PriceListPricesAddForm = ({
 
   const handleSubmit = form.handleSubmit(
     async (values) => {
-      const { products } = values;
+      const { offers } = values;
 
-      const prices = exctractPricesFromProducts(products, regions);
+      const prices = extractPricesFromOffers(offers, regions);
 
       await mutateAsync(
         {
@@ -83,8 +84,8 @@ export const PriceListPricesAddForm = ({
       );
     },
     (errors) => {
-      if (errors.products) {
-        toast.error("At least one price must be added.");
+      if (errors.offers) {
+        toast.error(t("priceLists.products.add.atLeastOnePrice"));
       }
     },
   );
@@ -106,7 +107,7 @@ export const PriceListPricesAddForm = ({
     const validationResult = schema.safeParse(values);
 
     if (!validationResult.success) {
-      validationResult.error.errors.forEach(({ path, message, code }) => {
+      validationResult.error.issues.forEach(({ path, message, code }) => {
         form.setError(path.join(".") as keyof PriceListPricesAddSchema, {
           type: code,
           message,

@@ -1,0 +1,81 @@
+---
+title: "How to Add a Block"
+sidebarTitle: "Add a Block"
+description: "Install the reviews block end-to-end and follow it live across the admin, vendor, and storefront surfaces."
+---
+
+Install a block and see the feature running on every surface it touches.
+
+Blocks are complete features installed as **source code** into your project. A block bundles the backend module, workflows, API routes, and panel UI. This tutorial installs the `reviews` block and follows it across each surface it appears on.
+
+<Info>
+  Blocks are copied, not installed as dependencies. `add` writes the block's source files into your project through the aliases in `blocks.json`. You own and can edit every file afterwards. Updates are opt-in through `diff` and `add --overwrite`. When you outgrow the catalog, [build your own block](/rc/resources/tutorials/build-a-block).
+</Info>
+
+## Goal
+
+Install reviews as a block and confirm it runs everywhere it appears.
+
+## Install the block
+
+<Steps>
+  <Step title="Discover the block">
+    Search the registry and inspect what the block ships before you install it.
+
+    ```bash Terminal
+    bunx @mercurjs/cli@latest search --query reviews
+    bunx @mercurjs/cli@latest view reviews
+    ```
+
+    `view` lists the block's files by target (API, admin, vendor) and its dependencies.
+  </Step>
+  <Step title="Install it">
+    Run `add` to copy the block into your project.
+
+    ```bash Terminal
+    bunx @mercurjs/cli@latest add reviews
+    ```
+
+    The CLI copies the source into the directories mapped by your `blocks.json` aliases and prints the block's post-install instructions: module registration, middlewares, and migrations.
+  </Step>
+  <Step title="Run migrations and codegen">
+    The block introduced a reviews module. Generate and run its migrations, then refresh the typed route map.
+
+    ```bash Terminal
+    cd packages/api
+    bunx medusa db:generate reviews
+    bunx medusa db:migrate
+    bunx @mercurjs/cli@latest codegen
+    ```
+  </Step>
+  <Step title="See it live">
+    Start the project. Reviews now appear in the admin panel (moderation), the vendor portal (per-seller reviews), and the Store API (customer-facing review routes).
+  </Step>
+</Steps>
+
+## Verify
+
+Check that the install landed cleanly:
+
+- **Files:** the block's files exist in your repo under the alias-mapped paths.
+- **API:** migrations ran cleanly and the API boots.
+- **Panels and store:** the admin and vendor panels show their reviews pages, and the store review endpoints respond.
+- **No drift:** `bunx @mercurjs/cli@latest diff reviews` reports no drift from the registry.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="What if I've already modified files the block wants to write?">
+    The CLI asks before overwriting existing files, or you can force it with `--overwrite`. If you have customized a page the block also ships, merge by hand. You are merging source, not resolving package versions.
+  </Accordion>
+  <Accordion title="How do I update a block later?">
+    `bunx @mercurjs/cli@latest diff reviews` shows what changed in the registry since you installed. Take updates with `add reviews --overwrite`, then re-apply any local edits afterwards.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Add a custom panel page" href="/rc/resources/tutorials/custom-panel-page" />
+  <Card title="Build your own block" href="/rc/resources/tutorials/build-a-block" />
+</CardGroup>

@@ -1,4 +1,4 @@
-import { XCircle } from "@medusajs/icons"
+import { Buildings, XCircle } from "@medusajs/icons"
 import { AdminOrderLineItem } from "@medusajs/types"
 import {
   Button,
@@ -15,6 +15,7 @@ import { format } from "date-fns"
 import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router-dom"
 import { ActionMenu } from "@components/common/action-menu"
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
 import { Skeleton } from "@components/common/skeleton"
 import { Thumbnail } from "@components/common/thumbnail"
 import {
@@ -45,6 +46,7 @@ export const OrderFulfillmentSection = ({
       {fulfillments.map((f, index) => (
         <Fulfillment key={f.id} index={index} fulfillment={f} order={order} />
       ))}
+      <DisplayExtensionZone model="order" zone="fulfillment" data={order} />
     </div>
   )
 }
@@ -176,6 +178,20 @@ const UnfulfilledItemDisplay = ({
           <StatusBadge color="red" className="text-nowrap">
             {t("orders.fulfillment.awaitingFulfillmentBadge")}
           </StatusBadge>
+
+          <ActionMenu
+            groups={[
+              {
+                actions: [
+                  {
+                    label: t("orders.fulfillment.fulfillItems"),
+                    icon: <Buildings />,
+                    to: `/orders/${order.id}/fulfillment?requires_shipping=${requiresShipping}`,
+                  },
+                ],
+              },
+            ]}
+          />
         </div>
       </div>
       <div>
@@ -186,13 +202,6 @@ const UnfulfilledItemDisplay = ({
             currencyCode={order.currency_code}
           />
         ))}
-      </div>
-      <div className="px-6 py-4 flex justify-end">
-        <Link
-          to={`/orders/${order.id}/fulfillment?requires_shipping=${requiresShipping}`}
-        >
-          <Button>{t("orders.fulfillment.fulfillItems")}</Button>
-        </Link>
       </div>
     </Container>
   )
@@ -262,6 +271,13 @@ const Fulfillment = ({
 
   const showDeliveryButton =
     !fulfillment.canceled_at && !fulfillment.delivered_at
+
+  // Once a fulfillment has shipped (or been delivered/canceled) it can no
+  // longer be canceled — keep the action visible but disabled.
+  const cancelDisabled =
+    !!fulfillment.canceled_at ||
+    !!fulfillment.shipped_at ||
+    !!fulfillment.delivered_at
 
   const handleMarkAsDelivered = async () => {
     const res = await prompt({
@@ -346,7 +362,7 @@ const Fulfillment = ({
                     label: t("actions.cancel"),
                     icon: <XCircle />,
                     onClick: handleCancel,
-                    disabled: !!fulfillment.canceled_at,
+                    disabled: cancelDisabled,
                   },
                 ],
               },
@@ -444,7 +460,11 @@ const Fulfillment = ({
       {(showShippingButton || showDeliveryButton) && (
         <div className="bg-ui-bg-subtle flex items-center justify-end gap-x-2 rounded-b-xl px-4 py-4">
           {showDeliveryButton && (
-            <Button onClick={handleMarkAsDelivered} variant="secondary">
+            <Button
+              size="small"
+              onClick={handleMarkAsDelivered}
+              variant="secondary"
+            >
               {t(
                 isPickUpFulfillment
                   ? "orders.fulfillment.markAsPickedUp"
@@ -455,6 +475,7 @@ const Fulfillment = ({
 
           {showShippingButton && (
             <Button
+              size="small"
               onClick={() => navigate(`./${fulfillment.id}/create-shipment`)}
               variant="secondary"
             >

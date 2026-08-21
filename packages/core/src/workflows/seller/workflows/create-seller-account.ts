@@ -36,6 +36,7 @@ type CreateSellerAccountWorkflowInput = {
   auth_identity_id: string
   seller: CreateSellerDTO
   member_email?: string
+  member_phone?: string
   member_id?: string
   first_name?: string
   last_name?: string
@@ -58,13 +59,17 @@ export const createSellerAccountWorkflow = createWorkflow(
 
     const newMember = when('no-existing-member', input, ({ member_id }) => !member_id).then(() => {
       const members = upsertMembersStep(
-        transform(input, ({ member_email, first_name, last_name }) => [
-          {
-            email: member_email!,
-            first_name: first_name ?? null,
-            last_name: last_name ?? null,
-          },
-        ])
+        transform(
+          input,
+          ({ member_email, member_phone, first_name, last_name }) => [
+            {
+              email: member_email ?? null,
+              phone: member_phone ?? null,
+              first_name: first_name ?? null,
+              last_name: last_name ?? null,
+            },
+          ]
+        )
       )
       const member = transform({ members }, ({ members }) => members[0])
 

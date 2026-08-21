@@ -1,6 +1,9 @@
 import { AnimatePresence } from "motion/react";
+import { Button, Heading, Text } from "@medusajs/ui";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { useLinkQuery } from "@mercurjs/dashboard-shared";
 import { useLogout, useSellers } from "@hooks/api";
 import { queryClient } from "@lib/query-client";
 import { WizardSidebar } from "./wizard-sidebar";
@@ -13,18 +16,25 @@ import { CompanyStep } from "./steps/company-step";
 import { PaymentStep } from "./steps/payment-step";
 
 type OnboardingWizardProps = {
-  memberEmail: string;
+  memberEmail?: string;
+  memberPhone?: string;
 };
 
-export const OnboardingWizard = ({ memberEmail }: OnboardingWizardProps) => {
+export const OnboardingWizard = ({
+  memberEmail,
+  memberPhone,
+}: OnboardingWizardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { mutateAsync: logoutMutation } = useLogout();
-  const { seller_members } = useSellers();
+  const { seller_members } = useSellers(useLinkQuery("seller"));
   const hasStores = (seller_members?.length ?? 0) > 0;
 
   const {
     currentStep,
     sellerId,
+    isComplete,
+    goToLogin,
     isPending,
     goBack,
     submitStoreStep,
@@ -34,7 +44,7 @@ export const OnboardingWizard = ({ memberEmail }: OnboardingWizardProps) => {
     skipCompanyStep,
     submitPaymentStep,
     skipPaymentStep,
-  } = useOnboarding(memberEmail);
+  } = useOnboarding({ email: memberEmail, phone: memberPhone });
 
   const handleBack = async () => {
     if (currentStep === 0) {
@@ -94,6 +104,20 @@ export const OnboardingWizard = ({ memberEmail }: OnboardingWizardProps) => {
         return null;
     }
   };
+
+  if (isComplete) {
+    return (
+      <div className="flex h-dvh w-dvw flex-col items-center justify-center gap-y-6 px-6 text-center">
+        <div className="flex max-w-md flex-col gap-y-2">
+          <Heading level="h1">{t("onboarding.success.title")}</Heading>
+          <Text size="small" className="text-ui-fg-subtle">
+            {t("onboarding.success.description")}
+          </Text>
+        </div>
+        <Button onClick={goToLogin}>{t("onboarding.success.login")}</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-dvh w-dvw overflow-hidden">

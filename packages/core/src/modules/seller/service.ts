@@ -108,32 +108,63 @@ class SellerModuleService extends MedusaService({
 
   @InjectTransactionManager()
   async upsertMembers(
-    data: { email: string; first_name?: string | null; last_name?: string | null }[],
+    data: {
+      email?: string | null
+      phone?: string | null
+      first_name?: string | null
+      last_name?: string | null
+    }[],
     sharedContext?: Context,
   ): Promise<MemberDTO[]> {
-    const emails = data.map((d) => d.email)
-    const existing = await this.listMembers(
-      { email: emails },
-      {},
-      sharedContext,
+    // Members are keyed by email (email/password sign-up) OR phone (OTP sign-up).
+    const emails = data
+      .map((d) => d.email)
+      .filter((e): e is string => !!e)
+    const phones = data
+      .map((d) => d.phone)
+      .filter((p): p is string => !!p)
+
+    const existing: MemberDTO[] = []
+    if (emails.length) {
+      existing.push(
+        ...(await this.listMembers({ email: emails }, {}, sharedContext))
+      )
+    }
+    if (phones.length) {
+      existing.push(
+        ...(await this.listMembers({ phone: phones }, {}, sharedContext))
+      )
+    }
+
+    const byEmail = new Map(
+      existing.filter((m) => m.email).map((m) => [m.email as string, m])
+    )
+    const byPhone = new Map(
+      existing.filter((m) => m.phone).map((m) => [m.phone as string, m])
     )
 
-    const existingMap = new Map(existing.map((m) => [m.email, m]))
+    const findExisting = (d: { email?: string | null; phone?: string | null }) =>
+      (d.email ? byEmail.get(d.email) : undefined) ??
+      (d.phone ? byPhone.get(d.phone) : undefined)
 
-    const toCreate = data.filter((d) => !existingMap.has(d.email))
-
+    const toCreate = data.filter((d) => !findExisting(d))
     const created = toCreate.length
       ? await this.createMembers(toCreate, sharedContext)
       : []
-
-    const createdMap = new Map(
-      (Array.isArray(created) ? created : [created]).map((m) => [m.email, m])
+    const createdArr = Array.isArray(created) ? created : [created]
+    const createdByEmail = new Map(
+      createdArr.filter((m) => m.email).map((m) => [m.email as string, m])
+    )
+    const createdByPhone = new Map(
+      createdArr.filter((m) => m.phone).map((m) => [m.phone as string, m])
     )
 
     const toUpdate = data
-      .filter((d) => existingMap.has(d.email))
       .map((d) => {
-        const existingMember = existingMap.get(d.email)!
+        const existingMember = findExisting(d)
+        if (!existingMember) {
+          return null
+        }
         const update: { id: string; first_name?: string; last_name?: string } = {
           id: existingMember.id,
         }
@@ -145,15 +176,24 @@ class SellerModuleService extends MedusaService({
         }
         return Object.keys(update).length > 1 ? update : null
       })
-      .filter((u): u is { id: string; first_name?: string; last_name?: string } => !!u)
+      .filter(
+        (u): u is { id: string; first_name?: string; last_name?: string } => !!u
+      )
 
     if (toUpdate.length) {
       await this.updateMembers(toUpdate, sharedContext)
     }
 
-    return data.map(
-      (d) => existingMap.get(d.email) ?? createdMap.get(d.email)!
-    )
+    return data.map((d) => {
+      const ex = findExisting(d)
+      if (ex) {
+        return ex
+      }
+      const createdMember =
+        (d.email ? createdByEmail.get(d.email) : undefined) ??
+        (d.phone ? createdByPhone.get(d.phone) : undefined)
+      return createdMember!
+    })
   }
 
   @InjectTransactionManager()
@@ -174,15 +214,18 @@ class SellerModuleService extends MedusaService({
     )
     const sellerMap = new Map(sellers.map((s) => [s.id, s.name]))
 
-    const emails = inviteList.map((i) => i.email)
-    const existingMembers = await this.listMembers(
-      { email: emails },
-      { select: ["id", "email"] },
-      sharedContext,
-    )
+    const emails = inviteList
+      .map((i) => i.email)
+      .filter((e): e is string => !!e)
+    const existingMembers = emails.length
+      ? await this.listMembers(
+          { email: emails },
+          { select: ["id", "email"] },
+          sharedContext,
+        )
+      : []
     const existingEmailSet = new Set(existingMembers.map((m) => m.email))
 
-    // Check if any invited emails already belong to the seller
     if (existingMembers.length > 0) {
       const memberIds = existingMembers.map((m) => m.id)
       const existingSellerMembers = await this.listSellerMembers(
@@ -219,7 +262,8 @@ class SellerModuleService extends MedusaService({
         token: this.generateInviteToken_(
           {
             id,
-            email: invite.email,
+            email: invite.email ?? null,
+            phone: invite.phone ?? null,
             seller_name: sellerMap.get(invite.seller_id) ?? "",
             existing_member: existingEmailSet.has(invite.email),
           },
@@ -275,7 +319,13 @@ class SellerModuleService extends MedusaService({
   }
 
   private generateInviteToken_(
-    data: { id: string; email: string; seller_name: string; existing_member: boolean },
+    data: {
+      id: string
+      email?: string | null
+      phone?: string | null
+      seller_name: string
+      existing_member: boolean
+    },
     expiresIn: number,
   ): string {
     return generateJwtToken(data, {

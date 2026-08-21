@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import components from "virtual:mercur/components";
 
 import { ArrowUturnLeft, MinusMini } from "@medusajs/icons";
 import { Divider, IconButton, Text, clx } from "@medusajs/ui";
@@ -10,15 +11,11 @@ import { Link, useLocation } from "react-router-dom";
 import { type INavItem, NavItem } from "@components/layout/nav-item";
 import { Shell } from "@components/layout/shell";
 import { UserMenu } from "@components/layout/user-menu";
-import components from "virtual:mercur/components";
 import menuItemsModule from "virtual:mercur/menu-items";
 import { getMenuItemsByType } from "../../../utils/routes";
 
 export const SettingsLayout = () => {
-  const Sidebar = components.SettingsSidebar
-    ? components.SettingsSidebar
-    : SettingsSidebar;
-
+  const Sidebar = components.SettingsSidebar ? components.SettingsSidebar : SettingsSidebar;
   return (
     <Shell>
       <Sidebar />
@@ -28,6 +25,16 @@ export const SettingsLayout = () => {
 
 const allMenuItems = menuItemsModule.menuItems ?? [];
 const customSettingsItems = getMenuItemsByType(allMenuItems, "settings");
+
+/**
+ * Settings pages this installation added, as their own section.
+ *
+ * They used to be appended to the end of "General", where they were
+ * indistinguishable from the platform's own settings — which is misleading in
+ * both directions: an operator cannot tell which screens are theirs, and a
+ * screen that disappears after an upgrade looks like a platform regression
+ * rather than a missing extension.
+ */
 const extensionNavItems: INavItem[] = customSettingsItems
   .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
   .map((item) => ({
@@ -86,10 +93,13 @@ const useSettingRoutes = (): INavItem[] => {
         to: "/settings/locations",
       },
       {
-        label: t("commissionRates.domain"),
-        to: "/settings/commission-rates",
+        label: t("commissions.domain"),
+        to: "/settings/commissions",
       },
-      ...extensionNavItems,
+      {
+        label: t("notificationSettings.domain"),
+        to: "/settings/notifications",
+      },
     ],
     [t],
   );
@@ -160,6 +170,17 @@ const SettingsSidebar = () => {
             label={t("app.nav.settings.general")}
             items={routes}
           />
+          {extensionNavItems.length > 0 && (
+            <>
+              <div className="flex items-center justify-center px-3">
+                <Divider variant="dashed" />
+              </div>
+              <RadixCollapsibleSection
+                label={t("app.nav.common.advanced")}
+                items={extensionNavItems}
+              />
+            </>
+          )}
           <div className="flex items-center justify-center px-3">
             <Divider variant="dashed" />
           </div>

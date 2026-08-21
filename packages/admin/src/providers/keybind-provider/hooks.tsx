@@ -100,13 +100,22 @@ export const useGlobalShortcuts = () => {
 
   const { mutateAsync } = useLogout();
 
+  /**
+   * A 401 from DELETE /auth/session means the session is already gone — the
+   * goal state, not a failure — so logout must still complete locally.
+   * Navigate out of the protected tree BEFORE clearing the cache, or every
+   * mounted `useMe` observer refetches against the destroyed session and the
+   * resulting 401s hit the error boundary.
+   */
   const handleLogout = async () => {
-    await mutateAsync(undefined, {
-      onSuccess: () => {
-        queryClient.clear();
-        navigate("/login");
-      },
-    });
+    try {
+      await mutateAsync();
+    } catch {
+      // Session already invalid server-side; local cleanup still runs.
+    }
+
+    navigate("/login", { replace: true });
+    queryClient.clear();
   };
 
   const globalShortcuts: Shortcut[] = [

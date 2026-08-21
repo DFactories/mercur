@@ -1,16 +1,12 @@
-import { zodResolver } from "@hookform/resolvers/zod"
 import { HttpTypes } from "@medusajs/types"
-import {
-  Button,
-  Input,
-  RadioGroup,
-  Select,
-  Textarea,
-  toast,
-} from "@medusajs/ui"
-import { useForm } from "react-hook-form"
+import { Button, Input, RadioGroup, Textarea, toast } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
+
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared"
 
 import { Form } from "../../../../../components/common/form"
 import { RouteDrawer, useRouteModal } from "../../../../../components/modals"
@@ -27,27 +23,36 @@ const PriceListEditSchema = z.object({
   status: z.nativeEnum(PriceListStatus),
   type: z.nativeEnum(PriceListType),
   title: z.string().min(1),
-  description: z.string().min(1),
+  description: z.string().optional(),
 })
 
 export const PriceListEditForm = ({ priceList }: PriceListEditFormProps) => {
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
   const direction = useDocumentDirection()
-  const form = useForm<z.infer<typeof PriceListEditSchema>>({
+  const form = useExtendableForm({
+    schema: PriceListEditSchema,
+    model: "price_list",
+    zone: "edit",
+    data: priceList,
     defaultValues: {
       type: priceList.type as PriceListType,
       title: priceList.title,
       description: priceList.description,
       status: priceList.status as PriceListStatus,
     },
-    resolver: zodResolver(PriceListEditSchema),
   })
 
   const { mutateAsync, isPending } = useUpdatePriceList(priceList.id)
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    await mutateAsync(values, {
+    const { additional_data, ...rest } = values
+    const payload =
+      additional_data && Object.keys(additional_data).length
+        ? { ...rest, additional_data }
+        : rest
+
+    await mutateAsync(payload, {
       onSuccess: ({ price_list }) => {
         toast.success(
           t("priceLists.edit.successToast", {
@@ -115,6 +120,45 @@ export const PriceListEditForm = ({ priceList }: PriceListEditFormProps) => {
           <div className="flex flex-col gap-y-4">
             <Form.Field
               control={form.control}
+              name="status"
+              render={({ field: { onChange, ...rest } }) => {
+                return (
+                  <Form.Item data-testid="price-list-edit-form-status-item">
+                    <Form.Label data-testid="price-list-edit-form-status-label">
+                      {t("priceLists.fields.status.label")}
+                    </Form.Label>
+                    <Form.Control data-testid="price-list-edit-form-status-control">
+                      <RadioGroup
+                        dir={direction}
+                        onValueChange={onChange}
+                        {...rest}
+                        data-testid="price-list-edit-form-status-radio-group"
+                      >
+                        <RadioGroup.ChoiceBox
+                          value={PriceListStatus.DRAFT}
+                          label={t("priceLists.fields.status.options.draft")}
+                          description={t(
+                            "priceLists.fields.status.descriptions.draft"
+                          )}
+                          data-testid="price-list-edit-form-status-option-draft"
+                        />
+                        <RadioGroup.ChoiceBox
+                          value={PriceListStatus.ACTIVE}
+                          label={t("priceLists.fields.status.options.active")}
+                          description={t(
+                            "priceLists.fields.status.descriptions.active"
+                          )}
+                          data-testid="price-list-edit-form-status-option-active"
+                        />
+                      </RadioGroup>
+                    </Form.Control>
+                    <Form.ErrorMessage data-testid="price-list-edit-form-status-error" />
+                  </Form.Item>
+                )
+              }}
+            />
+            <Form.Field
+              control={form.control}
               name="title"
               render={({ field }) => {
                 return (
@@ -130,45 +174,11 @@ export const PriceListEditForm = ({ priceList }: PriceListEditFormProps) => {
             />
             <Form.Field
               control={form.control}
-              name="status"
-              render={({ field: { onChange, ref, ...field } }) => {
-                return (
-                  <Form.Item data-testid="price-list-edit-form-status-item">
-                    <Form.Label data-testid="price-list-edit-form-status-label">
-                      {t("priceLists.fields.status.label")}
-                    </Form.Label>
-                    <Form.Control data-testid="price-list-edit-form-status-control">
-                      <Select
-                          dir={direction}
-                        {...field}
-                        onValueChange={onChange}
-                        data-testid="price-list-edit-form-status-select"
-                      >
-                        <Select.Trigger ref={ref}>
-                          <Select.Value />
-                        </Select.Trigger>
-                        <Select.Content>
-                          <Select.Item value={PriceListStatus.ACTIVE} data-testid="price-list-edit-form-status-option-active">
-                            {t("priceLists.fields.status.options.active")}
-                          </Select.Item>
-                          <Select.Item value={PriceListStatus.DRAFT} data-testid="price-list-edit-form-status-option-draft">
-                            {t("priceLists.fields.status.options.draft")}
-                          </Select.Item>
-                        </Select.Content>
-                      </Select>
-                    </Form.Control>
-                    <Form.ErrorMessage data-testid="price-list-edit-form-status-error" />
-                  </Form.Item>
-                )
-              }}
-            />
-            <Form.Field
-              control={form.control}
               name="description"
               render={({ field }) => {
                 return (
                   <Form.Item data-testid="price-list-edit-form-description-item">
-                    <Form.Label data-testid="price-list-edit-form-description-label">{t("fields.description")}</Form.Label>
+                    <Form.Label optional data-testid="price-list-edit-form-description-label">{t("fields.description")}</Form.Label>
                     <Form.Control data-testid="price-list-edit-form-description-control">
                       <Textarea {...field} data-testid="price-list-edit-form-description-input" />
                     </Form.Control>
@@ -178,6 +188,12 @@ export const PriceListEditForm = ({ priceList }: PriceListEditFormProps) => {
               }}
             />
           </div>
+          <FormExtensionZone
+            model="price_list"
+            zone="edit"
+            control={form.control}
+            data={priceList}
+          />
         </RouteDrawer.Body>
         <RouteDrawer.Footer className="shrink-0" data-testid="price-list-edit-form-footer">
           <div className="flex items-center justify-end gap-x-2">

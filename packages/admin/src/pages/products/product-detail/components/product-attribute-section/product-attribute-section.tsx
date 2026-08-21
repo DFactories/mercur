@@ -1,77 +1,51 @@
-import { PencilSquare } from "@medusajs/icons";
-import { Container, Heading } from "@medusajs/ui";
-import { useTranslation } from "react-i18next";
-import { HttpTypes } from "@medusajs/types";
-import { ActionMenu } from "../../../../../components/common/action-menu";
-import { SectionRow } from "../../../../../components/common/section";
-import { getFormattedCountry } from "../../../../../lib/addresses";
+import { toast } from "@medusajs/ui";
+import {
+  ProductAttributeSection as SharedProductAttributeSection,
+} from "@mercurjs/dashboard-shared";
+import { ProductAttributeDTO } from "@mercurjs/types";
+
+import { useProductAttributes } from "../../../../../hooks/api";
+import { useBatchProductAttributes } from "../../../../../hooks/api/products";
+
+type ProductWithAttributes = {
+  id: string;
+  attributes?: ProductAttributeDTO[] | null;
+  categories?: { id?: string | null }[] | null;
+};
 
 export const ProductAttributeSection = ({
   product,
 }: {
-  product: HttpTypes.AdminProduct;
+  product: ProductWithAttributes;
 }) => {
-  const { t } = useTranslation();
+  const categoryId = product.categories?.[0]?.id;
+  const { product_attributes } = useProductAttributes(
+    { category_id: categoryId, is_required: true },
+    { enabled: !!categoryId },
+  );
+
+  const { mutateAsync } = useBatchProductAttributes(product.id);
+
+  const onDeleteAttribute = async (attribute: ProductAttributeDTO) => {
+    try {
+      await mutateAsync(
+        { remove: [attribute.id] },
+        {
+          onError: (error) => {
+            toast.error(error.message);
+          },
+        },
+      );
+    } catch {
+      // Error surfaced via the mutation's onError toast.
+    }
+  };
 
   return (
-    <Container className="divide-y p-0" data-testid="product-attribute-section">
-      <div
-        className="flex items-center justify-between px-6 py-4"
-        data-testid="product-attribute-header"
-      >
-        <Heading level="h2" data-testid="product-attribute-title">
-          {t("products.attributes")}
-        </Heading>
-        <ActionMenu
-          groups={[
-            {
-              actions: [
-                {
-                  label: t("actions.edit"),
-                  to: "attributes",
-                  icon: <PencilSquare />,
-                },
-              ],
-            },
-          ]}
-          data-testid="product-attribute-action-menu"
-        />
-      </div>
-      <SectionRow
-        title={t("fields.height")}
-        value={product.height}
-        data-testid="product-height-row"
-      />
-      <SectionRow
-        title={t("fields.width")}
-        value={product.width}
-        data-testid="product-width-row"
-      />
-      <SectionRow
-        title={t("fields.length")}
-        value={product.length}
-        data-testid="product-length-row"
-      />
-      <SectionRow
-        title={t("fields.weight")}
-        value={product.weight}
-        data-testid="product-weight-row"
-      />
-      <SectionRow
-        title={t("fields.midCode")}
-        value={product.mid_code}
-        data-testid="product-mid-code-row"
-      />
-      <SectionRow
-        title={t("fields.hsCode")}
-        value={product.hs_code}
-        data-testid="product-hs-code-row"
-      />
-      <SectionRow
-        title={t("fields.countryOfOrigin")}
-        value={getFormattedCountry(product.origin_country)}
-        data-testid="product-country-of-origin-row"
-      />
-    </Container>
+    <SharedProductAttributeSection
+      product={product}
+      requiredAttributes={product_attributes}
+      onDeleteAttribute={onDeleteAttribute}
+    />
   );
 };

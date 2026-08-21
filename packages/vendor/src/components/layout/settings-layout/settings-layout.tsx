@@ -1,4 +1,5 @@
 import { ArrowUturnLeft, MinusMini } from "@medusajs/icons";
+import components from "virtual:mercur/components";
 import { clx, Divider, IconButton, Text } from "@medusajs/ui";
 import { Collapsible as RadixCollapsible } from "radix-ui";
 import { useEffect, useMemo, useState } from "react";
@@ -8,15 +9,11 @@ import { Link, useLocation } from "react-router-dom";
 import { INavItem, NavItem } from "../nav-item";
 import { Shell } from "../shell";
 import { UserMenu } from "../user-menu";
-import components from "virtual:mercur/components";
 import menuItemsModule from "virtual:mercur/menu-items";
 import { getMenuItemsByType } from "../../../utils/routes";
 
 export const SettingsLayout = () => {
-  const Sidebar = components.SettingsSidebar
-    ? components.SettingsSidebar
-    : SettingsSidebar;
-
+  const Sidebar = components.SettingsSidebar ? components.SettingsSidebar : SettingsSidebar;
   return (
     <Shell>
       <Sidebar />
@@ -134,7 +131,7 @@ const Header = () => {
       >
         <div className="flex items-center gap-x-2.5 px-2 py-1">
           <div className="flex items-center justify-center">
-            <ArrowUturnLeft className="text-ui-fg-subtle" />
+            <ArrowUturnLeft className="text-ui-fg-subtle rtl:-scale-x-100 rtl:-scale-y-100" />
           </div>
           <Text leading="compact" weight="plus" size="small">
             {t("app.nav.settings.header")}

@@ -12,8 +12,11 @@ const Seller = model
     id: model.id({ prefix: "sel" }).primaryKey(),
     name: model.text().searchable(),
     handle: model.text().searchable(),
-    email: model.text().searchable(),
+    email: model.text().searchable().nullable(),
     phone: model.text().nullable(),
+    // Set when the store phone has been verified via OTP. A verified store phone
+    // is "owned": it locks registration and can't be verified by another account.
+    phone_verified_at: model.dateTime().nullable(),
     description: model.text().nullable(),
     logo: model.text().nullable(),
     banner: model.text().nullable(),

@@ -81,6 +81,24 @@ const useColumns = (sellerId: string) => {
 
   return useMemo(
     () => [
+      columnHelper.display({
+        id: "name",
+        header: () => (
+          <div className="flex h-full w-full items-center">
+            <span>{t("fields.name")}</span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const m = row.original.member;
+          const name =
+            [m?.first_name, m?.last_name].filter(Boolean).join(" ") || "-";
+          return (
+            <div className="flex size-full items-center overflow-hidden">
+              <span className="truncate">{name}</span>
+            </div>
+          );
+        },
+      }),
       columnHelper.accessor("member.email", {
         header: () => (
           <div className="flex h-full w-full items-center">
@@ -94,6 +112,23 @@ const useColumns = (sellerId: string) => {
             </div>
           );
         },
+      }),
+      columnHelper.accessor("member.phone", {
+        header: () => (
+          <div className="flex h-full w-full items-center">
+            <span>{t("fields.phone")}</span>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div
+            className="flex size-full items-center overflow-hidden"
+            dir="ltr"
+          >
+            <span className="truncate">
+              {row.original.member?.phone ?? "-"}
+            </span>
+          </div>
+        ),
       }),
       columnHelper.accessor("role_id", {
         header: () => (

@@ -12,7 +12,8 @@ export const createMemberInvitesWorkflowId = "create-member-invites"
 
 type CreateMemberInvitesWorkflowInput = {
   seller_id: string
-  email: string
+  email?: string | null
+  phone?: string | null
   role_id: string
 }[]
 
@@ -21,6 +22,9 @@ export const createMemberInvitesWorkflow = createWorkflow(
   function (input: CreateMemberInvitesWorkflowInput) {
     const invites = createMemberInvitesStep(input)
 
+    // `member_invite.created` is also a notification catalog event, so the
+    // notification orchestrator routes the invite through the pipeline (SMS for
+    // phone invites). The resolver handles this array payload.
     emitEventStep({
       eventName: MemberInviteWorkflowEvents.CREATED,
       data: transform({ invites }, ({ invites }) =>

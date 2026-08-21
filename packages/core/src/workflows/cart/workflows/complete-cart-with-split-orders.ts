@@ -8,7 +8,6 @@ import {
 } from "@medusajs/framework/types"
 import {
     generateEntityId,
-    isDefined,
     MathBN,
     Modules,
     OrderStatus,
@@ -40,6 +39,7 @@ import { CreateOrderGroupDTO, MercurModules, SellerDTO } from "@mercurjs/types"
 import { createOrderGroupStep } from "../../order-group"
 import { OrderGroupWorkflowEvents } from "../../events"
 import {
+    mirrorLineItemOfferLinksToOrderStep,
     validateSellerCartItemsStep,
     validateSellerCartShippingStep,
 } from "../steps"
@@ -49,10 +49,13 @@ import {
     PrepareLineItemDataInput,
     prepareLineItemData,
     prepareTaxLinesData,
-    prepareConfirmInventoryInput,
 } from "../utils"
 import { registerUsageStep } from "../../promotion"
 import { refreshOrderCommissionLinesWorkflow } from "../../commission/workflows/refresh-order-commission-lines"
+import {
+    prepareOfferInventoryInput,
+    requiredOfferFieldsForInventoryConfirmation,
+} from "../../offer/utils"
 
 type CompleteCartWithSplitOrdersWorkflowInput = {
     cart_id: string
@@ -108,7 +111,6 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
             cart: cartData.data,
         })
 
-        // If order ID does not exist, we are completing the cart for the first time
         const createdOrderGroup = when("create-order-group", { orderGroupId }, ({ orderGroupId }) => {
             return !orderGroupId
         }).then(() => {
@@ -138,29 +140,21 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
                 cart: cartData.data,
                 shippingOptions: shippingOptionsData.data,
             })
-            const { variants, sales_channel_id } = transform(
+            const { sales_channel_id } = transform(
                 { cart: cartData.data },
                 (data) => {
-                    const variantsMap: Record<string, any> = {}
-                    const allItems = data.cart?.items?.map((item) => {
-                        variantsMap[item.variant_id] = item.variant
-                        return {
-                            id: item.id,
-                            variant_id: item.variant_id,
-                            quantity: item.quantity,
-                        }
-                    })
-
                     return {
-                        variants: Object.values(variantsMap),
-                        items: allItems,
                         sales_channel_id: data.cart.sales_channel_id,
                     }
                 }
             )
 
-            const { ordersToCreate, sellerOrdersMap } = transform({ cart: cartData.data, shippingOptionsData: shippingOptionsData.data }, ({ cart, shippingOptionsData }) => {
-                const cartSellerIds = new Set<string>(cart.items?.map((item) => item.variant.product.seller.id))
+            const { ordersToCreate, sellerOrdersMap, offerIdsByOrderId } = transform({ cart: cartData.data, shippingOptionsData: shippingOptionsData.data }, ({ cart, shippingOptionsData }) => {
+                const cartSellerIds = new Set<string>(
+                    (cart.items ?? [])
+                        .map((item: any) => item.offer?.seller_id)
+                        .filter((id: unknown): id is string => typeof id === "string")
+                )
                 const sellerShippingOptionsMap = new Map()
                 shippingOptionsData.forEach((so) => {
                     const sellerId = so.seller.id
@@ -170,16 +164,39 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
 
                 const sellerOrdersMap: Record<string, string> = {}
                 const ordersToCreate: (CreateOrderDTO & { id: string })[] = []
+                const offerIdsByOrderId: Record<string, (string | null)[]> = {}
 
                 Array.from(cartSellerIds).map((sellerId) => {
-                    const sellerCartItems = (cart.items ?? []).filter((item) => item.variant.product.seller.id === sellerId)
+                    const sellerCartItems = (cart.items ?? []).filter(
+                        (item: any) => item.offer?.seller_id === sellerId
+                    )
                     const sellerShippingOptions = sellerShippingOptionsMap.get(sellerId) ?? []
                     const sellerCartShippingMethods = (cart.shipping_methods ?? []).filter((sm) => sellerShippingOptions.some((so) => so.id === sm.shipping_option_id))
 
                     const allItems = sellerCartItems.map((item) => {
+                        const offerShippingProfileId = (
+                            item as { offer?: { shipping_profile_id?: string } | null }
+                        ).offer?.shipping_profile_id
+                        const itemForLineItem = offerShippingProfileId
+                            ? { ...item, requires_shipping: true }
+                            : item
+                        const variantForLineItem =
+                            item.variant && offerShippingProfileId
+                                ? {
+                                      ...item.variant,
+                                      product: {
+                                          ...(item.variant.product ?? {}),
+                                          shipping_profile:
+                                              (item.variant.product as { shipping_profile?: { id: string } } | undefined)
+                                                  ?.shipping_profile ?? {
+                                                  id: offerShippingProfileId,
+                                              },
+                                      },
+                                  }
+                                : item.variant
                         const input: PrepareLineItemDataInput = {
-                            item,
-                            variant: item.variant,
+                            item: itemForLineItem,
+                            variant: variantForLineItem,
                             cartId: cart.id,
                             unitPrice: item.unit_price,
                             isTaxInclusive: item.is_tax_inclusive,
@@ -264,11 +281,16 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
                     })
 
                     sellerOrdersMap[sellerId] = orderId
+                    offerIdsByOrderId[orderId] = sellerCartItems.map(
+                        (item: any) =>
+                            (item.offer?.id as string | undefined) ?? null,
+                    )
                 })
 
                 return {
                     sellerOrdersMap,
                     ordersToCreate,
+                    offerIdsByOrderId,
                 }
             })
 
@@ -309,25 +331,104 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
                 createOrdersStep(ordersToCreate)
             )
 
-            const reservationItemsData = transform(
-                { createdOrders },
-                ({ createdOrders }) =>
-                    createdOrders.flatMap((order) => order.items!).map((i) => ({
-                        variant_id: i.variant_id,
-                        quantity: i.quantity,
-                        id: i.id,
-                    }))
+            const orderLineOfferPairs = transform(
+                { createdOrders, offerIdsByOrderId },
+                ({ createdOrders, offerIdsByOrderId }) => {
+                    const pairs: Array<{
+                        order_line_item_id: string
+                        offer_id: string
+                    }> = []
+                    for (const order of createdOrders) {
+                        const offerIds = offerIdsByOrderId[order.id] ?? []
+                        const items = order.items ?? []
+                        for (let i = 0; i < items.length; i++) {
+                            const offerId = offerIds[i]
+                            if (offerId) {
+                                pairs.push({
+                                    order_line_item_id: items[i].id,
+                                    offer_id: offerId,
+                                })
+                            }
+                        }
+                    }
+                    return pairs
+                }
             )
+
+            mirrorLineItemOfferLinksToOrderStep({
+                pairs: orderLineOfferPairs,
+            })
+
+            const offerReservationItems = transform(
+                { createdOrders, orderLineOfferPairs },
+                ({ createdOrders, orderLineOfferPairs }) => {
+                    const offerByOrderLine = new Map(
+                        orderLineOfferPairs.map((p) => [
+                            p.order_line_item_id,
+                            p.offer_id,
+                        ]),
+                    )
+                    const offerItems: Array<{
+                        id: string
+                        quantity: number
+                        offer?: { id: string } | null
+                    }> = []
+                    for (const order of createdOrders) {
+                        for (const ordItem of order.items ?? []) {
+                            const offerId = offerByOrderLine.get(ordItem.id)
+                            offerItems.push({
+                                id: ordItem.id,
+                                quantity: Number(ordItem.quantity),
+                                offer: offerId ? { id: offerId } : null,
+                            })
+                        }
+                    }
+                    return offerItems
+                }
+            )
+
+            const uniqueOffers = transform(
+                { cart: cartData.data },
+                ({ cart }) => {
+                    const byId = new Map<string, unknown>()
+                    for (const item of cart.items ?? []) {
+                        const offer = (item as { offer?: unknown }).offer as
+                            | { id: string }
+                            | undefined
+                        if (offer?.id && !byId.has(offer.id)) {
+                            byId.set(offer.id, item)
+                        }
+                    }
+                    return Array.from(byId.keys())
+                }
+            )
+
+            const { data: offersWithInventory } = useQueryGraphStep({
+                entity: "offer",
+                fields: requiredOfferFieldsForInventoryConfirmation,
+                filters: { id: uniqueOffers },
+            }).config({ name: "fetch-offers-for-reservation" })
 
             const formatedInventoryItems = transform(
                 {
                     input: {
                         sales_channel_id,
-                        variants,
-                        items: reservationItemsData,
+                        items: offerReservationItems,
+                        offers: offersWithInventory,
                     },
                 },
-                prepareConfirmInventoryInput
+                prepareOfferInventoryInput
+            )
+
+            // Native reserveInventoryStep rejects the extra `manage_inventory`
+            // key, so strip it and drop unmanaged offers before reserving.
+            const reservableInventoryItems = transform(
+                { formatedInventoryItems },
+                ({ formatedInventoryItems }) => ({
+                    items: formatedInventoryItems.items
+                        .filter((item) => item.manage_inventory)
+                        .map(({ manage_inventory: _manage_inventory, ...item }) => item),
+                })
             )
 
             const updateCompletedAt = transform(
@@ -386,38 +487,41 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
                     }))
 
                     if (cart.promotions?.length) {
-                        cart.promotions.forEach((promotion: PromotionDTO & { seller: SellerDTO }) => {
+                        cart.promotions.forEach((promotion: PromotionDTO & { seller?: SellerDTO }) => {
+                            const orderId = promotion.seller?.id
+                                ? sellerOrdersMap[promotion.seller.id]
+                                : undefined
+                            // Sellerless (marketplace/admin) promotions are already
+                            // applied as cart adjustments; there is no seller order to link.
+                            if (!orderId) {
+                                return
+                            }
                             links.push({
-                                [Modules.ORDER]: { order_id: sellerOrdersMap[promotion.seller.id] },
+                                [Modules.ORDER]: { order_id: orderId },
                                 [Modules.PROMOTION]: { promotion_id: promotion.id },
                             })
                         })
                     }
 
-                    if (isDefined(cart.payment_collection?.id)) {
-                        createdOrders.forEach((order) => {
-                            links.push({
-                                [Modules.ORDER]: { order_id: order.id },
-                                [Modules.PAYMENT]: {
-                                    payment_collection_id: cart.payment_collection.id,
-                                },
-                            })
-                        })
-                    }
+                    // The cart's payment collection is shared across every
+                    // split order, but Medusa's order↔payment_collection link is
+                    // one-to-one on the payment-collection side, so it cannot be
+                    // linked to more than one order. Each order already links to
+                    // the cart, and the cart links to the payment collection, so
+                    // the shared collection stays reachable per order via
+                    // `order.cart.payment_collection`.
 
                     links.push(...Object.entries(sellerOrdersMap).map(([sellerId, orderId]) => ({
                         [Modules.ORDER]: { order_id: orderId },
                         [MercurModules.SELLER]: { seller_id: sellerId },
                     })))
 
-                    // Link order group to orders
                     links.push(...createdOrders.map((order) => ({
                         [MercurModules.SELLER]: { order_group_id: createdOrderGroup.id },
                         [Modules.ORDER]: { order_id: order.id },
                     })))
 
                     if (cart.customer?.id) {
-                        // Create seller-customer links for new relationships
                         const existingSellerIds = new Set(
                             (existingSellerCustomerLinks?.data ?? []).map((link) => link.seller_id)
                         )
@@ -445,7 +549,7 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
 
             parallelize(
                 updateCartsStep([updateCompletedAt]),
-                reserveInventoryStep(formatedInventoryItems),
+                reserveInventoryStep(reservableInventoryItems),
                 registerUsageStep(promotionUsage),
                 emitEventStep({
                     eventName: OrderWorkflowEvents.PLACED,
@@ -465,7 +569,6 @@ export const completeCartWithSplitOrdersWorkflow = createWorkflow(
                 input,
             })
 
-            // Authorize payment session
             const payment = authorizePaymentSessionStep({
                 id: paymentSessions![0].id,
             })

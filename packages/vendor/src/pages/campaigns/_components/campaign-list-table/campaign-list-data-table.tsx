@@ -2,7 +2,8 @@ import { PencilSquare, Trash } from "@medusajs/icons";
 import { AdminCampaign } from "@medusajs/types";
 import { toast, usePrompt } from "@medusajs/ui";
 import { keepPreviousData } from "@tanstack/react-query";
-import { createColumnHelper } from "@tanstack/react-table";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { useExtendableTable, useLinkQuery } from "@mercurjs/dashboard-shared";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +14,7 @@ import {
   useDeleteCampaign,
 } from "@hooks/api/campaigns";
 import { useCampaignTableColumns } from "@hooks/table/columns/use-campaign-table-columns";
+import { useCampaignTableFilters } from "@hooks/table/filters/use-campaign-table-filters";
 import { useCampaignTableQuery } from "@hooks/table/query/use-campaign-table-query";
 import { useDataTable } from "@hooks/use-data-table";
 
@@ -21,6 +23,7 @@ const PAGE_SIZE = 20;
 export const CampaignListDataTable = () => {
   const { t } = useTranslation();
   const { raw, searchParams } = useCampaignTableQuery({ pageSize: PAGE_SIZE });
+  const linkQuery = useLinkQuery("campaign");
 
   const {
     campaigns,
@@ -28,11 +31,15 @@ export const CampaignListDataTable = () => {
     isPending: isLoading,
     isError,
     error,
-  } = useCampaigns(searchParams, {
-    placeholderData: keepPreviousData,
-  });
+  } = useCampaigns(
+    { ...searchParams, ...linkQuery },
+    {
+      placeholderData: keepPreviousData,
+    },
+  );
 
-  const columns = useColumns();
+  const { columns } = useColumns();
+  const filters = useCampaignTableFilters();
 
   const { table } = useDataTable({
     data: campaigns ?? [],
@@ -55,6 +62,7 @@ export const CampaignListDataTable = () => {
       pageSize={PAGE_SIZE}
       pagination
       search
+      filters={filters}
       navigateTo={(row) => row.id}
       isLoading={isLoading}
       queryObject={raw}
@@ -74,12 +82,10 @@ const CampaignActions = ({ campaign }: { campaign: AdminCampaign }) => {
 
   const handleDelete = async () => {
     const confirm = await prompt({
-      title: t("general.areYouSure"),
-      description: t("campaigns.deleteCampaignWarning", {
+      title: t("campaigns.delete.title"),
+      description: t("campaigns.delete.description", {
         name: campaign.name,
       }),
-      verificationInstruction: t("general.typeToConfirm"),
-      verificationText: campaign.name,
       confirmText: t("actions.delete"),
       cancelText: t("actions.cancel"),
     });
@@ -130,10 +136,14 @@ const columnHelper = createColumnHelper<AdminCampaign>();
 
 const useColumns = () => {
   const base = useCampaignTableColumns();
+  const { columns: extended, filters } = useExtendableTable<AdminCampaign>({
+    model: "campaign",
+    columns: base as unknown as ColumnDef<AdminCampaign, unknown>[],
+  });
 
-  return useMemo(
+  const columns = useMemo(
     () => [
-      ...base,
+      ...extended,
       columnHelper.display({
         id: "actions",
         cell: ({ row }) => {
@@ -141,6 +151,8 @@ const useColumns = () => {
         },
       }),
     ],
-    [base],
+    [extended],
   );
+
+  return { columns, filters };
 };

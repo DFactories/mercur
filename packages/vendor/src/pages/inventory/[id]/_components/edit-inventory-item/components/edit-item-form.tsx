@@ -1,51 +1,58 @@
-import * as zod from "zod"
-
 import { Button, Input, toast } from "@medusajs/ui"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 
-import { zodResolver } from "@hookform/resolvers/zod"
 import { HttpTypes } from "@medusajs/types"
-import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { Form } from "@components/common/form"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { useUpdateInventoryItem } from "@hooks/api/inventory"
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared"
 
 type EditInventoryItemFormProps = {
   item: HttpTypes.AdminInventoryItem
 }
 
-const EditInventoryItemSchema = z.object({
-  title: z.string().optional(),
-  sku: z.string().min(1),
-})
-
 const getDefaultValues = (item: HttpTypes.AdminInventoryItem) => {
   return {
-    title: item.title ?? undefined,
-    sku: item.sku ?? undefined,
+    title: item.title ?? "",
+    sku: item.sku ?? "",
   }
 }
 
 export const EditInventoryItemForm = ({ item }: EditInventoryItemFormProps) => {
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
-  const form = useForm<zod.infer<typeof EditInventoryItemSchema>>({
+
+  const EditInventoryItemSchema = z.object({
+    title: z.string().min(1, t("validation.requiredField")),
+    sku: z.string().optional(),
+  })
+
+  const form = useExtendableForm({
+    schema: EditInventoryItemSchema,
+    model: "inventory_item",
+    zone: "edit",
+    data: item,
     defaultValues: getDefaultValues(item),
-    resolver: zodResolver(EditInventoryItemSchema),
   })
 
   const { mutateAsync, isPending: isLoading } = useUpdateInventoryItem(item.id)
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    mutateAsync(values as any, {
-      onSuccess: () => {
-        toast.success(t("inventory.toast.updateItem"))
-        handleSuccess()
-      },
-      onError: (e) => toast.error(e.message),
-    })
+    mutateAsync(
+      { title: values.title, sku: values.sku },
+      {
+        onSuccess: () => {
+          toast.success(t("inventory.toast.updateItem"))
+          handleSuccess()
+        },
+        onError: (e) => toast.error(e.message),
+      }
+    )
   })
 
   return (
@@ -76,7 +83,7 @@ export const EditInventoryItemForm = ({ item }: EditInventoryItemFormProps) => {
             render={({ field }) => {
               return (
                 <Form.Item>
-                  <Form.Label>{t("fields.sku")}</Form.Label>
+                  <Form.Label optional>{t("fields.sku")}</Form.Label>
                   <Form.Control>
                     <Input {...field} />
                   </Form.Control>
@@ -84,6 +91,12 @@ export const EditInventoryItemForm = ({ item }: EditInventoryItemFormProps) => {
                 </Form.Item>
               )
             }}
+          />
+          <FormExtensionZone
+            model="inventory_item"
+            zone="edit"
+            control={form.control}
+            data={item}
           />
         </RouteDrawer.Body>
         <RouteDrawer.Footer>

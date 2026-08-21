@@ -10,8 +10,10 @@ import { Link, Navigate, useNavigate } from "react-router-dom"
 import config from "virtual:mercur/config"
 import * as z from "zod"
 
+import { AuthConsent } from "@components/common/auth-consent"
 import { Form } from "@components/common/form"
 import AvatarBox from "@components/common/logo-box/avatar-box"
+import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form"
 import { AuthLayout } from "@components/layout/auth-layout"
 import { useFeatureFlags, useSignUpWithEmailPass } from "@hooks/api"
 
@@ -148,10 +150,13 @@ const RegisterForm = () => {
 }
 
 const RegisterFooter = () => {
+  const { t } = useTranslation()
+
   return (
-    <div className="mt-auto">
+    <div className="mt-auto md:mt-8">
       <span className="text-ui-fg-muted txt-small">
         <Trans
+          t={t}
           i18nKey="register.alreadySeller"
           components={[
             <Link
@@ -162,6 +167,98 @@ const RegisterFooter = () => {
           ]}
         />
       </span>
+    </div>
+  )
+}
+
+const RegisterContent = () => {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [nameError, setNameError] = useState<string | null>(null)
+
+  // First/last name are collected here and carried (via the register draft +
+  // navigation state) to onboarding, which lands them on the seller member.
+  const validateNames = () => {
+    if (!firstName.trim()) {
+      setNameError(t("register.validation.firstNameRequired"))
+      return false
+    }
+    if (!lastName.trim()) {
+      setNameError(t("register.validation.lastNameRequired"))
+      return false
+    }
+    setNameError(null)
+    return true
+  }
+
+  // Phone (OTP) is the only sign-up method. The email RegisterForm is kept
+  // (exported) but no longer rendered.
+  return (
+    <div className="mt-6">
+      <RegisterHeader />
+      <PhoneAuthForm
+        mode="register"
+        submitLabel={t("actions.continue")}
+        beforeRequest={validateNames}
+        extraFields={
+          <div className="flex flex-col gap-y-4">
+            <div className="flex flex-col gap-y-2">
+              <Text size="small" weight="plus">
+                {t("register.firstName")}
+              </Text>
+              <Input
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value)
+                  setNameError(null)
+                }}
+                data-testid="register-first-name"
+              />
+            </div>
+            <div className="flex flex-col gap-y-2">
+              <Text size="small" weight="plus">
+                {t("register.lastName")}
+              </Text>
+              <Input
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value)
+                  setNameError(null)
+                }}
+                data-testid="register-last-name"
+              />
+            </div>
+            {nameError && (
+              <Text size="small" className="text-ui-fg-error">
+                {nameError}
+              </Text>
+            )}
+          </div>
+        }
+        onVerified={(phone) => {
+          sessionStorage.setItem(
+            REGISTER_DRAFT_KEY,
+            JSON.stringify({
+              phone,
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+            }),
+          )
+          navigate("/onboarding", {
+            state: {
+              phone,
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+            },
+          })
+        }}
+      />
+      {/* DFACTORIES: legal consent + Terms / Privacy links. */}
+      <AuthConsent i18nKey="register.consent" />
     </div>
   )
 }
@@ -188,10 +285,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
       ) : (
         <>
           <RegisterLogo />
-          <div className="mt-6">
-            <RegisterHeader />
-            <RegisterForm />
-          </div>
+          <RegisterContent />
           <RegisterFooter />
         </>
       )}

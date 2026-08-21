@@ -4,11 +4,11 @@ import { HttpTypes } from "@medusajs/types"
 import { UIMatch } from "react-router-dom"
 import { TwoColumnPageSkeleton } from "@components/common/skeleton"
 import { TwoColumnPage } from "@components/layout/pages"
-import { useDashboardExtension } from "@/extensions"
+import { useLinkQuery, WidgetZone } from "@mercurjs/dashboard-shared"
 import { useReservationItem } from "@hooks/api/reservations"
 import { useInventoryItem } from "@hooks/api"
 import { ReservationGeneralSection } from "./_components/reservation-general-section"
-import { InventoryItemGeneralSection } from "../../inventory/[id]/_components/inventory-item-general-section"
+import { ReservationInventorySection } from "./_components/reservation-inventory-section"
 
 type ReservationDetailBreadcrumbProps =
   UIMatch<HttpTypes.AdminReservationResponse>
@@ -35,15 +35,16 @@ export const Breadcrumb = (props: ReservationDetailBreadcrumbProps) => {
 export const Component = () => {
   const { id } = useParams()
 
-  const { reservation, isLoading } = useReservationItem(id!)
+  const { reservation, isLoading } = useReservationItem(
+    id!,
+    useLinkQuery("reservation")
+  )
 
   // TEMP: fetch directly since the fields are not populated with reservation call
   const { inventory_item } = useInventoryItem(
     reservation?.inventory_item?.id,
-    { fields: "*location_levels" }
+    useLinkQuery("inventory_item", "*location_levels")
   )
-
-  const { getWidgets } = useDashboardExtension()
 
   if (isLoading || !reservation) {
     return (
@@ -57,22 +58,18 @@ export const Component = () => {
   }
 
   return (
-    <TwoColumnPage
-      widgets={{
-        before: getWidgets("reservation.details.before"),
-        after: getWidgets("reservation.details.after"),
-        sideBefore: getWidgets("reservation.details.side.before"),
-        sideAfter: getWidgets("reservation.details.side.after"),
-      }}
-      data={reservation}
-    >
+    <TwoColumnPage data={reservation} showJSON showMetadata>
       <TwoColumnPage.Main>
-        <ReservationGeneralSection reservation={reservation} />
+        <WidgetZone id="reservations.detail.main" data={reservation}>
+          <ReservationGeneralSection reservation={reservation} />
+        </WidgetZone>
       </TwoColumnPage.Main>
       <TwoColumnPage.Sidebar>
-        {inventory_item && (
-          <InventoryItemGeneralSection inventoryItem={inventory_item!} />
-        )}
+        <WidgetZone id="reservations.detail.side" data={reservation}>
+          {inventory_item && (
+            <ReservationInventorySection inventoryItem={inventory_item!} />
+          )}
+        </WidgetZone>
       </TwoColumnPage.Sidebar>
     </TwoColumnPage>
   )

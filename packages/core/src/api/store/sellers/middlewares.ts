@@ -5,7 +5,7 @@ import {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { MiddlewareRoute } from "@medusajs/medusa"
-import { SellerStatus } from "@mercurjs/types"
+import { sellerVisibilityFilters } from "../../utils/sellers"
 
 import * as QueryConfig from "./query-config"
 import { StoreGetSellersParams, StoreGetSellerParams } from "./validators"
@@ -15,15 +15,15 @@ function applySellerOpenFilters(
   _res: MedusaResponse,
   next: MedusaNextFunction
 ) {
-  const now = new Date()
+  // One shared definition of "visible", so this route and the offer/product
+  // routes can never answer the question differently — they used to hold two
+  // copies of the predicate and both copies were wrong the same way.
+  const { status, $or } = sellerVisibilityFilters()
 
-  req.filterableFields.status ??= SellerStatus.OPEN
+  req.filterableFields.status ??= status
 
   req.filterableFields.$and ??= []
-    ; (req.filterableFields.$and as any[]).push(
-      { $or: [{ closed_from: null }, { closed_from: { $gt: now } }] },
-      { $or: [{ closed_to: null }, { closed_to: { $lt: now } }] }
-    )
+    ; (req.filterableFields.$and as any[]).push({ $or })
 
   next()
 }

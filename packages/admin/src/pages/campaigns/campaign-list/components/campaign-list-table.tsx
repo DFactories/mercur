@@ -2,7 +2,8 @@ import { PencilSquare, Trash } from "@medusajs/icons"
 import { AdminCampaign } from "@medusajs/types"
 import { Button, Container, Heading, toast, usePrompt } from "@medusajs/ui"
 import { keepPreviousData } from "@tanstack/react-query"
-import { createColumnHelper } from "@tanstack/react-table"
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
+import { useExtendableTable, useLinkQuery } from "@mercurjs/dashboard-shared"
 import { Children, ReactNode, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
@@ -13,6 +14,7 @@ import {
   useDeleteCampaign,
 } from "../../../../hooks/api/campaigns"
 import { useCampaignTableColumns } from "../../../../hooks/table/columns/use-campaign-table-columns"
+import { useCampaignTableFilters } from "../../../../hooks/table/filters/use-campaign-table-filters"
 import { useCampaignTableQuery } from "../../../../hooks/table/query/use-campaign-table-query"
 import { useDataTable } from "../../../../hooks/use-data-table"
 
@@ -67,6 +69,8 @@ export const CampaignListHeader = ({ children }: { children?: ReactNode }) => {
 export const CampaignListDataTable = () => {
   const { t } = useTranslation()
   const { raw, searchParams } = useCampaignTableQuery({ pageSize: PAGE_SIZE })
+  const filters = useCampaignTableFilters()
+  const linkQuery = useLinkQuery("campaign", searchParams.fields)
 
   const {
     campaigns,
@@ -74,9 +78,12 @@ export const CampaignListDataTable = () => {
     isPending: isLoading,
     isError,
     error,
-  } = useCampaigns(searchParams, {
-    placeholderData: keepPreviousData,
-  })
+  } = useCampaigns(
+    { ...searchParams, ...linkQuery },
+    {
+      placeholderData: keepPreviousData,
+    }
+  )
 
   const columns = useColumns()
 
@@ -101,9 +108,11 @@ export const CampaignListDataTable = () => {
       pageSize={PAGE_SIZE}
       pagination
       search
+      filters={filters}
       navigateTo={(row) => row.id}
       isLoading={isLoading}
       queryObject={raw}
+      defaultOrder="-created_at"
       orderBy={[
         { key: "name", label: t("fields.name") },
         { key: "created_at", label: t("fields.createdAt") },
@@ -137,12 +146,10 @@ const CampaignActions = ({ campaign }: { campaign: AdminCampaign }) => {
 
   const handleDelete = async () => {
     const confirm = await prompt({
-      title: t("general.areYouSure"),
-      description: t("campaigns.deleteCampaignWarning", {
+      title: t("campaigns.delete.title"),
+      description: t("campaigns.delete.description", {
         name: campaign.name,
       }),
-      verificationInstruction: t("general.typeToConfirm"),
-      verificationText: campaign.name,
       confirmText: t("actions.delete"),
       cancelText: t("actions.cancel"),
     })
@@ -153,9 +160,7 @@ const CampaignActions = ({ campaign }: { campaign: AdminCampaign }) => {
 
     await mutateAsync(undefined, {
       onSuccess: () => {
-        toast.success(
-          t("campaigns.delete.successToast", { name: campaign.name })
-        )
+        toast.success(t("campaigns.delete.successToast"))
       },
       onError: (e) => {
         toast.error(e.message)
@@ -194,10 +199,14 @@ const columnHelper = createColumnHelper<AdminCampaign>()
 
 const useColumns = () => {
   const base = useCampaignTableColumns()
+  const { columns: extended } = useExtendableTable<AdminCampaign>({
+    model: "campaign",
+    columns: base as unknown as ColumnDef<AdminCampaign, unknown>[],
+  })
 
   return useMemo(
     () => [
-      ...base,
+      ...extended,
       columnHelper.display({
         id: "actions",
         cell: ({ row }) => {
@@ -205,6 +214,6 @@ const useColumns = () => {
         },
       }),
     ],
-    [base]
+    [extended]
   )
 }

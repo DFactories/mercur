@@ -1,6 +1,7 @@
 import { FolderIllustration, TriangleRightMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import { Badge, Container, Heading, Text, Tooltip } from "@medusajs/ui"
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
@@ -35,6 +36,7 @@ export const CategoryOrganizeSection = ({
         </Text>
         <ChildrenDisplay category={category} />
       </div>
+      <DisplayExtensionZone model="category" zone="organize" data={category} />
     </Container>
   )
 }
@@ -86,7 +88,7 @@ const PathDisplay = ({
             </button>
           </Tooltip>
           <div className="flex size-[15px] shrink-0 items-center justify-center">
-            <TriangleRightMini />
+            <TriangleRightMini className="rtl:-scale-x-100 "/>
           </div>
           <Text
             size="xsmall"
@@ -121,7 +123,7 @@ const PathDisplay = ({
                     {chip.name}
                   </LinkButton>
                 )}
-                {index < chips.length - 1 && <TriangleRightMini />}
+                {index < chips.length - 1 && <TriangleRightMini className="rtl:-scale-x-100 "/>}
               </div>
             )
           })}
@@ -137,7 +139,7 @@ const PathDisplay = ({
           <Text size="xsmall" leading="compact" weight="plus">
             {chip.name}
           </Text>
-          {index < chips.length - 1 && <TriangleRightMini />}
+          {index < chips.length - 1 && <TriangleRightMini className="rtl:-scale-x-100 "/>}
         </div>
       ))}
     </div>

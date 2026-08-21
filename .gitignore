@@ -38,4 +38,16 @@ yarn-error.log*
 *.pem
 
 apps/backend/.medusa
+integration-tests/.medusa
 packages/modules/*
+.npmrc
+
+# Graphify knowledge-graph output (generated, large, regenerable) + local hooks
+graphify-out/
+**/graphify-out/
+.graphifyignore
+**/.graphifyignore
+.claude/settings.json
+
+# Local spec tracker (not versioned)
+docs/specs/

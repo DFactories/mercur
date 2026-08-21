@@ -1,13 +1,15 @@
 import { ReactNode, Children } from "react";
 import { useLoaderData, useParams } from "react-router-dom";
 
+import { useLinkQuery, WidgetZone } from "@mercurjs/dashboard-shared";
+
 import { TwoColumnPageSkeleton } from "../../../components/common/skeleton";
 import { TwoColumnPage } from "../../../components/layout/pages";
 import { useInventoryItem } from "../../../hooks/api";
 import { useReservationItem } from "../../../hooks/api/reservations";
 
-import { InventoryItemGeneralSection } from "../../inventory/inventory-detail/components/inventory-item-general-section";
 import { ReservationGeneralSection } from "./components/reservation-general-section";
+import { ReservationInventorySection } from "./components/reservation-inventory-section";
 import { reservationItemLoader } from "./loader";
 
 const Root = ({ children }: { children?: ReactNode }) => {
@@ -19,7 +21,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
 
   const { reservation, isLoading, isError, error } = useReservationItem(
     id!,
-    undefined,
+    useLinkQuery("reservation"),
     {
       initialData,
     },
@@ -28,7 +30,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
   // TEMP: fetch directly since the fields are not populated with reservation call
   const { inventory_item } = useInventoryItem(
     reservation?.inventory_item?.id!,
-    undefined,
+    useLinkQuery("inventory_item"),
     { enabled: !!reservation?.inventory_item?.id },
   );
 
@@ -64,12 +66,16 @@ const Root = ({ children }: { children?: ReactNode }) => {
       data-testid="reservation-detail-page"
     >
       <TwoColumnPage.Main>
-        <ReservationGeneralSection reservation={reservation} />
+        <WidgetZone id="reservation.detail.main" data={reservation}>
+          <ReservationGeneralSection reservation={reservation} />
+        </WidgetZone>
       </TwoColumnPage.Main>
       <TwoColumnPage.Sidebar>
-        {inventory_item && (
-          <InventoryItemGeneralSection inventoryItem={inventory_item} />
-        )}
+        <WidgetZone id="reservation.detail.side" data={reservation}>
+          {inventory_item && (
+            <ReservationInventorySection inventoryItem={inventory_item} />
+          )}
+        </WidgetZone>
       </TwoColumnPage.Sidebar>
     </TwoColumnPage>
   );
@@ -79,5 +85,5 @@ export const ReservationDetailPage = Object.assign(Root, {
   Main: TwoColumnPage.Main,
   Sidebar: TwoColumnPage.Sidebar,
   MainGeneralSection: ReservationGeneralSection,
-  SidebarInventorySection: InventoryItemGeneralSection,
+  SidebarInventorySection: ReservationInventorySection,
 });

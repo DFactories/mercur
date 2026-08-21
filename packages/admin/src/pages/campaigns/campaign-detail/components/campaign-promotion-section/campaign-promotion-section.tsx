@@ -1,10 +1,18 @@
 import { PencilSquare, Trash } from "@medusajs/icons"
 import { AdminCampaign, AdminPromotion } from "@medusajs/types"
-import { Button, Checkbox, Container, Heading, usePrompt } from "@medusajs/ui"
+import {
+  Button,
+  Checkbox,
+  Container,
+  Heading,
+  toast,
+  usePrompt,
+} from "@medusajs/ui"
 import { RowSelectionState, createColumnHelper } from "@tanstack/react-table"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
 
 import { ActionMenu } from "../../../../../components/common/action-menu"
 import { _DataTable } from "../../../../../components/table/data-table"
@@ -64,7 +72,7 @@ export const CampaignPromotionSection = ({
       description: t("campaigns.promotions.remove.description", {
         count: keys.length,
       }),
-      confirmText: t("actions.continue"),
+      confirmText: t("actions.remove"),
       cancelText: t("actions.cancel"),
     })
 
@@ -74,7 +82,15 @@ export const CampaignPromotionSection = ({
 
     await mutateAsync(
       { remove: keys },
-      { onSuccess: () => setRowSelection({}) }
+      {
+        onSuccess: () => {
+          toast.success(
+            t("campaigns.promotions.toast.removed", { count: keys.length })
+          )
+          setRowSelection({})
+        },
+        onError: (err) => toast.error(err.message),
+      }
     )
   }
 
@@ -114,10 +130,13 @@ export const CampaignPromotionSection = ({
           },
         ]}
         noRecords={{
+          title: t("campaigns.promotions.list.noRecordsTitle"),
           message: t("campaigns.promotions.list.noRecordsMessage"),
         }}
         data-testid="campaign-promotion-section-table"
       />
+
+      <DisplayExtensionZone model="campaign" zone="promotions" data={campaign} />
     </Container>
   )
 }
@@ -142,7 +161,7 @@ const PromotionActions = ({
       description: t("campaigns.promotions.remove.description", {
         count: 1,
       }),
-      confirmText: t("actions.continue"),
+      confirmText: t("actions.remove"),
       cancelText: t("actions.cancel"),
     })
 
@@ -150,9 +169,18 @@ const PromotionActions = ({
       return
     }
 
-    await mutateAsync({
-      remove: [promotion.id],
-    })
+    await mutateAsync(
+      {
+        remove: [promotion.id],
+      },
+      {
+        onSuccess: () =>
+          toast.success(
+            t("campaigns.promotions.toast.removed", { count: 1 })
+          ),
+        onError: (error) => toast.error(error.message),
+      }
+    )
   }
 
   return (
@@ -185,7 +213,10 @@ const PromotionActions = ({
 const columnHelper = createColumnHelper<AdminPromotion>()
 
 const useColumns = () => {
-  const columns = usePromotionTableColumns()
+  const columns = usePromotionTableColumns({
+    exclude: ["campaign"],
+    order: ["code", "method", "type", "owner", "status"],
+  })
 
   return useMemo(
     () => [

@@ -1,29 +1,48 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Heading, Input, Select, Textarea } from "@medusajs/ui";
 import i18n from "i18next";
-import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLoaderData } from "react-router-dom";
 import * as z from "zod";
 
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared";
+
 import { Form } from "@components/common/form";
 import { HandleInput } from "@components/inputs/handle-input";
+import { isValidHandle } from "@lib/handle";
 import { useStore } from "@hooks/api";
 import { onboardingLoader } from "../../../pages/onboarding/loader";
 
 const StoreStepSchema = z.object({
   name: z.string().min(1, i18n.t("onboarding.wizard.validation.nameRequired")),
-  email: z.string().email(i18n.t("onboarding.wizard.validation.emailInvalid")),
-  phone: z.string().optional(),
+  email: z
+    .string()
+    .email(i18n.t("onboarding.wizard.validation.emailInvalid"))
+    .optional()
+    .or(z.literal("")),
+  phone: z.string().min(1, i18n.t("onboarding.wizard.validation.phoneRequired")),
   currency_code: z.string().min(1, i18n.t("onboarding.wizard.validation.currencyRequired")),
   description: z.string().optional(),
-  handle: z.string().optional(),
+  handle: z
+    .string()
+    .trim()
+    .refine(isValidHandle, {
+      message: i18n.t("onboarding.wizard.validation.handleInvalid"),
+    })
+    .optional()
+    .or(z.literal("")),
 });
 
 type StoreStepValues = z.infer<typeof StoreStepSchema>;
 
+type StoreStepSubmitValues = StoreStepValues & {
+  additional_data?: Record<string, unknown>;
+};
+
 type StoreStepProps = {
-  onSubmit: (data: StoreStepValues) => Promise<void>;
+  onSubmit: (data: StoreStepSubmitValues) => Promise<void>;
   isPending?: boolean;
 };
 
@@ -34,8 +53,12 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
   >;
   const { store } = useStore(undefined, { initialData });
 
-  const form = useForm<StoreStepValues>({
-    resolver: zodResolver(StoreStepSchema),
+  const form = useExtendableForm({
+    schema: StoreStepSchema,
+    model: "seller",
+    zone: "onboarding",
+    tab: "store",
+    data: store,
     defaultValues: {
       name: "",
       email: "",
@@ -77,7 +100,7 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
               name="email"
               render={({ field }) => (
                 <Form.Item>
-                  <Form.Label>{t("onboarding.wizard.store.email")}</Form.Label>
+                  <Form.Label optional>{t("onboarding.wizard.store.email")}</Form.Label>
                   <Form.Control>
                     <Input type="email" autoComplete="email" {...field} />
                   </Form.Control>
@@ -90,7 +113,7 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
               name="phone"
               render={({ field }) => (
                 <Form.Item>
-                  <Form.Label optional>{t("fields.phone")}</Form.Label>
+                  <Form.Label>{t("fields.phone")}</Form.Label>
                   <Form.Control>
                     <Input type="tel" autoComplete="tel" {...field} />
                   </Form.Control>
@@ -158,9 +181,19 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
                       </Select.Content>
                     </Select>
                   </Form.Control>
+                  <Form.Hint>
+                    {t("onboarding.wizard.store.currencyHint")}
+                  </Form.Hint>
                   <Form.ErrorMessage />
                 </Form.Item>
               )}
+            />
+            <FormExtensionZone
+              model="seller"
+              zone="onboarding"
+              tab="store"
+              control={form.control}
+              data={store}
             />
           </div>
           <Button type="submit" className="w-full" isLoading={isPending}>

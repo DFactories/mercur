@@ -27,6 +27,62 @@ export class ClientError extends Error {
     }
 }
 
+/**
+ * Optional transform applied to every backend error message before it becomes a
+ * ClientError, so consumers can localize/normalize API errors in one place
+ * instead of at every call site. Generic by design (no app coupling); an app
+ * registers its own transformer via {@link setClientErrorMessageTransformer}.
+ */
+export type ClientErrorMessageTransformer = (
+    message: string,
+    context: { status?: number; statusText?: string }
+) => string;
+
+let errorMessageTransformer: ClientErrorMessageTransformer | undefined;
+
+export function setClientErrorMessageTransformer(
+    transformer: ClientErrorMessageTransformer | undefined
+) {
+    errorMessageTransformer = transformer;
+}
+
+const isFileLike = (value: unknown): value is Blob =>
+    typeof Blob !== "undefined" && value instanceof Blob;
+
+const payloadHasFiles = (payload: Record<string, any>): boolean =>
+    Object.values(payload).some(
+        (value) =>
+            isFileLike(value) || (Array.isArray(value) && value.some(isFileLike))
+    );
+
+const toFormData = (payload: Record<string, any>): FormData => {
+    const formData = new FormData();
+
+    for (const [key, value] of Object.entries(payload)) {
+        if (value === undefined || value === null) {
+            continue;
+        }
+
+        const append = (item: unknown) => {
+            if (isFileLike(item)) {
+                formData.append(key, item);
+            } else if (typeof item === "object") {
+                formData.append(key, JSON.stringify(item));
+            } else {
+                formData.append(key, String(item));
+            }
+        };
+
+        if (Array.isArray(value)) {
+            value.forEach(append);
+        } else {
+            append(value);
+        }
+    }
+
+    return formData;
+};
+
 export function createClient(options: ClientOptions) {
     const { baseUrl, fetchOptions: defaultFetchOptions } = options;
 
@@ -58,12 +114,16 @@ export function createClient(options: ClientOptions) {
         const fullPath = `${base.pathname.replace(/\/$/, "")}/${urlPath.replace(/^\//, "")}`;
         const url = new URL(fullPath, base.origin);
 
-        const isFormData = inputFetchOptions?.body instanceof FormData;
+        const hasExplicitFormData = inputFetchOptions?.body instanceof FormData;
+        const hasFilePayload = method !== "GET" && payloadHasFiles(rest);
+        const isMultipart = hasExplicitFormData || hasFilePayload;
 
         let body: string | FormData | undefined;
 
-        if (isFormData) {
+        if (hasExplicitFormData) {
             body = inputFetchOptions!.body as FormData;
+        } else if (hasFilePayload) {
+            body = toFormData(rest);
         } else if (method === "GET" && Object.keys(rest).length > 0) {
             url.search = qs.stringify(rest, { skipNulls: true });
         } else if (method !== "GET" && Object.keys(rest).length > 0) {
@@ -74,7 +134,7 @@ export function createClient(options: ClientOptions) {
             Accept: "application/json",
         };
 
-        if (!isFormData) {
+        if (!isMultipart) {
             defaultHeaders["Content-Type"] = "application/json";
         }
 
@@ -95,8 +155,15 @@ export function createClient(options: ClientOptions) {
                 const jsonError = (await response.json().catch(() => ({}))) as {
                     message?: string;
                 };
+                const rawMessage = jsonError.message ?? response.statusText;
+                const message = errorMessageTransformer
+                    ? errorMessageTransformer(rawMessage, {
+                          status: response.status,
+                          statusText: response.statusText,
+                      })
+                    : rawMessage;
                 throw new ClientError(
-                    jsonError.message ?? response.statusText,
+                    message,
                     response.statusText,
                     response.status
                 );

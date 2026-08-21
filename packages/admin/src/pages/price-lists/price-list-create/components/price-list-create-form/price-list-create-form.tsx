@@ -3,13 +3,12 @@ import { toast } from "@medusajs/ui"
 import { Children, ReactNode, useMemo } from "react"
 import { DeepPartial, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { z } from "zod"
 
 import { HttpTypes, PriceListStatus, PriceListType } from "@medusajs/types"
 import { useRouteModal } from "../../../../../components/modals"
 import { TabbedForm } from "../../../../../components/tabbed-form/tabbed-form"
 import { useCreatePriceList } from "../../../../../hooks/api/price-lists"
-import { exctractPricesFromProducts } from "../../../common/utils"
+import { extractPricesFromOffers } from "../../../common/utils"
 import { PriceListDetailsForm } from "./price-list-details-form"
 import { PriceListPricesForm } from "./price-list-prices-form"
 import { PriceListProductsForm } from "./price-list-products-form"
@@ -22,7 +21,7 @@ type PriceListCreateFormProps = {
   currencies: HttpTypes.AdminStoreCurrency[]
   pricePreferences: HttpTypes.AdminPricePreference[]
   children?: ReactNode
-  schema?: z.ZodType<PricingCreateSchemaType>
+  schema?: typeof PricingCreateSchema
   defaultValues?: DeepPartial<PricingCreateSchemaType>
 }
 
@@ -40,13 +39,14 @@ export const PriceListCreateForm = ({
   const form = useForm<PricingCreateSchemaType>({
     defaultValues: {
       type: "sale",
-      status: "active",
+      status: "draft",
       title: "",
       description: "",
       starts_at: null,
       ends_at: null,
       product_ids: [],
-      products: {},
+      offer_ids: [],
+      offers: {},
       rules: {
         customer_group_id: [],
       },
@@ -58,13 +58,13 @@ export const PriceListCreateForm = ({
   const { mutateAsync, isPending } = useCreatePriceList()
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    const { rules, products } = data
+    const { rules, offers } = data
 
     const rulesPayload = rules?.customer_group_id?.length
       ? { "customer.groups.id": rules.customer_group_id.map((cg) => cg.id) }
       : undefined
 
-    const prices = exctractPricesFromProducts(products, regions)
+    const prices = extractPricesFromOffers(offers, regions)
 
     await mutateAsync(
       {
@@ -111,6 +111,8 @@ export const PriceListCreateForm = ({
 
   return (
     <TabbedForm
+      model="price_list"
+      zone="create"
       form={form}
       onSubmit={handleSubmit}
       isLoading={isPending}

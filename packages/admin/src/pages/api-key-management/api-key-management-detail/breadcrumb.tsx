@@ -11,7 +11,7 @@ export const ApiKeyManagementDetailBreadcrumb = (
 ) => {
   const { id } = props.params || {}
 
-  const { api_key } = useApiKey(id!, {
+  const { api_key } = useApiKey(id!, undefined, {
     initialData: props.data,
     enabled: Boolean(id),
   })

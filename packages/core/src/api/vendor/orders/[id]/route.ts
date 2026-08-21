@@ -5,7 +5,11 @@ import {
 } from "@medusajs/framework"
 import { HttpTypes } from "@mercurjs/types"
 
-import { validateSellerOrder } from "../helpers"
+import {
+  normalizeOrderPaymentCollections,
+  validateSellerOrder,
+  withCartPaymentCollectionFields,
+} from "../helpers"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -18,10 +22,12 @@ export const GET = async (
   const workflow = getOrderDetailWorkflow(req.scope)
   const { result } = await workflow.run({
     input: {
-      fields: req.queryConfig.fields,
+      fields: withCartPaymentCollectionFields(req.queryConfig.fields),
       order_id: req.params.id,
     },
   })
+
+  normalizeOrderPaymentCollections(result as never)
 
   res.json({ order: result as HttpTypes.VendorOrderResponse["order"] })
 }

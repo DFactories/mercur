@@ -1,6 +1,8 @@
 import { Button, Container, Heading, Text } from "@medusajs/ui"
+import { useExtendableTable, useLinkQuery } from "@mercurjs/dashboard-shared"
+import type { ColumnDef } from "@tanstack/react-table"
 
-import { Children, ReactNode } from "react"
+import { Children, ReactNode, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 
@@ -8,6 +10,7 @@ import { _DataTable } from "@/components/table/data-table"
 import { useReservationItems } from "@/hooks/api/reservations"
 import { useDataTable } from "@/hooks/use-data-table"
 
+import { ExtendedReservationItem } from "../../../../inventory/inventory-detail/components/reservations-table/use-reservation-list-table-columns"
 import { useReservationTableColumns } from "./use-reservation-table-columns"
 import { useReservationTableFilters } from "./use-reservation-table-filters"
 import { useReservationTableQuery } from "./use-reservation-table-query"
@@ -59,16 +62,22 @@ export const ReservationListHeader = ({ children }: { children?: ReactNode }) =>
 }
 
 export const ReservationListDataTable = () => {
+  const { t } = useTranslation()
   const { searchParams, raw } = useReservationTableQuery({
     pageSize: PAGE_SIZE,
   })
   const { reservations, count, isPending, isError, error } =
     useReservationItems({
       ...searchParams,
+      ...useLinkQuery("reservation"),
     })
 
-  const filters = useReservationTableFilters()
-  const columns = useReservationTableColumns()
+  const baseFilters = useReservationTableFilters()
+  const { columns, filters: extFilters } = useColumns()
+  const filters = useMemo(
+    () => [...baseFilters, ...(extFilters as typeof baseFilters)],
+    [baseFilters, extFilters]
+  )
 
   const { table } = useDataTable({
     data: reservations || [],
@@ -93,10 +102,58 @@ export const ReservationListDataTable = () => {
       filters={filters}
       queryObject={raw}
       pagination
+      search
+      orderBy={[
+        { key: "inventory_item.title", label: t("fields.title") },
+        { key: "inventory_item.sku", label: t("fields.sku") },
+        { key: "created_at", label: t("fields.createdAt") },
+        { key: "updated_at", label: t("fields.updatedAt") },
+      ]}
+      defaultOrder="inventory_item.title"
       navigateTo={(row) => row.id}
-      search={false}
+      noRecords={{
+        title: t("reservations.list.noRecordsTitle"),
+        message: t("reservations.list.noRecordsMessage"),
+        action: {
+          to: "create",
+          label: t("actions.create"),
+        },
+      }}
     />
   )
+}
+
+const useColumns = () => {
+  const base = useReservationTableColumns()
+
+  const actionsColumn = base.filter(
+    (c) => (c as { id?: string }).id === "actions"
+  )
+  const dataColumns = base.filter(
+    (c) => (c as { id?: string }).id !== "actions"
+  )
+
+  const { columns: extended, filters } =
+    useExtendableTable<ExtendedReservationItem>({
+      model: "reservation",
+      columns: dataColumns as unknown as ColumnDef<
+        ExtendedReservationItem,
+        unknown
+      >[],
+    })
+
+  const columns = useMemo(
+    () => [
+      ...extended,
+      ...(actionsColumn as unknown as ColumnDef<
+        ExtendedReservationItem,
+        unknown
+      >[]),
+    ],
+    [extended, actionsColumn]
+  )
+
+  return { columns, filters }
 }
 
 export const ReservationListTable = ({ children }: { children?: ReactNode }) => {

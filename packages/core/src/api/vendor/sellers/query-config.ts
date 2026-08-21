@@ -20,6 +20,7 @@ export const retrieveVendorSellerQueryConfig = {
     "handle",
     "email",
     "phone",
+    "phone_verified_at",
     "description",
     "logo",
     "banner",
@@ -66,6 +67,7 @@ export const listVendorMemberInvitesQueryConfig = {
   defaults: [
     "id",
     "email",
+    "phone",
     "accepted",
     "role_id",
     "expires_at",

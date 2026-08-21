@@ -103,7 +103,7 @@ medusaIntegrationTestRunner({
           expect(response.data.seller.status).toEqual("pending_approval")
         })
 
-        it("should create an associated member with the provided email", async () => {
+        it("should invite the provided member email", async () => {
           const response = await api.post(
             `/admin/sellers`,
             {
@@ -117,15 +117,20 @@ medusaIntegrationTestRunner({
 
           expect(response.status).toEqual(201)
 
-          const membersResponse = await api.get(
-            `/admin/sellers/${response.data.seller.id}/members`,
+          // Admin-created sellers only invite the owner — the member is
+          // created when the invite is accepted, not on seller creation.
+          const invitesResponse = await api.get(
+            `/admin/sellers/${response.data.seller.id}/members/invites`,
             adminHeaders
           )
 
-          expect(membersResponse.data.seller_members).toHaveLength(1)
+          expect(invitesResponse.data.member_invites).toHaveLength(1)
+          expect(invitesResponse.data.member_invites[0].email).toEqual(
+            "membertest@test.com"
+          )
         })
 
-        it("should set the first member as owner", async () => {
+        it("should not create a seller member on creation (invite only)", async () => {
           const response = await api.post(
             `/admin/sellers`,
             {
@@ -144,7 +149,7 @@ medusaIntegrationTestRunner({
             adminHeaders
           )
 
-          expect(membersResponse.data.seller_members[0].is_owner).toBe(true)
+          expect(membersResponse.data.seller_members).toHaveLength(0)
         })
 
         it("should create a seller with all optional fields", async () => {
@@ -1497,6 +1502,7 @@ medusaIntegrationTestRunner({
           const response = await api.post(
             `/admin/sellers/${sellerA.id}/members/invite`,
             {
+              phone: "09120000501",
               email: "newinvite@test.com",
               role_id: "role_test",
             },
@@ -1511,6 +1517,7 @@ medusaIntegrationTestRunner({
           const response = await api.post(
             `/admin/sellers/${sellerA.id}/members/invite`,
             {
+              phone: "09120000502",
               email: "invitee@test.com",
               role_id: "role_admin",
             },
@@ -1520,6 +1527,7 @@ medusaIntegrationTestRunner({
           expect(response.status).toEqual(201)
           expect(response.data.member_invite).toEqual(
             expect.objectContaining({
+              phone: "09120000502",
               email: "invitee@test.com",
               role_id: "role_admin",
             })
@@ -1531,6 +1539,7 @@ medusaIntegrationTestRunner({
             .post(
               `/admin/sellers/${sellerA.id}/members/invite`,
               {
+                phone: "09120000503",
                 email: "not-an-email",
                 role_id: "role_test",
               },
@@ -1546,6 +1555,7 @@ medusaIntegrationTestRunner({
             .post(
               `/admin/sellers/${sellerA.id}/members/invite`,
               {
+                phone: "09120000504",
                 email: "missingrole@test.com",
               },
               adminHeaders

@@ -35,6 +35,33 @@ export const validateSellerShippingOption = async (
   }
 }
 
+/**
+ * Resolve the admin-curated delivery time (days) for a shipping option type, or
+ * null when none is set. Used to stamp the type's delivery onto a shipping
+ * option's metadata at create/update so the settlement hold can floor the return
+ * window. Best-effort: any error → null (the settlement falls back to a default).
+ */
+export const getTypeDeliveryDays = async (
+  scope: MedusaContainer,
+  typeId: string
+): Promise<number | null> => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  try {
+    const {
+      data: [type],
+    } = await query.graph({
+      entity: "shipping_option_type",
+      filters: { id: typeId },
+      fields: ["id", "delivery.estimated_delivery_days"],
+    })
+    const days = (type as { delivery?: { estimated_delivery_days?: number | null } })
+      ?.delivery?.estimated_delivery_days
+    return days === null || days === undefined ? null : Number(days)
+  } catch {
+    return null
+  }
+}
+
 export const refetchShippingOption = async (
   scope: MedusaContainer,
   shippingOptionId: string,

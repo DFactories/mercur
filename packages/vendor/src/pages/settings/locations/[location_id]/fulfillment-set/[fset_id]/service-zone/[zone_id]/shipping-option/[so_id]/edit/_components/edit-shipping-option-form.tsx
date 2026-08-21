@@ -19,6 +19,7 @@ import {
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
+  providerSupportsCalculatedPricing,
 } from "@pages/settings/locations/_common/constants"
 
 type EditShippingOptionFormProps = {
@@ -43,6 +44,14 @@ export const EditShippingOptionForm = ({
   const { handleSuccess } = useRouteModal()
 
   const isPickup = type === FulfillmentSetType.Pickup
+
+  // Hidden unless the provider can price the option; Medusa rejects a
+  // calculated option whose provider cannot calculate (see the constant).
+  // An option already stored as calculated keeps showing the choice so the
+  // form never renders a selected-but-absent radio.
+  const supportsCalculated =
+    providerSupportsCalculatedPricing(shippingOption.provider_id) ||
+    shippingOption.price_type === ShippingOptionPriceType.Calculated
 
   const shippingProfiles = useComboboxData({
     queryFn: async () => {
@@ -130,16 +139,18 @@ export const EditShippingOptionForm = ({
                                 "stockLocations.shippingOptions.fields.priceType.options.fixed.hint"
                               )}
                             />
-                            <RadioGroup.ChoiceBox
-                              className="flex-1"
-                              value={ShippingOptionPriceType.Calculated}
-                              label={t(
-                                "stockLocations.shippingOptions.fields.priceType.options.calculated.label"
-                              )}
-                              description={t(
-                                "stockLocations.shippingOptions.fields.priceType.options.calculated.hint"
-                              )}
-                            />
+                            {supportsCalculated && (
+                              <RadioGroup.ChoiceBox
+                                className="flex-1"
+                                value={ShippingOptionPriceType.Calculated}
+                                label={t(
+                                  "stockLocations.shippingOptions.fields.priceType.options.calculated.label"
+                                )}
+                                description={t(
+                                  "stockLocations.shippingOptions.fields.priceType.options.calculated.hint"
+                                )}
+                              />
+                            )}
                           </RadioGroup>
                         </Form.Control>
                         <Form.ErrorMessage />
@@ -191,6 +202,7 @@ export const EditShippingOptionForm = ({
                     )
                   }}
                 />
+
               </div>
 
               {/* <Divider />

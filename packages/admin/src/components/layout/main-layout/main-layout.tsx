@@ -6,14 +6,24 @@ import {
   CurrencyDollar,
   EllipsisHorizontal,
   MagnifyingGlass,
+  MinusMini,
   OpenRectArrowOut,
   ReceiptPercent,
   ShoppingCart,
   Tag,
   Users,
 } from "@medusajs/icons";
-import { Avatar, Divider, DropdownMenu, Text, clx } from "@medusajs/ui";
+import components from "virtual:mercur/components";
+import {
+  Avatar,
+  Divider,
+  DropdownMenu,
+  IconButton,
+  Text,
+  clx,
+} from "@medusajs/ui";
 
+import { Collapsible as RadixCollapsible } from "radix-ui";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -26,8 +36,26 @@ import { Skeleton } from "../../common/skeleton";
 import { INavItem, NavItem } from "../../layout/nav-item";
 import { Shell } from "../../layout/shell";
 import { UserMenu } from "../user-menu";
-import components from "virtual:mercur/components";
 import menuItemsModule from "virtual:mercur/menu-items";
+import {
+  applyNavOverrides,
+  useExtension,
+  type CoreNavItem,
+} from "@mercurjs/dashboard-shared";
+
+const navId = (to: string) => to.replace(/^\//, "");
+
+const toCoreNavItem = (route: Omit<INavItem, "pathname">): CoreNavItem => ({
+  id: navId(route.to),
+  label: route.label,
+  to: route.to,
+  icon: route.icon,
+  items: route.items?.map((item) => ({
+    id: navId(item.to),
+    label: item.label,
+    to: item.to,
+  })),
+});
 import { getMenuItemsByType, getNestedMenuItems } from "../../../utils/routes";
 
 export const MainLayout = () => {
@@ -60,10 +88,15 @@ const addNestedItems = (
 };
 
 const MainSidebar = () => {
+  const { t } = useTranslation();
   const coreRoutes = useCoreRoutes();
+  const navOverrides = useExtension().getNavOverrides();
   const customMenuItems = getMenuItemsByType(allMenuItems, "main");
 
-  const routesWithNested = coreRoutes.map((route) => ({
+  const routesWithNested = applyNavOverrides(
+    coreRoutes.map(toCoreNavItem),
+    navOverrides,
+  ).map((route) => ({
     ...route,
     items: addNestedItems(route.to, route.items),
   }));
@@ -103,10 +136,18 @@ const MainSidebar = () => {
               {routesWithNested.map((route) => {
                 return <NavItem key={route.to} {...route} />;
               })}
-              {customRoutesWithNested.map((route) => (
-                <NavItem key={route.to} {...route} />
-              ))}
             </nav>
+            {customRoutesWithNested.length > 0 && (
+              <>
+                <div className="px-3">
+                  <Divider variant="dashed" />
+                </div>
+                <AdvancedSection
+                  label={t("app.nav.common.advanced")}
+                  items={customRoutesWithNested}
+                />
+              </>
+            )}
           </div>
           <UtilitySection />
         </div>
@@ -121,22 +162,73 @@ const MainSidebar = () => {
   );
 };
 
+/**
+ * Routes this installation added, under a heading of their own.
+ *
+ * They used to sit directly under the platform's own routes with nothing
+ * separating them, so the sidebar read as one list in which half the entries
+ * came from somewhere else. This is the same shape the settings sidebar
+ * already uses for its sections, collapsible included, so the two navigations
+ * stay recognisably the same thing.
+ */
+const AdvancedSection = ({
+  label,
+  items,
+}: {
+  label: string;
+  items: INavItem[];
+}) => {
+  return (
+    <RadixCollapsible.Root
+      defaultOpen
+      className="py-3"
+      data-testid="sidebar-advanced-routes"
+    >
+      <div className="px-3">
+        <div className="flex h-7 items-center justify-between px-2 text-ui-fg-muted">
+          <Text size="small" leading="compact">
+            {label}
+          </Text>
+          <RadixCollapsible.Trigger asChild>
+            <IconButton size="2xsmall" variant="transparent" className="static">
+              <MinusMini className="text-ui-fg-muted" />
+            </IconButton>
+          </RadixCollapsible.Trigger>
+        </div>
+      </div>
+      <RadixCollapsible.Content>
+        <nav className="flex flex-col gap-y-1 pt-0.5">
+          {items.map((route) => (
+            <NavItem key={route.to} {...route} />
+          ))}
+        </nav>
+      </RadixCollapsible.Content>
+    </RadixCollapsible.Root>
+  );
+};
+
 const Logout = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { mutateAsync: logoutMutation } = useLogout();
 
+  /**
+   * A 401 from DELETE /auth/session means the session is already gone — the
+   * goal state, not a failure — so logout must still complete locally.
+   * Navigate out of the protected tree BEFORE clearing the cache, or every
+   * mounted `useMe` observer refetches against the destroyed session and the
+   * resulting 401s hit the error boundary.
+   */
   const handleLogout = async () => {
-    await logoutMutation(undefined, {
-      onSuccess: () => {
-        /**
-         * When the user logs out, we want to clear the query cache
-         */
-        queryClient.clear();
-        navigate("/login");
-      },
-    });
+    try {
+      await logoutMutation();
+    } catch {
+      // Session already invalid server-side; local cleanup still runs.
+    }
+
+    navigate("/login", { replace: true });
+    queryClient.clear();
   };
 
   return (
@@ -287,6 +379,10 @@ const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       to: "/products",
       items: [
         {
+          label: t("offers.domain"),
+          to: "/offers",
+        },
+        {
           label: t("collections.domain"),
           to: "/collections",
         },
@@ -343,6 +439,12 @@ const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       icon: <BuildingStorefront />,
       label: t("stores.domain"),
       to: "/stores",
+      items: [
+        {
+          label: t("reviews.domain"),
+          to: "/reviews",
+        },
+      ],
     },
     {
       icon: <CreditCardRefresh />,

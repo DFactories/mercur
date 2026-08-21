@@ -4,6 +4,8 @@ import { Avatar, Heading, StatusBadge, Text } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { DisplayExtensionZone, DisplayField } from "@mercurjs/dashboard-shared";
+
 import AvatarBox from "@components/common/logo-box/avatar-box";
 import { AuthLayout } from "@components/layout/auth-layout";
 import { useSelectSeller, useSellers } from "@hooks/api";
@@ -50,9 +52,11 @@ const StoreSelectHeader = () => {
 const StoreSelectList = ({
   seller_members,
   email,
+  phone,
 }: {
   seller_members: SellerMemberDTO[];
   email: string;
+  phone: string;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -97,15 +101,28 @@ const StoreSelectList = ({
                   </Text>
                 ) : null}
               </div>
-              {badge ? (
-                <StatusBadge color={badge.color}>{badge.label}</StatusBadge>
-              ) : null}
-              <ChevronRight className="text-ui-fg-muted" />
+              <DisplayField
+                model="seller"
+                zone="seller-select"
+                id="status"
+                data={seller}
+              >
+                {badge ? (
+                  <StatusBadge color={badge.color}>{badge.label}</StatusBadge>
+                ) : null}
+              </DisplayField>
+              <DisplayExtensionZone
+                model="seller"
+                zone="seller-select"
+                data={seller}
+                builtInFieldIds={["status"]}
+              />
+              <ChevronRight className="rtl:-scale-x-100 text-ui-fg-muted" />
             </button>
           );
         })}
       <button
-        onClick={() => navigate("/onboarding", { state: { email } })}
+        onClick={() => navigate("/onboarding", { state: { email, phone } })}
         className="hover:bg-ui-bg-base-hover transition-fg flex items-center justify-center gap-x-2 rounded-b-lg px-4 py-3"
       >
         <Plus className="text-ui-fg-muted" />
@@ -123,8 +140,15 @@ const StoreSelectFooter = () => {
 
 const Root = ({ children }: { children?: ReactNode }) => {
   const location = useLocation();
-  const email = (location.state as { email?: string })?.email ?? "";
+  const state = location.state as { email?: string; phone?: string } | null;
   const { seller_members, isLoading } = useSellers();
+
+  // Router state is lost on reload (and on any direct navigation here), which
+  // would send "add new store" to /login. The member rows carry the same
+  // identity, so fall back to those.
+  const member = seller_members?.[0]?.member;
+  const email = state?.email ?? member?.email ?? "";
+  const phone = state?.phone ?? member?.phone ?? "";
 
   if (isLoading) {
     return (
@@ -148,6 +172,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
             <StoreSelectList
               seller_members={seller_members ?? []}
               email={email}
+              phone={phone}
             />
           </div>
           <StoreSelectFooter />

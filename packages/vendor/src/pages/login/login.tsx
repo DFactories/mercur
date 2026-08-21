@@ -1,4 +1,4 @@
-import { Children, ReactNode } from "react";
+import { Children, ReactNode, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
 import { Alert, Button, Heading, Input, Text } from "@medusajs/ui";
@@ -7,12 +7,24 @@ import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as z from "zod";
 
+import { AuthConsent } from "@components/common/auth-consent";
+import { WidgetZone } from "@mercurjs/dashboard-shared";
 import { Form } from "@components/common/form";
 import AvatarBox from "@components/common/logo-box/avatar-box";
+import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form";
 import { AuthLayout } from "@components/layout/auth-layout";
 import { useSignInWithEmailPass } from "@hooks/api";
 import { isFetchError } from "@lib/is-fetch-error";
 import config from "virtual:mercur/config";
+
+// Map raw backend auth strings (from @medusajs/auth-emailpass, which arrive with
+// no i18n key) to translation keys so the login form shows localized errors
+// instead of the verbatim English server text. Replaces the host-side DOM
+// text-swap overlay.
+const AUTH_ERROR_I18N: Record<string, string> = {
+  "Invalid email or password": "login.errors.invalidCredentials",
+  "Identity with email already exists": "login.errors.identityExists",
+};
 
 const LoginSchema = z.object({
   email: z
@@ -25,7 +37,11 @@ const LoginSchema = z.object({
 });
 
 const LoginLogo = () => {
-  return <AvatarBox />;
+  return (
+    <WidgetZone id="login.logo">
+      <AvatarBox />
+    </WidgetZone>
+  );
 };
 
 const LoginHeader = () => {
@@ -63,6 +79,14 @@ const LoginForm = () => {
   });
 
   const { mutateAsync, isPending } = useSignInWithEmailPass();
+  // The redirect is deferred, so `isPending` goes false while the page is still
+  // here; without this the button is live again and re-submits.
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const translateAuthError = (message?: string) => {
+    const key = message ? AUTH_ERROR_I18N[message.trim()] : undefined;
+    return key ? t(key) : message;
+  };
 
   const handleSubmit = form.handleSubmit(async ({ email, password }) => {
     await mutateAsync(
@@ -76,7 +100,7 @@ const LoginForm = () => {
             if (error.status === 401) {
               form.setError("email", {
                 type: "manual",
-                message: error.message,
+                message: translateAuthError(error.message),
               });
 
               return;
@@ -85,11 +109,12 @@ const LoginForm = () => {
 
           form.setError("root.serverError", {
             type: "manual",
-            message: error.message,
+            message: translateAuthError(error.message),
           });
         },
         onSuccess: () => {
           const email = form.getValues("email");
+          setIsRedirecting(true);
           setTimeout(() => {
             navigate("/store-select", {
               replace: true,
@@ -148,7 +173,11 @@ const LoginForm = () => {
             </Alert>
           )}
         </div>
-        <Button className="w-full" type="submit" isLoading={isPending}>
+        <Button
+          className="w-full"
+          type="submit"
+          isLoading={isPending || isRedirecting}
+        >
           {t("login.submit")}
         </Button>
       </form>
@@ -157,23 +186,16 @@ const LoginForm = () => {
 };
 
 const LoginFooter = () => {
+  const { t } = useTranslation();
   return (
-    <div className="mt-auto flex flex-col gap-y-2">
-      <span className="text-ui-fg-muted txt-small">
-        <Trans
-          i18nKey="login.forgotPassword"
-          components={[
-            <Link
-              key="reset-password-link"
-              to="/reset-password"
-              className="text-ui-fg-interactive transition-fg hover:text-ui-fg-interactive-hover focus-visible:text-ui-fg-interactive-hover font-medium outline-none"
-            />,
-          ]}
-        />
-      </span>
-      {config.enableSellerRegistration && (
+    // DFACTORIES: phone-OTP login has no password, so no forgot-password link.
+    // Registration stays config-driven (upstream's seller_registration feature
+    // flag defaults to false, which would hide the public register link).
+    <div className="mt-auto flex flex-col gap-y-2 md:mt-8">
+      {config.enableSellerRegistration !== false && (
         <span className="text-ui-fg-muted txt-small">
           <Trans
+            t={t}
             i18nKey="login.notSellerYet"
             components={[
               <Link
@@ -189,6 +211,30 @@ const LoginFooter = () => {
   );
 };
 
+const LoginContent = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // Phone (OTP) is the only sign-in method. The email/password LoginForm is
+  // kept (exported) but no longer rendered.
+  return (
+    <div className="mt-6">
+      <LoginHeader />
+      <PhoneAuthForm
+        mode="login"
+        submitLabel={t("login.submit")}
+        onVerified={(phone) => {
+          setTimeout(() => {
+            navigate("/store-select", { replace: true, state: { phone } });
+          }, 800);
+        }}
+      />
+      {/* DFACTORIES: legal consent + Terms / Privacy links. */}
+      <AuthConsent i18nKey="login.consent" />
+    </div>
+  );
+};
+
 const Root = ({ children }: { children?: ReactNode }) => {
   return (
     <AuthLayout>
@@ -197,10 +243,9 @@ const Root = ({ children }: { children?: ReactNode }) => {
       ) : (
         <>
           <LoginLogo />
-          <div className="mt-6">
-            <LoginHeader />
-            <LoginForm />
-          </div>
+          <WidgetZone id="login.before" />
+          <LoginContent />
+          <WidgetZone id="login.after" />
           <LoginFooter />
         </>
       )}

@@ -1,7 +1,9 @@
 import { InventoryTypes } from "@medusajs/types";
+import { Buildings } from "@medusajs/icons";
 
-import { RowSelectionState } from "@tanstack/react-table";
-import { useState } from "react";
+import { useExtendableTable, useLinkQuery } from "@mercurjs/dashboard-shared";
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { _DataTable } from "@components/table/data-table";
@@ -34,14 +36,35 @@ export const InventoryListDataTable = () => {
   } = useInventoryItems(
     {
       ...searchParams,
+      ...useLinkQuery(
+        "inventory_item",
+        "+offers.product_variant.product.title",
+      ),
     },
     {
       placeholderData: keepPreviousData,
     },
   );
 
-  const filters = useInventoryTableFilters();
-  const columns = useInventoryTableColumns();
+  const baseFilters = useInventoryTableFilters();
+  const baseColumns = useInventoryTableColumns();
+  const actionsColumn = baseColumns[baseColumns.length - 1];
+  const { columns: extended, filters: extFilters } =
+    useExtendableTable<InventoryTypes.InventoryItemDTO>({
+      model: "inventory_item",
+      columns: baseColumns.slice(0, -1) as unknown as ColumnDef<
+        InventoryTypes.InventoryItemDTO,
+        unknown
+      >[],
+    });
+  const columns = useMemo(
+    () => [...extended, actionsColumn],
+    [extended, actionsColumn],
+  );
+  const filters = useMemo(
+    () => [...baseFilters, ...(extFilters as typeof baseFilters)],
+    [baseFilters, extFilters],
+  );
 
   const { table } = useDataTable({
     data: (inventory_items ?? []) as InventoryTypes.InventoryItemDTO[],
@@ -78,6 +101,13 @@ export const InventoryListDataTable = () => {
         { key: "stocked_quantity", label: t("fields.inStock") },
         { key: "reserved_quantity", label: t("inventory.reserved") },
       ]}
+      defaultOrder="title"
+      noRecords={{
+        icon: <Buildings className="text-ui-fg-subtle" />,
+        title: t("inventory.list.noRecordsTitle"),
+        message: t("inventory.list.noRecordsMessage"),
+        action: { to: "create", label: t("actions.create") },
+      }}
       navigateTo={(row) => `${row.id}`}
       commands={[
         {

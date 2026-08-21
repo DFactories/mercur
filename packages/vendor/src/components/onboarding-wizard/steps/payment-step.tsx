@@ -36,7 +36,8 @@ export const PaymentStep = ({
   const form = useForm<PaymentStepValues>({
     resolver: zodResolver(PaymentStepSchema),
     defaultValues: {
-      country_code: "",
+      // DFACTORIES: Iran-only marketplace — bank details are always Iranian.
+      country_code: "ir",
       holder_name: "",
       iban: "",
       bic: "",
@@ -70,7 +71,7 @@ export const PaymentStep = ({
                     {t("onboarding.wizard.address.country")}
                   </Form.Label>
                   <Form.Control>
-                    <CountrySelect {...field} onChange={onChange} />
+                    <CountrySelect {...field} onChange={onChange} disabled />
                   </Form.Control>
                   <Form.ErrorMessage />
                 </Form.Item>

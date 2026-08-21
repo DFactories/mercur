@@ -73,10 +73,11 @@ export function getRouteMap({
                   {
                     path: "",
                     lazy: async () => {
-                      const { ProductListPage } =
+                      const { productListLoader, ProductListPage } =
                         await import("./pages/products");
                       return {
                         Component: ProductListPage,
+                        loader: productListLoader,
                       };
                     },
                     children: [
@@ -89,11 +90,6 @@ export function getRouteMap({
                             Component: ProductCreatePage,
                           };
                         },
-                      },
-                      {
-                        path: "bulk-edit",
-                        lazy: () =>
-                          import("./pages/products/bulk-edit"),
                       },
                     ],
                   },
@@ -129,6 +125,11 @@ export function getRouteMap({
                             lazy: () => import("./pages/products/[id]/edit"),
                           },
                           {
+                            path: "edit-variant",
+                            lazy: () =>
+                              import("./pages/product-variants/product-variant-edit"),
+                          },
+                          {
                             path: "sales-channels",
                             lazy: () =>
                               import("./pages/products/[id]/sales-channels"),
@@ -148,14 +149,19 @@ export function getRouteMap({
                               import("./pages/products/[id]/attributes"),
                           },
                           {
+                            path: "attributes/create",
+                            lazy: () =>
+                              import("./pages/products/[id]/attributes/create"),
+                          },
+                          {
                             path: "attributes/add",
                             lazy: () =>
                               import("./pages/products/[id]/attributes/add"),
                           },
                           {
-                            path: "informational-attributes/:attribute_id/edit",
+                            path: "attributes/:attribute_id/edit",
                             lazy: () =>
-                              import("./pages/products/[id]/informational-attributes/[attribute_id]/edit"),
+                              import("./pages/products/[id]/attributes/[attribute_id]/edit"),
                           },
                           {
                             path: "metadata",
@@ -168,22 +174,6 @@ export function getRouteMap({
                               import("./pages/products/[id]/shipping-profile"),
                           },
                           {
-                            path: "prices",
-                            lazy: () => import("./pages/products/[id]/prices"),
-                          },
-                          {
-                            path: "options/create",
-                            lazy: () =>
-                              import("./pages/products/[id]/options/create"),
-                          },
-                          {
-                            path: "options/:option_id/edit",
-                            lazy: () =>
-                              import(
-                                "./pages/products/[id]/options/[optionId]/edit"
-                              ),
-                          },
-                          {
                             path: "variants/create",
                             lazy: () =>
                               import("./pages/products/[id]/variants/create"),
@@ -191,13 +181,39 @@ export function getRouteMap({
                         ],
                       },
                       {
-                        path: "stock",
-                        lazy: () => import("./pages/products/[id]/stock"),
-                      },
-                      {
-                        path: "edit-stocks-and-prices",
-                        lazy: () =>
-                          import("./pages/products/[id]/edit-stocks-and-prices"),
+                        path: "variants/:variant_id",
+                        lazy: async () => {
+                          const { loader, Breadcrumb } =
+                            await import("./pages/product-variants/product-variant-detail");
+                          return {
+                            Component: Outlet,
+                            loader,
+                            handle: {
+                              breadcrumb: (match: UIMatch<any>) => (
+                                <Breadcrumb {...match} />
+                              ),
+                            },
+                          };
+                        },
+                        children: [
+                          {
+                            path: "",
+                            lazy: () =>
+                              import("./pages/product-variants/product-variant-detail"),
+                            children: [
+                              {
+                                path: "edit",
+                                lazy: () =>
+                                  import("./pages/product-variants/product-variant-edit"),
+                              },
+                              {
+                                path: "media",
+                                lazy: () =>
+                                  import("./pages/product-variants/product-variant-detail/media"),
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
                   },
@@ -254,8 +270,35 @@ export function getRouteMap({
                           },
                           {
                             path: ":f_id/create-shipment",
+                            lazy: () => import("./pages/orders/[id]/shipment"),
+                          },
+                          {
+                            path: "returns/create",
                             lazy: () =>
-                              import("./pages/orders/[id]/shipment"),
+                              import("./pages/orders/[id]/returns/create"),
+                          },
+                          {
+                            path: "returns/:return_id/receive",
+                            lazy: () =>
+                              import("./pages/orders/[id]/returns/[return_id]/receive"),
+                          },
+                          {
+                            path: "refund",
+                            lazy: () => import("./pages/orders/[id]/refund"),
+                          },
+                          {
+                            path: "edit",
+                            lazy: () => import("./pages/orders/[id]/edit"),
+                          },
+                          {
+                            path: "exchanges/create",
+                            lazy: () =>
+                              import("./pages/orders/[id]/exchanges/create"),
+                          },
+                          {
+                            path: "claims/create",
+                            lazy: () =>
+                              import("./pages/orders/[id]/claims/create"),
                           },
                         ],
                       },
@@ -483,18 +526,9 @@ export function getRouteMap({
                         },
                         children: [
                           {
-                            path: "edit",
-                            lazy: () => import("./pages/customers/[id]/edit"),
-                          },
-                          {
                             path: "add-customer-groups",
                             lazy: () =>
                               import("./pages/customers/[id]/add-customer-groups"),
-                          },
-                          {
-                            path: "metadata",
-                            lazy: () =>
-                              import("./pages/customers/[id]/metadata"),
                           },
                         ],
                       },
@@ -503,11 +537,191 @@ export function getRouteMap({
                 ],
               },
 
-              // CUSTOMER GROUPS - disabled
-              // {
-              //   path: "/customer-groups",
-              //   ...
-              // },
+              // CUSTOMER GROUPS
+              {
+                path: "/customer-groups",
+                errorElement: <ErrorBoundary />,
+                handle: { breadcrumb: () => t("customerGroups.domain") },
+                children: [
+                  {
+                    path: "",
+                    lazy: async () => {
+                      const { CustomerGroupListPage } =
+                        await import("./pages/customer-groups");
+                      return {
+                        Component: CustomerGroupListPage,
+                      };
+                    },
+                    children: [
+                      {
+                        path: "create",
+                        lazy: () =>
+                          import("./pages/customer-groups/customer-group-create"),
+                      },
+                    ],
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { loader } =
+                        await import("./pages/customer-groups/customer-group-detail");
+                      const { Breadcrumb } =
+                        await import("./pages/customer-groups/customer-group-detail/breadcrumb");
+                      return {
+                        Component: Outlet,
+                        loader,
+                        handle: {
+                          breadcrumb: (match: UIMatch<any>) => (
+                            <Breadcrumb {...match} />
+                          ),
+                        },
+                      };
+                    },
+                    children: [
+                      {
+                        path: "",
+                        lazy: async () => {
+                          const { CustomerGroupDetailPage } =
+                            await import("./pages/customer-groups/customer-group-detail");
+                          return {
+                            Component: CustomerGroupDetailPage,
+                          };
+                        },
+                        children: [
+                          {
+                            path: "edit",
+                            lazy: () =>
+                              import("./pages/customer-groups/customer-group-edit"),
+                          },
+                          {
+                            path: "add-customers",
+                            lazy: () =>
+                              import("./pages/customer-groups/customer-group-add-customers"),
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+
+              // OFFERS
+              {
+                path: "/offers",
+                errorElement: <ErrorBoundary />,
+                handle: { breadcrumb: () => t("offers.domain") },
+                children: [
+                  {
+                    path: "",
+                    lazy: async () => {
+                      const { OfferListPage } = await import("./pages/offers");
+                      return { Component: OfferListPage };
+                    },
+                    children: [
+                      {
+                        path: "create",
+                        lazy: () =>
+                          import("./pages/offers/create/offer-create-page"),
+                      },
+                    ],
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { loader } =
+                        await import("./pages/offers/[id]/loader");
+                      const { Breadcrumb } =
+                        await import("./pages/offers/[id]/breadcrumb");
+                      return {
+                        Component: Outlet,
+                        loader,
+                        handle: {
+                          breadcrumb: (match: UIMatch<any>) => (
+                            <Breadcrumb {...match} />
+                          ),
+                        },
+                      };
+                    },
+                    children: [
+                      {
+                        path: "",
+                        lazy: async () => {
+                          const { OfferDetailPage } =
+                            await import("./pages/offers/[id]/offer-detail-page");
+                          return { Component: OfferDetailPage };
+                        },
+                        children: [
+                          {
+                            path: "edit-price",
+                            lazy: () =>
+                              import("./pages/offers/[id]/edit-price"),
+                          },
+                          {
+                            path: "edit-stock",
+                            lazy: () =>
+                              import("./pages/offers/[id]/edit-stock"),
+                          },
+                        ],
+                      },
+                      {
+                        path: "variants/:offer_id",
+                        lazy: async () => {
+                          const { loader } =
+                            await import("./pages/offers/[id]/variants/[offer_id]/loader");
+                          const { Breadcrumb } =
+                            await import("./pages/offers/[id]/variants/[offer_id]/breadcrumb");
+                          return {
+                            Component: Outlet,
+                            loader,
+                            handle: {
+                              breadcrumb: (match: UIMatch<any>) => (
+                                <Breadcrumb {...match} />
+                              ),
+                            },
+                          };
+                        },
+                        children: [
+                          {
+                            path: "",
+                            lazy: async () => {
+                              const { OfferVariantDetailPage } =
+                                await import("./pages/offers/[id]/variants/[offer_id]/offer-variant-detail-page");
+                              return { Component: OfferVariantDetailPage };
+                            },
+                            children: [
+                              {
+                                path: "edit",
+                                lazy: () =>
+                                  import("./pages/offers/[id]/variants/[offer_id]/edit"),
+                              },
+                              {
+                                path: "shipping",
+                                lazy: () =>
+                                  import("./pages/offers/[id]/variants/[offer_id]/shipping"),
+                              },
+                              {
+                                path: "pricing",
+                                lazy: () =>
+                                  import("./pages/offers/[id]/variants/[offer_id]/pricing"),
+                              },
+                              {
+                                path: "inventory",
+                                lazy: () =>
+                                  import("./pages/offers/[id]/variants/[offer_id]/inventory"),
+                              },
+                              {
+                                path: "manage-items",
+                                lazy: () =>
+                                  import("./pages/offers/[id]/variants/[offer_id]/manage-items"),
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
 
               // INVENTORY
               {
@@ -801,6 +1015,13 @@ export function getRouteMap({
                               import("./pages/price-lists/[id]/configuration"),
                           },
                           {
+                            path: "customer-availability",
+                            lazy: () =>
+                              import(
+                                "./pages/price-lists/[id]/customer-availability"
+                              ),
+                          },
+                          {
                             path: "products/add",
                             lazy: () =>
                               import("./pages/price-lists/[id]/products/add"),
@@ -822,41 +1043,110 @@ export function getRouteMap({
                 ],
               },
 
-              // RESERVATIONS - disabled
-              // {
-              //   path: "/reservations",
-              //   ...
-              // },
-
-              // PRODUCT VARIANTS (standalone routes)
+              // REVIEWS
               {
-                path: "/products/:product_id/variants/:variant_id",
+                path: "/reviews",
                 errorElement: <ErrorBoundary />,
-                lazy: async () => {
-                  const { loader } =
-                    await import("./pages/product-variants/product-variant-detail");
-                  return {
-                    Component: Outlet,
-                    loader,
-                  };
-                },
+                handle: { breadcrumb: () => t("reviews.domain") },
                 children: [
                   {
                     path: "",
-                    lazy: () =>
-                      import("./pages/product-variants/product-variant-detail"),
+                    lazy: async () => {
+                      const { ReviewListPage } = await import("./pages/reviews");
+                      return {
+                        Component: ReviewListPage,
+                      };
+                    },
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { loader } = await import("./pages/reviews/[id]");
+                      const { Breadcrumb } = await import(
+                        "./pages/reviews/[id]/breadcrumb"
+                      );
+                      return {
+                        Component: Outlet,
+                        loader,
+                        handle: {
+                          breadcrumb: (match: UIMatch<any>) => (
+                            <Breadcrumb {...match} />
+                          ),
+                        },
+                      };
+                    },
                     children: [
                       {
-                        path: "edit",
+                        path: "",
                         lazy: async () => {
-                          const { ProductVariantEdit } =
-                            await import("./pages/product-variants/product-variant-edit/product-variant-edit");
-                          return { Component: ProductVariantEdit };
+                          const { ReviewDetailPage } = await import(
+                            "./pages/reviews/[id]"
+                          );
+                          return {
+                            Component: ReviewDetailPage,
+                          };
                         },
+                        children: [
+                          {
+                            path: "respond",
+                            lazy: () => import("./pages/reviews/[id]/respond"),
+                          },
+                        ],
                       },
+                    ],
+                  },
+                ],
+              },
+
+              // RESERVATIONS
+              {
+                path: "/reservations",
+                errorElement: <ErrorBoundary />,
+                handle: { breadcrumb: () => t("reservations.domain") },
+                children: [
+                  {
+                    path: "",
+                    lazy: () => import("./pages/reservations"),
+                    children: [
                       {
-                        path: "prices",
-                        lazy: () => import("./pages/products/[id]/prices"),
+                        path: "create",
+                        lazy: () => import("./pages/reservations/create"),
+                      },
+                    ],
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { Breadcrumb } = await import(
+                        "./pages/reservations/[id]"
+                      );
+                      return {
+                        Component: Outlet,
+                        handle: {
+                          breadcrumb: (match: UIMatch<any>) => (
+                            <Breadcrumb {...match} />
+                          ),
+                        },
+                      };
+                    },
+                    children: [
+                      {
+                        path: "",
+                        lazy: () => import("./pages/reservations/[id]"),
+                        children: [
+                          {
+                            path: "edit",
+                            lazy: () =>
+                              import(
+                                "./pages/reservations/[id]/_components/edit-reservation"
+                              ),
+                          },
+                          {
+                            path: "metadata/edit",
+                            lazy: () =>
+                              import("./pages/reservations/[id]/metadata"),
+                          },
+                        ],
                       },
                     ],
                   },
@@ -947,6 +1237,11 @@ export function getRouteMap({
                         path: "professional-details",
                         lazy: () =>
                           import("./pages/settings/store/professional-details"),
+                      },
+                      {
+                        path: "documents",
+                        lazy: () =>
+                          import("./pages/settings/store/documents"),
                       },
                       {
                         path: "store-closure",

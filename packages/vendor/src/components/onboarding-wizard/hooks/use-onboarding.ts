@@ -8,11 +8,12 @@ import { TOTAL_STEPS } from "../constants";
 
 type StoreData = {
   name: string;
-  email: string;
-  phone?: string;
+  email?: string;
+  phone: string;
   currency_code: string;
   description?: string;
   handle?: string;
+  additional_data?: Record<string, unknown>;
 };
 
 type AddressData = {
@@ -40,10 +41,17 @@ type PaymentData = {
   account_number?: string;
 };
 
-export const useOnboarding = (memberEmail: string) => {
+export const useOnboarding = ({
+  email,
+  phone,
+}: {
+  email?: string;
+  phone?: string;
+}) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
 
   const sellerIdRef = useRef<string | null>(null);
   const [sellerIdState, setSellerIdState] = useState<string | null>(null);
@@ -136,13 +144,18 @@ export const useOnboarding = (memberEmail: string) => {
         const result = await createSeller({
           name: storeData.name,
           handle: storeData.handle || undefined,
-          email: storeData.email,
+          email: storeData.email || undefined,
           phone: storeData.phone || undefined,
-          member_email: memberEmail,
+          member_email: email || undefined,
+          member_phone: phone || undefined,
           first_name: registerDraft.first_name,
           last_name: registerDraft.last_name,
           currency_code: storeData.currency_code.toLowerCase(),
           description: storeData.description || undefined,
+          ...(storeData.additional_data &&
+          Object.keys(storeData.additional_data).length
+            ? { additional_data: storeData.additional_data }
+            : {}),
           address: addressData
             ? {
                 name: addressData.name || undefined,
@@ -187,16 +200,19 @@ export const useOnboarding = (memberEmail: string) => {
         }
         queryClient.clear();
         sessionStorage.removeItem("mercur_onboarding_email");
+        sessionStorage.removeItem("mercur_onboarding_phone");
         sessionStorage.removeItem("mercur_register_draft");
 
-        navigate("/login", { replace: true });
+        // Show a success screen (with a login button) instead of bouncing the
+        // user to /login with no feedback.
+        setIsComplete(true);
       } catch (error: any) {
         toast.error(error.message);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [createSeller, logout, memberEmail, navigate],
+    [createSeller, logout, email, phone, navigate],
   );
 
   // Step 4: Payment — create seller with everything and finish
@@ -218,10 +234,16 @@ export const useOnboarding = (memberEmail: string) => {
     }
   }, [currentStep]);
 
+  const goToLogin = useCallback(() => {
+    navigate("/login", { replace: true });
+  }, [navigate]);
+
   return {
     currentStep,
     totalSteps: TOTAL_STEPS,
     sellerId: sellerIdState,
+    isComplete,
+    goToLogin,
     isPending,
     canGoBack: currentStep > 0,
     goBack,

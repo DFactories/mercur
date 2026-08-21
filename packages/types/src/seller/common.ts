@@ -24,6 +24,8 @@ export interface ProfessionalDetailsDTO {
   corporate_name: string | null
   registration_number: string | null
   tax_id: string | null
+  business_license: string | null
+  health_permit: string | null
   created_at: Date
   updated_at: Date
 }
@@ -32,18 +34,22 @@ export interface CreateProfessionalDetailsDTO {
   corporate_name?: string | null
   registration_number?: string | null
   tax_id?: string | null
+  business_license?: string | null
+  health_permit?: string | null
 }
 
 export interface UpdateProfessionalDetailsDTO {
   corporate_name?: string | null
   registration_number?: string | null
   tax_id?: string | null
+  business_license?: string | null
+  health_permit?: string | null
 }
 
 export interface PaymentDetailsDTO {
   id: string
-  country_code: string
-  holder_name: string
+  country_code: string | null
+  holder_name: string | null
   bank_name: string | null
   iban: string | null
   bic: string | null
@@ -54,8 +60,8 @@ export interface PaymentDetailsDTO {
 }
 
 export interface CreatePaymentDetailsDTO {
-  country_code: string
-  holder_name: string
+  country_code?: string | null
+  holder_name?: string | null
   bank_name?: string | null
   iban?: string | null
   bic?: string | null
@@ -123,9 +129,11 @@ export interface UpdateSellerAddressDTO {
 
 export interface MemberDTO {
   id: string
-  email: string
+  email: string | null
+  phone: string | null
   first_name: string | null
   last_name: string | null
+  photo: string | null
   locale: string | null
   is_active: boolean
   metadata: Record<string, unknown> | null
@@ -135,14 +143,22 @@ export interface MemberDTO {
 }
 
 export interface CreateMemberDTO {
-  email: string
+  email?: string | null
+  phone?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  photo?: string | null
   locale?: string | null
   is_active?: boolean
   metadata?: Record<string, unknown> | null
 }
 
 export interface UpdateMemberDTO {
-  email?: string
+  email?: string | null
+  phone?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  photo?: string | null
   locale?: string | null
   is_active?: boolean
   metadata?: Record<string, unknown> | null
@@ -163,7 +179,8 @@ export interface SellerMemberDTO {
 
 export interface MemberInviteDTO {
   id: string
-  email: string
+  email: string | null
+  phone: string | null
   token: string
   accepted: boolean
   expires_at: Date
@@ -175,7 +192,8 @@ export interface MemberInviteDTO {
 }
 
 export interface CreateMemberInviteDTO {
-  email: string
+  email?: string | null
+  phone?: string | null
   role_id: string
   seller_id: string
   metadata?: Record<string, unknown> | null
@@ -185,8 +203,9 @@ export interface SellerDTO {
   id: string
   name: string
   handle: string
-  email: string
+  email: string | null
   phone: string | null
+  phone_verified_at: Date | null
   description: string | null
   logo: string | null
   banner: string | null

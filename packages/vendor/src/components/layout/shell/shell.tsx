@@ -2,7 +2,7 @@ import { SidebarLeft, TriangleRightMini, XMark } from "@medusajs/icons"
 import { IconButton, clx } from "@medusajs/ui"
 import { AnimatePresence } from "motion/react"
 import { Dialog as RadixDialog } from "radix-ui"
-import React, { PropsWithChildren, ReactNode, useEffect, useState } from "react"
+import { PropsWithChildren, ReactNode, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   Link,
@@ -14,6 +14,7 @@ import {
 } from "react-router-dom"
 
 import components from "virtual:mercur/components"
+import { WidgetZone } from "@mercurjs/dashboard-shared"
 import { KeybindProvider } from "../../../providers/keybind-provider"
 import { useGlobalShortcuts } from "../../../providers/keybind-provider/hooks"
 import { useSidebar } from "../../../providers/sidebar-provider"
@@ -159,7 +160,7 @@ const Breadcrumbs = () => {
             )}
             {!isLast && (
               <span className="mx-2">
-                <TriangleRightMini className="rtl:rotate-180" />
+                <TriangleRightMini className="rtl:-scale-x-100" />
               </span>
             )}
           </li>
@@ -281,9 +282,13 @@ const StoreSetupWidget = () => {
   const seller = seller_member?.seller
   const location = useLocation()
 
-  if (!StoreSetup || !seller || !isTopLevelRoute(location.pathname)) {
+  if (!seller || !isTopLevelRoute(location.pathname)) {
     return null
   }
 
-  return <StoreSetup seller={seller} />
+  if (StoreSetup) {
+    return <StoreSetup seller={seller} />
+  }
+
+  return <WidgetZone id="seller.setup" data={seller} />
 }

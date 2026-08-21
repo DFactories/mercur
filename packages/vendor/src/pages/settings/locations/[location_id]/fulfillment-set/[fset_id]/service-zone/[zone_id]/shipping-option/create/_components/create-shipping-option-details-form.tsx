@@ -12,6 +12,7 @@ import { fetchQuery } from "@lib/client"
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
+  providerSupportsCalculatedPricing,
 } from "@pages/settings/locations/_common/constants"
 import { CreateShippingOptionSchema } from "./schema"
 
@@ -32,6 +33,12 @@ export const CreateShippingOptionDetailsForm = ({
 
   const isPickup = type === FulfillmentSetType.Pickup
 
+  // Calculated pricing is only offered when the provider can actually price the
+  // option; otherwise the create call fails server-side (see the constant).
+  const supportsCalculated = providerSupportsCalculatedPricing(
+    form.watch("provider_id")
+  )
+
   const shippingProfiles = useComboboxData({
     queryFn: () =>
       fetchQuery(`/vendor/shipping-profiles`, {
@@ -45,6 +52,26 @@ export const CreateShippingOptionDetailsForm = ({
         return {
           label: name.includes(":") ? name.split(":")[1] : name,
           value: id,
+        }
+      }),
+  })
+
+  // Admin-curated shipping method types. Each option shows the promised delivery
+  // time (from the type's delivery link); the backend stamps that onto the
+  // option so the vendor never sets it directly.
+  const shippingOptionTypes = useComboboxData({
+    queryFn: () =>
+      fetchQuery(`/vendor/shipping-option-types`, { method: "GET" }),
+    queryKey: ["vendor_shipping_option_types_combobox"],
+    getOptions: (data) =>
+      (data.shipping_option_types || []).map((type: any) => {
+        const days = type.delivery?.estimated_delivery_days
+        return {
+          label:
+            days === null || days === undefined
+              ? type.label
+              : `${type.label} (${days}d)`,
+          value: type.id,
         }
       }),
   })
@@ -112,16 +139,18 @@ export const CreateShippingOptionDetailsForm = ({
                           "stockLocations.shippingOptions.fields.priceType.options.fixed.hint"
                         )}
                       />
-                      <RadioGroup.ChoiceBox
-                        className="flex-1"
-                        value={ShippingOptionPriceType.Calculated}
-                        label={t(
-                          "stockLocations.shippingOptions.fields.priceType.options.calculated.label"
-                        )}
-                        description={t(
-                          "stockLocations.shippingOptions.fields.priceType.options.calculated.hint"
-                        )}
-                      />
+                      {supportsCalculated && (
+                        <RadioGroup.ChoiceBox
+                          className="flex-1"
+                          value={ShippingOptionPriceType.Calculated}
+                          label={t(
+                            "stockLocations.shippingOptions.fields.priceType.options.calculated.label"
+                          )}
+                          description={t(
+                            "stockLocations.shippingOptions.fields.priceType.options.calculated.hint"
+                          )}
+                        />
+                      )}
                     </RadioGroup>
                   </Form.Control>
                   <Form.ErrorMessage />
@@ -163,6 +192,36 @@ export const CreateShippingOptionDetailsForm = ({
                       searchValue={shippingProfiles.searchValue}
                       onSearchValueChange={shippingProfiles.onSearchValueChange}
                       disabled={shippingProfiles.disabled}
+                    />
+                  </Form.Control>
+                  <Form.ErrorMessage />
+                </Form.Item>
+              )
+            }}
+          />
+          <Form.Field
+            control={form.control}
+            name="shipping_option_type_id"
+            render={({ field }) => {
+              return (
+                <Form.Item>
+                  <Form.Label
+                    tooltip={t(
+                      "stockLocations.shippingOptions.fields.typeHint",
+                      "The standard shipping method. Its delivery time (shown in parentheses) is set by the marketplace and starts the order return window."
+                    )}
+                  >
+                    {t("stockLocations.shippingOptions.fields.type")}
+                  </Form.Label>
+                  <Form.Control>
+                    <Combobox
+                      {...field}
+                      options={shippingOptionTypes.options}
+                      searchValue={shippingOptionTypes.searchValue}
+                      onSearchValueChange={
+                        shippingOptionTypes.onSearchValueChange
+                      }
+                      disabled={shippingOptionTypes.disabled}
                     />
                   </Form.Control>
                   <Form.ErrorMessage />

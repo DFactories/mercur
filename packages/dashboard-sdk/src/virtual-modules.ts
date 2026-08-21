@@ -5,11 +5,17 @@ import {
     RESOLVED_COMPONENTS_MODULE,
     RESOLVED_MENU_ITEMS_MODULE,
     RESOLVED_I18N_MODULE,
+    RESOLVED_WIDGETS_MODULE,
+    RESOLVED_NAVIGATION_MODULE,
+    RESOLVED_CUSTOM_FIELDS_MODULE,
     VIRTUAL_MODULES,
 } from "./constants"
 import { generateRoutes } from "./routes"
 import { generateMenuItems } from "./menu-items"
 import { generateI18n } from "./i18n"
+import { generateWidgets } from "./widgets"
+import { generateNavigation } from "./navigation"
+import { generateCustomFields } from "./custom-fields"
 import type { BuiltMercurConfig } from "./types"
 
 export function isVirtualModule(id: string): boolean {
@@ -27,20 +33,20 @@ export interface LoadVirtualModuleOptions {
 }
 
 export function loadVirtualModule({
-    cwd,
     id,
     mercurConfig,
+    cwd,
 }: LoadVirtualModuleOptions): string | null {
     if (id === RESOLVED_CONFIG_MODULE) {
         return loadConfigModule(mercurConfig)
     }
 
-    if (id === RESOLVED_COMPONENTS_MODULE) {
-        return loadComponentsModule(mercurConfig, cwd)
-    }
-
     if (id === RESOLVED_ROUTES_MODULE) {
         return loadRoutesModule(mercurConfig)
+    }
+
+    if (id === RESOLVED_COMPONENTS_MODULE) {
+        return loadComponentsModule(mercurConfig, cwd)
     }
 
     if (id === RESOLVED_MENU_ITEMS_MODULE) {
@@ -49,6 +55,18 @@ export function loadVirtualModule({
 
     if (id === RESOLVED_I18N_MODULE) {
         return loadI18nModule(mercurConfig)
+    }
+
+    if (id === RESOLVED_WIDGETS_MODULE) {
+        return generateWidgets(mercurConfig)
+    }
+
+    if (id === RESOLVED_NAVIGATION_MODULE) {
+        return generateNavigation(mercurConfig)
+    }
+
+    if (id === RESOLVED_CUSTOM_FIELDS_MODULE) {
+        return generateCustomFields(mercurConfig)
     }
 
     return null
@@ -66,7 +84,10 @@ function loadComponentsModule(mercurConfig: BuiltMercurConfig, cwd: string): str
 
     Object.entries(components).forEach(([name, componentPath]) => {
         const resolvedPath = path.resolve(cwd, 'src', componentPath)
-        imports.push(`import _${name} from "${JSON.stringify(resolvedPath)}"`)
+        // JSON.stringify already wraps the path in quotes — don't double-quote it
+        // (the old `"${JSON.stringify(...)}"` produced `from ""<path>""` and
+        // crashed the panel with an empty-specifier import).
+        imports.push(`import _${name} from ${JSON.stringify(resolvedPath)}`)
         exports.push(`${name}: _${name}`)
     })
 

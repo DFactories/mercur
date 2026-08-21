@@ -3,12 +3,12 @@ import { useLoaderData, useParams } from "react-router-dom"
 
 import { TwoColumnPageSkeleton } from "../../../components/common/skeleton"
 import { TwoColumnPage } from "../../../components/layout/pages"
+import { WidgetZone, useLinkQuery } from "@mercurjs/dashboard-shared"
 import { useCampaign } from "../../../hooks/api/campaigns"
 import { CampaignBudget } from "./components/campaign-budget"
 import { CampaignConfigurationSection } from "./components/campaign-configuration-section"
 import { CampaignGeneralSection } from "./components/campaign-general-section"
 import { CampaignPromotionSection } from "./components/campaign-promotion-section"
-import { CampaignSpend } from "./components/campaign-spend"
 import { campaignLoader } from "./loader"
 import { CAMPAIGN_DETAIL_FIELDS } from "./constants"
 
@@ -18,9 +18,10 @@ const Root = ({ children }: { children?: ReactNode }) => {
   >
 
   const { id } = useParams()
+  const query = useLinkQuery("campaign", CAMPAIGN_DETAIL_FIELDS)
   const { campaign, isLoading, isError, error } = useCampaign(
     id!,
-    { fields: CAMPAIGN_DETAIL_FIELDS },
+    query,
     { initialData }
   )
 
@@ -28,7 +29,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
     return (
       <TwoColumnPageSkeleton
         mainSections={2}
-        sidebarSections={3}
+        sidebarSections={2}
         showJSON
         showMetadata
       />
@@ -46,13 +47,16 @@ const Root = ({ children }: { children?: ReactNode }) => {
   ) : (
     <TwoColumnPage hasOutlet showJSON showMetadata data={campaign} data-testid="campaign-detail-page">
       <TwoColumnPage.Main>
-        <CampaignGeneralSection campaign={campaign} />
-        <CampaignPromotionSection campaign={campaign} />
+        <WidgetZone id="campaigns.detail.main" data={campaign}>
+          <CampaignGeneralSection campaign={campaign} />
+          <CampaignPromotionSection campaign={campaign} />
+        </WidgetZone>
       </TwoColumnPage.Main>
       <TwoColumnPage.Sidebar>
-        <CampaignConfigurationSection campaign={campaign} />
-        <CampaignSpend campaign={campaign} />
-        <CampaignBudget campaign={campaign} />
+        <WidgetZone id="campaigns.detail.side" data={campaign}>
+          <CampaignConfigurationSection campaign={campaign} />
+          <CampaignBudget campaign={campaign} />
+        </WidgetZone>
       </TwoColumnPage.Sidebar>
     </TwoColumnPage>
   )
@@ -64,6 +68,5 @@ export const CampaignDetailPage = Object.assign(Root, {
   MainGeneralSection: CampaignGeneralSection,
   MainPromotionSection: CampaignPromotionSection,
   SidebarConfigurationSection: CampaignConfigurationSection,
-  SidebarSpendSection: CampaignSpend,
   SidebarBudgetSection: CampaignBudget,
 })

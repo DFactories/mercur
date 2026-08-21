@@ -56,6 +56,7 @@ export function CreateShippingOptionsForm({
       shipping_profile_id: "",
       provider_id: "manual_manual",
       fulfillment_option_id: "",
+      shipping_option_type_id: "",
       region_prices: {},
       currency_prices: {},
       conditional_region_prices: {},
@@ -131,12 +132,9 @@ export function CreateShippingOptionsForm({
             operator: "eq",
           },
         ],
-        type: {
-          // TODO: FETCH TYPES
-          label: "Type label",
-          description: "Type description",
-          code: "type-code",
-        },
+        // Pick the admin-curated method type; the backend stamps its delivery
+        // time onto the option's metadata.
+        type_id: data.shipping_option_type_id,
       },
       {
         onSuccess: ({ shipping_option }) => {
@@ -166,7 +164,7 @@ export function CreateShippingOptionsForm({
       })
 
       if (!result.success) {
-        const [firstError, ...rest] = result.error.errors
+        const [firstError, ...rest] = result.error.issues
 
         for (const error of rest) {
           const _path = error.path.join(".") as keyof CreateShippingOptionSchema

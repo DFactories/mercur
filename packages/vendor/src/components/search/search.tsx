@@ -422,7 +422,7 @@ const CommandInput = forwardRef<
               variant="transparent"
               onClick={onBack}
             >
-              <ArrowUturnLeft className="text-ui-fg-muted" />
+              <ArrowUturnLeft className="text-ui-fg-muted rtl:-scale-x-100  rtl:-scale-y-100" />
             </IconButton>
           )}
           <Command.Input
@@ -567,7 +567,7 @@ const CommandItem = forwardRef<
   <Command.Item
     ref={ref}
     className={clx(
-      "aria-selected:bg-ui-bg-base-hover focus-visible:bg-ui-bg-base-hover txt-compact-small [&>svg]:text-ui-fg-subtle relative flex cursor-pointer select-none items-center gap-x-3 rounded-md p-2 outline-none data-[disabled]:pointer-events-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+      "aria-selected:bg-ui-bg-base-hover focus-visible:bg-ui-bg-base-hover txt-compact-small [&>svg]:text-ui-fg-subtle relative flex cursor-pointer select-none items-center gap-x-3 rounded-md p-2 outline-none data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50",
       className,
     )}
     {...props}

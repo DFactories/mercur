@@ -1,10 +1,13 @@
-import { zodResolver } from "@hookform/resolvers/zod"
 import { Button, Input, Select, Textarea, toast } from "@medusajs/ui"
-import { useForm } from "react-hook-form"
+import i18n from "i18next"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { HttpTypes } from "@medusajs/types"
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared"
 import { Form } from "../../../../../components/common/form"
 import { HandleInput } from "../../../../../components/inputs/handle-input"
 import { RouteDrawer, useRouteModal } from "../../../../../components/modals"
@@ -13,7 +16,7 @@ import { useUpdateProductCategory } from "../../../../../hooks/api/categories"
 import { useDocumentDirection } from "../../../../../hooks/use-document-direction"
 
 const EditCategorySchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1, { message: i18n.t("categories.validation.titleRequired") }),
   handle: z.string().min(1),
   description: z.string().optional(),
   status: z.enum(["active", "inactive"]),
@@ -28,7 +31,11 @@ export const EditCategoryForm = ({ category }: EditCategoryFormProps) => {
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
   const direction = useDocumentDirection()
-  const form = useForm<z.infer<typeof EditCategorySchema>>({
+  const form = useExtendableForm({
+    schema: EditCategorySchema,
+    model: "category",
+    zone: "edit",
+    data: category,
     defaultValues: {
       name: category.name,
       handle: category.handle,
@@ -36,7 +43,6 @@ export const EditCategoryForm = ({ category }: EditCategoryFormProps) => {
       status: category.is_active ? "active" : "inactive",
       visibility: category.is_internal ? "internal" : "public",
     },
-    resolver: zodResolver(EditCategorySchema),
   })
 
   const { mutateAsync, isPending } = useUpdateProductCategory(category.id)
@@ -89,7 +95,7 @@ export const EditCategoryForm = ({ category }: EditCategoryFormProps) => {
                   <Form.Item>
                     <Form.Label
                       optional
-                      tooltip={t("collections.handleTooltip")}
+                      tooltip={t("categories.handleTooltip")}
                     >
                       {t("fields.handle")}
                     </Form.Label>
@@ -184,6 +190,12 @@ export const EditCategoryForm = ({ category }: EditCategoryFormProps) => {
                 }}
               />
             </div>
+            <FormExtensionZone
+              model="category"
+              zone="edit"
+              control={form.control}
+              data={category}
+            />
           </div>
         </RouteDrawer.Body>
         <RouteDrawer.Footer>

@@ -20,6 +20,7 @@ export const membersQueryKeys = {
 };
 
 export const useMe = (
+  query?: Record<string, unknown>,
   options?: UseQueryOptions<
     any,
     ClientError,
@@ -27,8 +28,11 @@ export const useMe = (
   >,
 ) => {
   const { data, ...rest } = useQuery({
-    queryFn: () => sdk.vendor.members.me.query(),
-    queryKey: membersQueryKeys.me(),
+    queryFn: () =>
+      sdk.vendor.members.me.query(
+        query as Parameters<typeof sdk.vendor.members.me.query>[0],
+      ),
+    queryKey: query ? [...membersQueryKeys.me(), query] : membersQueryKeys.me(),
     ...options,
   });
 
@@ -72,6 +76,21 @@ export const useSellerMembers = (
     ...rest,
   };
 };
+
+export const useMember = (id: string) => {
+  const meResult = useMe() as { member?: any }
+  const sellerId = (meResult.member as any)?.seller?.id ?? ""
+
+  const membersResult = useSellerMembers(
+    sellerId,
+    {},
+    { enabled: !!sellerId && !!id }
+  ) as { members?: any[] }
+
+  const user = (membersResult.members ?? []).find((m: any) => m.id === id)
+
+  return { user }
+}
 
 export const useUpdateMemberRole = (
   sellerId: string,

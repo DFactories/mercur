@@ -9,7 +9,12 @@ import { formatDistance } from "date-fns";
 import { TFunction } from "i18next";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { notificationQueryKeys, useNotifications } from "../../../hooks/api";
+import {
+  notificationQueryKeys,
+  useMarkNotificationsRead,
+  useNotificationReadState,
+  useNotifications,
+} from "../../../hooks/api";
 import { sdk } from "../../../lib/client";
 import { FilePreview } from "../../common/file-preview";
 import { InfiniteList } from "../../common/infinite-list";
@@ -25,17 +30,24 @@ interface NotificationData {
   };
 }
 
-const LAST_READ_NOTIFICATION_KEY = "notificationsLastReadAt";
-
 export const Notifications = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [hasUnread, setHasUnread] = useUnreadNotifications();
-  // This is used to show the unread icon on the notification when the drawer is open,
-  // so it should lag behind the local storage data and should only be reset on close
-  const [lastReadAt, setLastReadAt] = useState(
-    localStorage.getItem(LAST_READ_NOTIFICATION_KEY),
+  const { last_read_at: serverLastReadAt } = useNotificationReadState();
+  const { mutate: markRead } = useMarkNotificationsRead();
+  const [hasUnread, setHasUnread] = useUnreadNotifications(serverLastReadAt);
+  // Lags behind the persisted marker on purpose: rows opened in this session
+  // keep their unread dot until the drawer closes.
+  const [lastReadAt, setLastReadAt] = useState<string | null | undefined>(
+    serverLastReadAt,
   );
+
+  // Seed the displayed marker once the persisted value arrives.
+  useEffect(() => {
+    if (!open) {
+      setLastReadAt(serverLastReadAt);
+    }
+  }, [serverLastReadAt, open]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -55,13 +67,10 @@ export const Notifications = () => {
     if (shouldOpen) {
       setHasUnread(false);
       setOpen(true);
-      localStorage.setItem(
-        LAST_READ_NOTIFICATION_KEY,
-        new Date().toISOString(),
-      );
+      markRead();
     } else {
       setOpen(false);
-      setLastReadAt(localStorage.getItem(LAST_READ_NOTIFICATION_KEY));
+      setLastReadAt(serverLastReadAt);
     }
   };
 
@@ -262,7 +271,7 @@ const NotificationsEmptyState = ({ t }: { t: TFunction }) => {
   );
 };
 
-const useUnreadNotifications = () => {
+const useUnreadNotifications = (lastReadAt: string | null | undefined) => {
   const [hasUnread, setHasUnread] = useState(false);
   const { notifications } = useNotifications(
     { limit: 1, offset: 0, fields: "created_at" },
@@ -276,16 +285,10 @@ const useUnreadNotifications = () => {
     }
 
     const lastNotificationAsTimestamp = Date.parse(lastNotification.created_at);
+    const lastReadAsTimestamp = lastReadAt ? Date.parse(lastReadAt) : 0;
 
-    const lastReadDatetime = localStorage.getItem(LAST_READ_NOTIFICATION_KEY);
-    const lastReadAsTimestamp = lastReadDatetime
-      ? Date.parse(lastReadDatetime)
-      : 0;
-
-    if (lastNotificationAsTimestamp > lastReadAsTimestamp) {
-      setHasUnread(true);
-    }
-  }, [lastNotification]);
+    setHasUnread(lastNotificationAsTimestamp > lastReadAsTimestamp);
+  }, [lastNotification, lastReadAt]);
 
   return [hasUnread, setHasUnread] as const;
 };

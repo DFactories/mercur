@@ -68,6 +68,7 @@ export const adminMemberInvitesQueryConfig = {
     defaults: [
       "id",
       "email",
+      "phone",
       "accepted",
       "role_id",
       "token",

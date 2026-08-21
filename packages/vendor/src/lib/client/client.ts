@@ -2,6 +2,8 @@ import { createClient, InferClient } from '@mercurjs/client'
 import { Routes } from '@mercurjs/core/_generated'
 import config from 'virtual:mercur/config'
 
+import { assetUrl } from '../../utils/asset-url'
+
 export const backendUrl = config.backendUrl ?? 'http://localhost:9000'
 
 export const sdk: InferClient<Routes> = createClient({
@@ -66,7 +68,7 @@ export const fetchQuery = async (
     const errorData = await response.json()
 
     if (response.status === 401) {
-      window.location.href = '/login?reason=Unauthorized'
+      window.location.href = `${assetUrl('/login')}?reason=Unauthorized`
       return
     }
 
@@ -78,6 +80,8 @@ export const fetchQuery = async (
   return response.json()
 }
 
+// DFACTORIES: multipart upload helper for vendor media (member photo, store
+// documents). Kept separate from the typed sdk because it posts FormData.
 export const uploadFilesQuery = async (files: any[]) => {
   const formData = new FormData()
 

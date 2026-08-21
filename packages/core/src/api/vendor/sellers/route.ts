@@ -53,22 +53,37 @@ export const POST = async (
     professional_details,
     payment_details,
     member_email,
+    member_phone,
     first_name,
     last_name,
+    additional_data,
     ...sellerData
   } = req.validatedBody
+
+  const memberId = req.auth_context.actor_id || undefined
+
+  // A member identity is only required when creating a NEW member. An already
+  // registered member (existing actor) can create additional stores without it.
+  if (!memberId && !member_email && !member_phone) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Either member_email or member_phone is required to create a seller account."
+    )
+  }
 
   const { result: seller } = await createSellerAccountWorkflow(req.scope).run({
     input: {
       auth_identity_id: req.auth_context.auth_identity_id,
-      member_id: req.auth_context.actor_id || undefined,
+      member_id: memberId,
       seller: sellerData,
       member_email,
+      member_phone: member_phone ?? undefined,
       first_name: first_name ?? undefined,
       last_name: last_name ?? undefined,
       address,
       professional_details,
       payment_details,
+      additional_data,
     },
   })
 

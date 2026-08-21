@@ -1,7 +1,7 @@
 export interface CreateSellerDTO {
   name: string
   handle?: string
-  email: string
+  email?: string | null
   description?: string | null
   logo?: string | null
   banner?: string | null
@@ -20,6 +20,10 @@ export interface UpdateSellerDTO {
   name?: string
   handle?: string
   email?: string
+  phone?: string | null
+  // Server-managed: set only by the OTP store-phone verification flow, never by
+  // a client validator.
+  phone_verified_at?: Date | null
   description?: string | null
   logo?: string | null
   banner?: string | null

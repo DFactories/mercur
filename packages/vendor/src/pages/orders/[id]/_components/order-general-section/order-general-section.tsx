@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle } from "@medusajs/icons"
+import { XCircle } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import {
   Container,
@@ -10,17 +10,22 @@ import {
   usePrompt,
 } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
+import { DisplayExtensionZone, DisplayField } from "@mercurjs/dashboard-shared"
 import { ActionMenu } from "@components/common/action-menu"
-import {
-  useCancelOrder,
-  useCompleteOrder,
-} from "@hooks/api/orders"
+import { useCancelOrder } from "@hooks/api/orders"
 import { useDate } from "@hooks/use-date"
 import {
   getCanceledOrderStatus,
   getOrderFulfillmentStatus,
   getOrderPaymentStatus,
 } from "@lib/order-helpers"
+
+const GENERAL_FIELD_IDS = [
+  "display_id",
+  "status",
+  "payment_status",
+  "fulfillment_status",
+]
 
 type OrderGeneralSectionProps = {
   order: HttpTypes.AdminOrder
@@ -32,18 +37,18 @@ export const OrderGeneralSection = ({ order }: OrderGeneralSectionProps) => {
   const { getFullDate } = useDate()
 
   const { mutateAsync: cancelOrder } = useCancelOrder(order.id)
-  const { mutateAsync: completeOrder } = useCompleteOrder(order.id)
 
-  const handleComplete = async () => {
-    await completeOrder(undefined, {
-      onSuccess: () => {
-        toast.success("Order completed")
-      },
-      onError: (e) => {
-        toast.error(e.message)
-      },
-    })
-  }
+  const hasAnyFulfilledItem = order.items?.some(
+    // @ts-ignore — detail.fulfilled_quantity is exposed via Mercur query-config
+    (i) => (i.detail?.fulfilled_quantity ?? 0) > 0
+  )
+
+  const cancelDisabled = !!order.canceled_at || !!hasAnyFulfilledItem
+  const cancelDisabledTooltip = order.canceled_at
+    ? undefined
+    : hasAnyFulfilledItem
+      ? t("orders.actions.cancelDisabledFulfilled")
+      : undefined
 
   const handleCancel = async () => {
     const res = await prompt({
@@ -72,10 +77,15 @@ export const OrderGeneralSection = ({ order }: OrderGeneralSectionProps) => {
   return (
     <Container className="flex items-center justify-between px-6 py-4">
       <div>
-        <div className="flex items-center gap-x-1">
-          <Heading>#{order.display_id}</Heading>
-          <Copy content={`#${order.display_id}`} className="text-ui-fg-muted" />
-        </div>
+        <DisplayField model="order" zone="general" id="display_id" data={order}>
+          <div className="flex items-center gap-x-1">
+            <Heading>#{order.display_id}</Heading>
+            <Copy
+              content={`#${order.display_id}`}
+              className="text-ui-fg-muted"
+            />
+          </div>
+        </DisplayField>
         <Text size="small" className="text-ui-fg-subtle">
           {t("orders.onDateFromSalesChannel", {
             date: getFullDate({ date: order.created_at, includeTime: true }),
@@ -85,25 +95,35 @@ export const OrderGeneralSection = ({ order }: OrderGeneralSectionProps) => {
       </div>
       <div className="flex items-center gap-x-4">
         <div className="flex items-center gap-x-1.5">
-          <OrderBadge order={order} />
-          <PaymentBadge order={order} />
-          <FulfillmentBadge order={order} />
+          <DisplayField model="order" zone="general" id="status" data={order}>
+            <OrderBadge order={order} />
+          </DisplayField>
+          <DisplayField
+            model="order"
+            zone="general"
+            id="payment_status"
+            data={order}
+          >
+            <PaymentBadge order={order} />
+          </DisplayField>
+          <DisplayField
+            model="order"
+            zone="general"
+            id="fulfillment_status"
+            data={order}
+          >
+            <FulfillmentBadge order={order} />
+          </DisplayField>
         </div>
         <ActionMenu
           groups={[
             {
               actions: [
                 {
-                  label: t("actions.complete"),
-                  onClick: handleComplete,
-                  disabled: order.status !== "pending",
-                  icon: <CheckCircle />,
-                },
-                {
                   label: t("actions.cancel"),
                   onClick: handleCancel,
-                  //@ts-ignore
-                  disabled: !!order.canceled_at,
+                  disabled: cancelDisabled,
+                  disabledTooltip: cancelDisabledTooltip,
                   icon: <XCircle />,
                 },
               ],
@@ -111,6 +131,12 @@ export const OrderGeneralSection = ({ order }: OrderGeneralSectionProps) => {
           ]}
         />
       </div>
+      <DisplayExtensionZone
+        model="order"
+        zone="general"
+        data={order}
+        builtInFieldIds={GENERAL_FIELD_IDS}
+      />
     </Container>
   )
 }

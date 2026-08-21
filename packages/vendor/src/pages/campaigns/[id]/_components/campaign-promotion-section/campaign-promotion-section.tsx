@@ -1,14 +1,25 @@
 import { PencilSquare, Trash } from "@medusajs/icons"
 import { AdminCampaign, AdminPromotion } from "@medusajs/types"
-import { Button, Checkbox, Container, Heading, usePrompt } from "@medusajs/ui"
+import {
+  Button,
+  Checkbox,
+  Container,
+  Heading,
+  toast,
+  usePrompt,
+} from "@medusajs/ui"
 import { RowSelectionState, createColumnHelper } from "@tanstack/react-table"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared"
 import { ActionMenu } from "@components/common/action-menu"
 import { _DataTable } from "@components/table/data-table"
-import { useRemovePromotionFromCampaign } from "@hooks/api/promotions"
+import {
+  usePromotions,
+  useRemovePromotionFromCampaign,
+} from "@hooks/api/promotions"
 import { fetchQuery } from "@lib/client"
 import { queryClient } from "@lib/query-client"
 import { campaignsQueryKeys } from "@hooks/api/campaigns"
@@ -31,18 +42,22 @@ export const CampaignPromotionSection = ({
   const { t } = useTranslation()
   const prompt = usePrompt()
   const columns = useColumns()
-  const filters = usePromotionTableFilters()
-  const { raw } = usePromotionTableQuery({
+  const filters = usePromotionTableFilters().filter(
+    (filter) => filter.key !== "campaign_id"
+  )
+  const { raw, searchParams } = usePromotionTableQuery({
     pageSize: PAGE_SIZE,
   })
 
-  const promotions = campaign.promotions
-  const count = promotions?.length ?? 0
+  const { promotions, count, isLoading } = usePromotions({
+    ...searchParams,
+    campaign_id: campaign.id,
+  })
 
   const { table } = useDataTable({
-    data: promotions ?? [],
+    data: (promotions ?? []) as unknown as AdminPromotion[],
     columns,
-    count,
+    count: count ?? 0,
     getRowId: (row) => row.id,
     enablePagination: true,
     enableRowSelection: true,
@@ -64,7 +79,7 @@ export const CampaignPromotionSection = ({
       description: t("campaigns.promotions.remove.description", {
         count: keys.length,
       }),
-      confirmText: t("actions.continue"),
+      confirmText: t("actions.remove"),
       cancelText: t("actions.cancel"),
     })
 
@@ -90,6 +105,10 @@ export const CampaignPromotionSection = ({
       queryKey: promotionsQueryKeys.all,
     })
 
+    toast.success(
+      t("campaigns.promotions.toast.removed", { count: keys.length })
+    )
+
     setRowSelection({})
   }
 
@@ -108,8 +127,8 @@ export const CampaignPromotionSection = ({
         table={table}
         columns={columns}
         pageSize={PAGE_SIZE}
-        isLoading={false}
-        count={count}
+        isLoading={isLoading}
+        count={count ?? 0}
         navigateTo={(row) => `/promotions/${row.id}`}
         filters={filters}
         search
@@ -135,8 +154,15 @@ export const CampaignPromotionSection = ({
           },
         ]}
         noRecords={{
+          title: t("campaigns.promotions.list.noRecordsTitle"),
           message: t("campaigns.promotions.list.noRecordsMessage"),
         }}
+      />
+
+      <DisplayExtensionZone
+        model="campaign"
+        zone="promotions"
+        data={campaign}
       />
     </Container>
   )
@@ -156,7 +182,7 @@ const PromotionActions = ({ promotion }: { promotion: AdminPromotion }) => {
       description: t("campaigns.promotions.remove.description", {
         count: 1,
       }),
-      confirmText: t("actions.continue"),
+      confirmText: t("actions.remove"),
       cancelText: t("actions.cancel"),
     })
 
@@ -164,7 +190,12 @@ const PromotionActions = ({ promotion }: { promotion: AdminPromotion }) => {
       return
     }
 
-    await mutateAsync()
+    await mutateAsync(undefined, {
+      onSuccess: () => {
+        toast.success(t("campaigns.promotions.toast.removed", { count: 1 }))
+      },
+      onError: (error) => toast.error(error.message),
+    })
   }
 
   return (
@@ -228,7 +259,7 @@ const useColumns = () => {
           )
         },
       }),
-      ...columns,
+      ...columns.filter((column) => column.id !== "campaign"),
       columnHelper.display({
         id: "actions",
         cell: ({ row }) => {

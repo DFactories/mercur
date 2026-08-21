@@ -10,7 +10,11 @@ import {
 import { MedusaError } from "@medusajs/framework/utils"
 import { HttpTypes } from "@mercurjs/types"
 
-import { refetchShippingOption, validateSellerShippingOption } from "../helpers"
+import {
+  getTypeDeliveryDays,
+  refetchShippingOption,
+  validateSellerShippingOption,
+} from "../helpers"
 import { VendorUpdateShippingOptionType } from "../validators"
 
 export const GET = async (
@@ -45,7 +49,46 @@ export const POST = async (
 
   await validateSellerShippingOption(req.scope, sellerId, req.params.id)
 
-  const shippingOptionPayload = req.validatedBody
+  const { metadata: bodyMetadata, ...shippingOptionPayload } = req.validatedBody
+
+  // When the option's type changes, re-stamp the new type's admin-curated
+  // delivery time onto the metadata. Medusa's update replaces the metadata
+  // object, so merge onto the existing metadata to preserve other keys.
+  //
+  // A "type change" is picking an admin type (`type_id`) OR switching to a
+  // custom inline `type`. Either way the stamp is re-evaluated: if the new type
+  // has an admin delivery time it wins; otherwise (custom type, or a type with
+  // no delivery set) any STALE `estimated_delivery_days` from the previous type
+  // is cleared so the settlement hold falls back to the default instead of using
+  // the old type's time. (An explicit manual value in the request body is kept.)
+  let metadataUpdate: Record<string, unknown> | undefined = bodyMetadata
+  const typeId = shippingOptionPayload.type_id
+  const typeChanged =
+    typeId !== undefined || shippingOptionPayload.type !== undefined
+  if (typeChanged || bodyMetadata !== undefined) {
+    const existing = await refetchShippingOption(req.scope, req.params.id, [
+      "metadata",
+    ])
+    const merged: Record<string, unknown> = {
+      ...((existing?.metadata as Record<string, unknown> | undefined) ?? {}),
+      ...(bodyMetadata ?? {}),
+    }
+    if (typeChanged) {
+      const days = typeId ? await getTypeDeliveryDays(req.scope, typeId) : null
+      if (days !== null) {
+        merged.estimated_delivery_days = days
+      } else if (
+        bodyMetadata === undefined ||
+        !("estimated_delivery_days" in bodyMetadata)
+      ) {
+        // Explicitly null (not delete) the stale value: Medusa MERGES metadata on
+        // update, so omitting the key would keep the previous type's time. Null
+        // is what the settlement hold reads as "unset" → falls back to default.
+        merged.estimated_delivery_days = null
+      }
+    }
+    metadataUpdate = merged
+  }
 
   const workflow = updateShippingOptionsWorkflow(req.scope)
 
@@ -53,6 +96,7 @@ export const POST = async (
     {
       id: req.params.id,
       ...shippingOptionPayload,
+      ...(metadataUpdate !== undefined ? { metadata: metadataUpdate } : {}),
     }
 
   const { result } = await workflow.run({

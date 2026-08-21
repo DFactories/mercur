@@ -1,7 +1,6 @@
 import { PencilSquare, Trash } from "@medusajs/icons"
 import { AdminCampaignResponse } from "@medusajs/types"
 import {
-  Badge,
   Container,
   Heading,
   StatusBadge,
@@ -11,9 +10,9 @@ import {
 } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
+import { DisplayExtensionZone, DisplayField } from "@mercurjs/dashboard-shared"
 import { ActionMenu } from "@components/common/action-menu"
 import { useDeleteCampaign } from "@hooks/api/campaigns"
-import { currencies } from "@lib/data/currencies"
 import {
   campaignStatus,
   statusColor,
@@ -66,12 +65,21 @@ export const CampaignGeneralSection = ({
   return (
     <Container className="divide-y p-0">
       <div className="flex items-center justify-between px-6 py-4">
-        <Heading>{campaign.name}</Heading>
+        <DisplayField model="campaign" zone="general" id="name" data={campaign}>
+          <Heading>{campaign.name}</Heading>
+        </DisplayField>
 
         <div className="flex items-center gap-x-4">
-          <StatusBadge color={statusColor(status)}>
-            {t(`campaigns.status.${status}`)}
-          </StatusBadge>
+          <DisplayField
+            model="campaign"
+            zone="general"
+            id="status"
+            data={campaign}
+          >
+            <StatusBadge color={statusColor(status)}>
+              {t(`campaigns.status.${status}`)}
+            </StatusBadge>
+          </DisplayField>
 
           <ActionMenu
             groups={[
@@ -98,40 +106,51 @@ export const CampaignGeneralSection = ({
         </div>
       </div>
 
-      <div className="text-ui-fg-subtle grid grid-cols-2 items-center px-6 py-4">
-        <Text size="small" leading="compact" weight="plus">
-          {t("campaigns.fields.identifier")}
-        </Text>
-
-        <Text size="small" leading="compact">
-          {campaign.campaign_identifier}
-        </Text>
-      </div>
-
-      <div className="text-ui-fg-subtle grid grid-cols-2 items-center px-6 py-4">
-        <Text size="small" leading="compact" weight="plus">
-          {t("fields.description")}
-        </Text>
-
-        <Text size="small" leading="compact">
-          {campaign.description || "-"}
-        </Text>
-      </div>
-
-      {campaign?.budget && campaign.budget.type === "spend" && (
+      <DisplayField
+        model="campaign"
+        zone="general"
+        id="description"
+        data={campaign}
+      >
         <div className="text-ui-fg-subtle grid grid-cols-2 items-center px-6 py-4">
           <Text size="small" leading="compact" weight="plus">
-            {t("fields.currency")}
+            {t("fields.description")}
           </Text>
 
-          <div>
-            <Badge size="xsmall">{campaign?.budget.currency_code}</Badge>
-            <Text className="inline pl-3" size="small" leading="compact">
-              {currencies[campaign?.budget.currency_code?.toUpperCase()]?.name}
-            </Text>
-          </div>
+          <Text size="small" leading="compact">
+            {campaign.description || "-"}
+          </Text>
         </div>
-      )}
+      </DisplayField>
+
+      <DisplayField
+        model="campaign"
+        zone="general"
+        id="campaign_identifier"
+        data={campaign}
+      >
+        <div className="text-ui-fg-subtle grid grid-cols-2 items-center px-6 py-4">
+          <Text size="small" leading="compact" weight="plus">
+            {t("campaigns.fields.identifier")}
+          </Text>
+
+          <Text size="small" leading="compact">
+            {campaign.campaign_identifier}
+          </Text>
+        </div>
+      </DisplayField>
+
+      <DisplayExtensionZone
+        model="campaign"
+        zone="general"
+        data={campaign}
+        builtInFieldIds={[
+          "name",
+          "status",
+          "campaign_identifier",
+          "description",
+        ]}
+      />
     </Container>
   )
 }

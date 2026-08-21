@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/payout-stripe-connect",
-  "version": "2.1.6",
+  "version": "2.3.1-dfactories.0",
   "description": "Stripe Connect payment provider for Mercur",
   "private": false,
   "type": "module",
@@ -25,11 +25,11 @@
     "build": "tsup"
   },
   "peerDependencies": {
-    "@medusajs/framework": "2.13.4"
+    "@medusajs/framework": ">=2.18.0"
   },
   "devDependencies": {
-    "@medusajs/framework": "2.13.4",
-    "@mercurjs/types": "workspace:*",
+    "@medusajs/framework": "2.18.0",
+    "@mercurjs/types": "2.3.1-dfactories.0",
     "tsup": "^8.5.0"
   },
   "dependencies": {

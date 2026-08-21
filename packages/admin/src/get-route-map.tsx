@@ -1,4 +1,5 @@
 import type { HttpTypes } from "@medusajs/types";
+import type { AdminReviewResponse } from "@mercurjs/types";
 
 import { t } from "i18next";
 import { Outlet, type RouteObject, type UIMatch } from "react-router-dom";
@@ -86,12 +87,9 @@ export function getRouteMap({
                         lazy: () => import("./pages/products/product-create"),
                       },
                       {
-                        path: "import",
-                        lazy: () => import("./pages/products/product-import"),
-                      },
-                      {
-                        path: "export",
-                        lazy: () => import("./pages/products/product-export"),
+                        path: "bulk-edit",
+                        lazy: () =>
+                          import("./pages/products/product-bulk-edit"),
                       },
                     ],
                   },
@@ -137,6 +135,21 @@ export function getRouteMap({
                               import("./pages/products/product-attributes"),
                           },
                           {
+                            path: "attributes/create",
+                            lazy: () =>
+                              import("./pages/products/product-create-attribute"),
+                          },
+                          {
+                            path: "attributes/add",
+                            lazy: () =>
+                              import("./pages/products/product-add-existing-attributes"),
+                          },
+                          {
+                            path: "attributes/:attribute_id/edit",
+                            lazy: () =>
+                              import("./pages/products/product-edit-attribute"),
+                          },
+                          {
                             path: "organization",
                             lazy: () =>
                               import("./pages/products/product-organization"),
@@ -152,29 +165,9 @@ export function getRouteMap({
                               import("./pages/products/product-media"),
                           },
                           {
-                            path: "prices",
-                            lazy: () =>
-                              import("./pages/products/product-prices"),
-                          },
-                          {
-                            path: "options/create",
-                            lazy: () =>
-                              import("./pages/products/product-create-option"),
-                          },
-                          {
-                            path: "options/:option_id/edit",
-                            lazy: () =>
-                              import("./pages/products/product-edit-option"),
-                          },
-                          {
                             path: "variants/create",
                             lazy: () =>
                               import("./pages/products/product-create-variant"),
-                          },
-                          {
-                            path: "stock",
-                            lazy: () =>
-                              import("./pages/products/product-stock"),
                           },
                           {
                             path: "metadata/edit",
@@ -210,16 +203,6 @@ export function getRouteMap({
                                 path: "edit",
                                 lazy: () =>
                                   import("./pages/product-variants/product-variant-edit"),
-                              },
-                              {
-                                path: "prices",
-                                lazy: () =>
-                                  import("./pages/products/product-prices"),
-                              },
-                              {
-                                path: "manage-items",
-                                lazy: () =>
-                                  import("./pages/product-variants/product-variant-manage-inventory-items"),
                               },
                               {
                                 path: "metadata/edit",
@@ -276,11 +259,23 @@ export function getRouteMap({
                     children: [
                       {
                         path: "",
-                        lazy: () => import("./pages/categories/category-detail"),
+                        lazy: () =>
+                          import("./pages/categories/category-detail"),
                         children: [
                           {
                             path: "edit",
-                            lazy: () => import("./pages/categories/category-edit"),
+                            lazy: () =>
+                              import("./pages/categories/category-edit"),
+                          },
+                          {
+                            path: "media",
+                            lazy: () =>
+                              import("./pages/categories/category-media"),
+                          },
+                          {
+                            path: "icon/edit",
+                            lazy: () =>
+                              import("./pages/categories/category-icon-edit"),
                           },
                           {
                             path: "products",
@@ -336,33 +331,14 @@ export function getRouteMap({
                         lazy: () => import("./pages/orders/order-detail"),
                         children: [
                           {
-                            path: "fulfillment",
-                            lazy: () =>
-                              import("./pages/orders/order-create-fulfillment"),
-                          },
-                          {
-                            path: "returns/:return_id/receive",
-                            lazy: () =>
-                              import("./pages/orders/order-receive-return"),
-                          },
-                          {
-                            path: "allocate-items",
-                            lazy: () =>
-                              import("./pages/orders/order-allocate-items"),
-                          },
-                          {
-                            path: ":f_id/create-shipment",
-                            lazy: () =>
-                              import("./pages/orders/order-create-shipment"),
-                          },
-                          {
                             path: "returns",
                             lazy: () =>
                               import("./pages/orders/order-create-return"),
                           },
                           {
                             path: "claims",
-                            lazy: () => import("./pages/orders/order-create-claim"),
+                            lazy: () =>
+                              import("./pages/orders/order-create-claim"),
                           },
                           {
                             path: "exchanges",
@@ -371,7 +347,8 @@ export function getRouteMap({
                           },
                           {
                             path: "edits",
-                            lazy: () => import("./pages/orders/order-create-edit"),
+                            lazy: () =>
+                              import("./pages/orders/order-create-edit"),
                           },
                           {
                             path: "refund",
@@ -385,7 +362,8 @@ export function getRouteMap({
                           },
                           {
                             path: "email",
-                            lazy: () => import("./pages/orders/order-edit-email"),
+                            lazy: () =>
+                              import("./pages/orders/order-edit-email"),
                           },
                           {
                             path: "shipping-address",
@@ -504,7 +482,8 @@ export function getRouteMap({
                         children: [
                           {
                             path: "edit",
-                            lazy: () => import("./pages/campaigns/campaign-edit"),
+                            lazy: () =>
+                              import("./pages/campaigns/campaign-edit"),
                           },
                           {
                             path: "configuration",
@@ -520,6 +499,55 @@ export function getRouteMap({
                             path: "add-promotions",
                             lazy: () =>
                               import("./pages/campaigns/add-campaign-promotions"),
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                path: "/reviews",
+                errorElement: <ErrorBoundary />,
+                handle: {
+                  breadcrumb: () => t("reviews.domain"),
+                },
+                children: [
+                  {
+                    path: "",
+                    lazy: () => import("./pages/reviews/review-list"),
+                    children: [],
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { Breadcrumb, loader } = await import(
+                        "./pages/reviews/review-detail"
+                      )
+
+                      return {
+                        Component: Outlet,
+                        loader,
+                        handle: {
+                          breadcrumb: (
+                            match: UIMatch<AdminReviewResponse>,
+                          ) => <Breadcrumb {...match} />,
+                        },
+                      }
+                    },
+                    children: [
+                      {
+                        path: "",
+                        lazy: () => import("./pages/reviews/review-detail"),
+                        children: [
+                          {
+                            path: "edit",
+                            lazy: () => import("./pages/reviews/review-edit"),
+                          },
+                          {
+                            path: "respond",
+                            lazy: () =>
+                              import("./pages/reviews/review-respond"),
                           },
                         ],
                       },
@@ -571,6 +599,16 @@ export function getRouteMap({
                             path: "edit",
                             lazy: () =>
                               import("./pages/collections/collection-edit"),
+                          },
+                          {
+                            path: "media",
+                            lazy: () =>
+                              import("./pages/collections/collection-media"),
+                          },
+                          {
+                            path: "icon/edit",
+                            lazy: () =>
+                              import("./pages/collections/collection-icon-edit"),
                           },
                           {
                             path: "products",
@@ -639,6 +677,13 @@ export function getRouteMap({
                               import("./pages/price-lists/price-list-configuration"),
                           },
                           {
+                            path: "customer-availability",
+                            lazy: () =>
+                              import(
+                                "./pages/price-lists/price-list-customer-availability"
+                              ),
+                          },
+                          {
                             path: "products/add",
                             lazy: () =>
                               import("./pages/price-lists/price-list-prices-add"),
@@ -694,12 +739,18 @@ export function getRouteMap({
                         children: [
                           {
                             path: "edit",
-                            lazy: () => import("./pages/customers/customer-edit"),
+                            lazy: () =>
+                              import("./pages/customers/customer-edit"),
                           },
                           {
                             path: "create-address",
                             lazy: () =>
                               import("./pages/customers/customer-create-address"),
+                          },
+                          {
+                            path: "edit-address/:address_id",
+                            lazy: () =>
+                              import("./pages/customers/customer-edit-address"),
                           },
                           {
                             path: "add-customer-groups",
@@ -732,16 +783,12 @@ export function getRouteMap({
                   {
                     path: "",
                     lazy: () =>
-                      import(
-                        "./pages/customer-groups/customer-group-list"
-                      ),
+                      import("./pages/customer-groups/customer-group-list"),
                     children: [
                       {
                         path: "create",
                         lazy: () =>
-                          import(
-                            "./pages/customer-groups/customer-group-create"
-                          ),
+                          import("./pages/customer-groups/customer-group-create"),
                       },
                     ],
                   },
@@ -749,9 +796,7 @@ export function getRouteMap({
                     path: ":id",
                     lazy: async () => {
                       const { Breadcrumb, loader } =
-                        await import(
-                          "./pages/customer-groups/customer-group-detail"
-                        );
+                        await import("./pages/customer-groups/customer-group-detail");
 
                       return {
                         Component: Outlet,
@@ -767,30 +812,22 @@ export function getRouteMap({
                       {
                         path: "",
                         lazy: () =>
-                          import(
-                            "./pages/customer-groups/customer-group-detail"
-                          ),
+                          import("./pages/customer-groups/customer-group-detail"),
                         children: [
                           {
                             path: "edit",
                             lazy: () =>
-                              import(
-                                "./pages/customer-groups/customer-group-edit"
-                              ),
+                              import("./pages/customer-groups/customer-group-edit"),
                           },
                           {
                             path: "add-customers",
                             lazy: () =>
-                              import(
-                                "./pages/customer-groups/customer-group-add-customers"
-                              ),
+                              import("./pages/customer-groups/customer-group-add-customers"),
                           },
                           {
                             path: "metadata/edit",
                             lazy: () =>
-                              import(
-                                "./pages/customer-groups/customer-group-metadata"
-                              ),
+                              import("./pages/customer-groups/customer-group-metadata"),
                           },
                         ],
                       },
@@ -851,16 +888,17 @@ export function getRouteMap({
                           {
                             path: "professional-details",
                             lazy: () =>
-                              import(
-                                "./pages/stores/store-professional-details-edit"
-                              ),
+                              import("./pages/stores/store-professional-details-edit"),
+                          },
+                          {
+                            path: "documents",
+                            lazy: () =>
+                              import("./pages/stores/store-documents-edit"),
                           },
                           {
                             path: "payment-details",
                             lazy: () =>
-                              import(
-                                "./pages/stores/store-payment-details-edit"
-                              ),
+                              import("./pages/stores/store-payment-details-edit"),
                           },
                           {
                             path: "store-closure",
@@ -971,6 +1009,86 @@ export function getRouteMap({
                 ],
               },
               {
+                path: "/offers",
+                errorElement: <ErrorBoundary />,
+                handle: {
+                  breadcrumb: () => t("offers.domain"),
+                },
+                children: [
+                  {
+                    path: "",
+                    lazy: async () => {
+                      const { OfferListPage } = await import(
+                        "./pages/offers"
+                      );
+                      return { Component: OfferListPage };
+                    },
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { loader } = await import(
+                        "./pages/offers/[id]/loader"
+                      );
+                      const { Breadcrumb } = await import(
+                        "./pages/offers/[id]/breadcrumb"
+                      );
+                      return {
+                        Component: Outlet,
+                        loader,
+                        handle: {
+                          breadcrumb: (match: UIMatch) => (
+                            <Breadcrumb {...match} />
+                          ),
+                        },
+                      };
+                    },
+                    children: [
+                      {
+                        path: "",
+                        lazy: async () => {
+                          const { OfferDetailPage } = await import(
+                            "./pages/offers/[id]/offer-detail-page"
+                          );
+                          return { Component: OfferDetailPage };
+                        },
+                      },
+                      {
+                        path: "variants/:offer_id",
+                        lazy: async () => {
+                          const { loader } = await import(
+                            "./pages/offers/[id]/variants/[offer_id]/loader"
+                          );
+                          const { Breadcrumb } = await import(
+                            "./pages/offers/[id]/variants/[offer_id]/breadcrumb"
+                          );
+                          return {
+                            Component: Outlet,
+                            loader,
+                            handle: {
+                              breadcrumb: (match: UIMatch) => (
+                                <Breadcrumb {...match} />
+                              ),
+                            },
+                          };
+                        },
+                        children: [
+                          {
+                            path: "",
+                            lazy: async () => {
+                              const { OfferVariantDetailPage } = await import(
+                                "./pages/offers/[id]/variants/[offer_id]/offer-variant-detail-page"
+                              );
+                              return { Component: OfferVariantDetailPage };
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
                 path: "/inventory",
                 errorElement: <ErrorBoundary />,
                 handle: {
@@ -981,11 +1099,6 @@ export function getRouteMap({
                     path: "",
                     lazy: () => import("./pages/inventory/inventory-list"),
                     children: [
-                      {
-                        path: "create",
-                        lazy: () =>
-                          import("./pages/inventory/inventory-create"),
-                      },
                       {
                         path: "stock",
                         lazy: () => import("./pages/inventory/inventory-stock"),
@@ -1138,7 +1251,8 @@ export function getRouteMap({
                           },
                           {
                             path: "metadata/edit",
-                            lazy: () => import("./pages/regions/region-metadata"),
+                            lazy: () =>
+                              import("./pages/regions/region-metadata"),
                           },
                         ],
                       },
@@ -1156,59 +1270,62 @@ export function getRouteMap({
                 children: [
                   {
                     path: "",
-                    lazy: () => import("./pages/marketplace/marketplace-detail"),
+                    lazy: () =>
+                      import("./pages/marketplace/marketplace-detail"),
                     children: [
                       {
                         path: "edit",
-                        lazy: () => import("./pages/marketplace/marketplace-edit"),
+                        lazy: () =>
+                          import("./pages/marketplace/marketplace-edit"),
                       },
                       {
                         path: "currencies",
-                        lazy: () => import("./pages/marketplace/marketplace-add-currencies"),
+                        lazy: () =>
+                          import("./pages/marketplace/marketplace-add-currencies"),
                       },
                       {
                         path: "metadata/edit",
-                        lazy: () => import("./pages/marketplace/marketplace-metadata"),
+                        lazy: () =>
+                          import("./pages/marketplace/marketplace-metadata"),
                       },
                     ],
                   },
                 ],
               },
               {
-                path: "commission-rates",
+                path: "commissions",
                 errorElement: <ErrorBoundary />,
                 element: <Outlet />,
                 handle: {
-                  breadcrumb: () => t("commissionRates.domain"),
+                  breadcrumb: () => t("commissions.domain"),
                 },
                 children: [
                   {
                     path: "",
                     lazy: () =>
-                      import(
-                        "./pages/commission-rates/commission-rate-list"
-                      ),
+                      import("./pages/commissions/commissions-list"),
                     children: [
                       {
                         path: "create",
                         lazy: () =>
-                          import(
-                            "./pages/commission-rates/commission-rate-create"
-                          ),
+                          import("./pages/commissions/commission-rule-create"),
+                      },
+                      {
+                        path: "edit-global",
+                        lazy: () =>
+                          import("./pages/commissions/global-commission-edit"),
                       },
                     ],
                   },
                   {
                     path: ":id",
                     lazy: async () => {
-                      const { Breadcrumb, loader } =
-                        await import(
-                          "./pages/commission-rates/commission-rate-detail"
-                        );
+                      const { Breadcrumb } = await import(
+                        "./pages/commissions/commission-rule-detail"
+                      );
 
                       return {
                         Component: Outlet,
-                        loader,
                         handle: {
                           breadcrumb: (match: UIMatch) => (
                             <Breadcrumb {...match} />
@@ -1220,15 +1337,18 @@ export function getRouteMap({
                       {
                         path: "",
                         lazy: () =>
-                          import(
-                            "./pages/commission-rates/commission-rate-detail"
-                          ),
+                          import("./pages/commissions/commission-rule-detail"),
                         children: [
                           {
                             path: "edit",
                             lazy: () =>
+                              import("./pages/commissions/commission-rule-edit"),
+                          },
+                          {
+                            path: "edit-commission",
+                            lazy: () =>
                               import(
-                                "./pages/commission-rates/commission-rate-edit"
+                                "./pages/commissions/commission-rule-commission-edit"
                               ),
                           },
                         ],
@@ -1236,6 +1356,14 @@ export function getRouteMap({
                     ],
                   },
                 ],
+              },
+              {
+                path: "notifications",
+                errorElement: <ErrorBoundary />,
+                handle: {
+                  breadcrumb: () => t("notificationSettings.domain"),
+                },
+                lazy: () => import("./pages/notification-settings"),
               },
               {
                 path: "users",
@@ -1499,7 +1627,8 @@ export function getRouteMap({
                         children: [
                           {
                             path: "edit",
-                            lazy: () => import("./pages/locations/location-edit"),
+                            lazy: () =>
+                              import("./pages/locations/location-edit"),
                           },
                           {
                             path: "sales-channels",
@@ -1653,9 +1782,9 @@ export function getRouteMap({
                         Component: Outlet,
                         loader,
                         handle: {
-                          breadcrumb: (
-                            match: UIMatch,
-                          ) => <Breadcrumb {...match} />,
+                          breadcrumb: (match: UIMatch) => (
+                            <Breadcrumb {...match} />
+                          ),
                         },
                       };
                     },
@@ -1673,23 +1802,17 @@ export function getRouteMap({
                           {
                             path: "edit-possible-value",
                             lazy: () =>
-                              import(
-                                "./pages/attributes/attribute-edit-possible-value"
-                              ),
+                              import("./pages/attributes/attribute-edit-possible-value"),
                           },
                           {
                             path: "create-possible-value",
                             lazy: () =>
-                              import(
-                                "./pages/attributes/attribute-create-possible-value"
-                              ),
+                              import("./pages/attributes/attribute-create-possible-value"),
                           },
                           {
                             path: "edit-ranking",
                             lazy: () =>
-                              import(
-                                "./pages/attributes/attribute-edit-ranking"
-                              ),
+                              import("./pages/attributes/attribute-edit-ranking"),
                           },
                         ],
                       },

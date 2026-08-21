@@ -5,16 +5,18 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "oxlint --quiet",
+    "test:unit": "turbo run test --filter=@mercurjs/vendor --filter=@mercurjs/admin --filter=@mercurjs/dashboard-shared --filter=@mercurjs/core",
     "test:integration:http": "cd integration-tests && bun run test:integration:http"
   },
   "dependencies": {
     "@mercurjs/core": "workspace:*"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "eslint": "^9.39.2",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
     "globals": "^17.0.0",
     "oxlint": "^1.64.0",
+    "pg-god": "^1.0.12",
     "prettier": "^3.7.4",
     "turbo": "^2.7.4",
     "typescript": "5.9.3",
@@ -28,6 +30,29 @@
     "apps/*",
     "packages/*",
     "packages/providers/*",
-    "integration-tests"
-  ]
+    "integration-tests",
+    "e2e-tests",
+    "e2e-tests/hosts/*"
+  ],
+  "overrides": {
+    "@medusajs/admin-bundler": "2.18.0",
+    "@medusajs/admin-sdk": "2.18.0",
+    "@medusajs/admin-shared": "2.18.0",
+    "@medusajs/admin-vite-plugin": "2.18.0",
+    "@medusajs/cli": "2.18.0",
+    "@medusajs/core-flows": "2.18.0",
+    "@medusajs/dashboard": "2.18.0",
+    "@medusajs/draft-order": "2.18.0",
+    "@medusajs/framework": "2.18.0",
+    "@medusajs/icons": "2.18.0",
+    "@medusajs/medusa": "2.18.0",
+    "@medusajs/test-utils": "2.18.0",
+    "@medusajs/types": "2.18.0",
+    "@medusajs/ui": "4.1.19",
+    "@medusajs/ui-preset": "2.18.0",
+    "zod": "3.25.76",
+    "tailwindcss": "3.4.19",
+    "@types/react": "18.3.29",
+    "@types/react-dom": "18.3.7"
+  }
 }

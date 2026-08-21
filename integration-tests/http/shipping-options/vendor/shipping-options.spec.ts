@@ -1,12 +1,16 @@
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import { IFulfillmentModuleService, MedusaContainer } from "@medusajs/framework/types"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createSellerUser } from "../../../helpers/create-seller-user"
+import {
+    adminHeaders,
+    createAdminUser,
+} from "../../../helpers/create-admin-user"
 
 jest.setTimeout(60000)
 
 medusaIntegrationTestRunner({
-    testSuite: ({ getContainer, api }) => {
+    testSuite: ({ getContainer, api, dbConnection }) => {
         describe("Vendor - Shipping Options", () => {
             let appContainer: MedusaContainer
             let _seller1: any
@@ -303,6 +307,91 @@ medusaIntegrationTestRunner({
 
                     expect(response.status).toEqual(201)
                     expect(response.data.shipping_option).toBeDefined()
+                })
+
+                it("stamps the type's admin delivery time onto the option metadata", async () => {
+                    const prerequisites = await createShippingPrerequisites(seller1Headers)
+
+                    const [type] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "Post", code: `post-${Date.now()}`, description: "" },
+                    ])
+
+                    // Admin sets the type's delivery = 4 days (here via the module
+                    // service directly; the admin route does the same).
+                    const deliveryService: any = appContainer.resolve(
+                        "shipping_option_type_delivery"
+                    )
+                    await deliveryService.createShippingOptionTypeDeliveries({
+                        shipping_option_type_id: type.id,
+                        estimated_delivery_days: 4,
+                    })
+
+                    const response = await api.post(
+                        `/vendor/shipping-options`,
+                        {
+                            name: "Post Shipping",
+                            service_zone_id: prerequisites.serviceZone.id,
+                            shipping_profile_id: prerequisites.shippingProfile.id,
+                            provider_id: "manual_manual",
+                            price_type: "flat",
+                            type_id: type.id,
+                            prices: [{ currency_code: "usd", amount: 1000 }],
+                        },
+                        seller1Headers
+                    )
+                    expect(response.status).toEqual(201)
+
+                    // The chosen type's delivery time is stamped onto the option.
+                    const query = appContainer.resolve(ContainerRegistrationKeys.QUERY)
+                    const {
+                        data: [opt],
+                    } = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: response.data.shipping_option.id },
+                    })
+                    expect(Number(opt.metadata.estimated_delivery_days)).toBe(4)
+                })
+
+                it("e2e: admin sets type delivery (HTTP) → vendor option (HTTP) is stamped", async () => {
+                    // 1) admin curates a type + its delivery time via the admin route
+                    await createAdminUser(dbConnection, adminHeaders, appContainer)
+                    const [type] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "تیپاکس", code: `tipax-${Date.now()}`, description: "" },
+                    ])
+                    await api.post(
+                        `/admin/shipping-templates/${type.id}`,
+                        { estimated_delivery_days: 5, carrier: "tipax" },
+                        adminHeaders
+                    )
+
+                    // 2) vendor creates a shipping option picking that type
+                    const prerequisites = await createShippingPrerequisites(seller1Headers)
+                    const response = await api.post(
+                        `/vendor/shipping-options`,
+                        {
+                            name: "Tipax Shipping",
+                            service_zone_id: prerequisites.serviceZone.id,
+                            shipping_profile_id: prerequisites.shippingProfile.id,
+                            provider_id: "manual_manual",
+                            price_type: "flat",
+                            type_id: type.id,
+                            prices: [{ currency_code: "usd", amount: 1000 }],
+                        },
+                        seller1Headers
+                    )
+                    expect(response.status).toEqual(201)
+
+                    // 3) the admin-set delivery time is stamped onto the option
+                    const query = appContainer.resolve(ContainerRegistrationKeys.QUERY)
+                    const {
+                        data: [opt],
+                    } = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: response.data.shipping_option.id },
+                    })
+                    expect(Number(opt.metadata.estimated_delivery_days)).toBe(5)
                 })
 
                 it("should create a shipping option with metadata", async () => {
@@ -629,6 +718,67 @@ medusaIntegrationTestRunner({
                     )
 
                     expect(response.status).toEqual(200)
+                })
+
+                it("clears a stale stamped delivery time when the type changes to one without a delivery", async () => {
+                    const prerequisites = await createShippingPrerequisites(seller1Headers)
+                    const deliveryService: any = appContainer.resolve(
+                        "shipping_option_type_delivery"
+                    )
+                    const query = appContainer.resolve(ContainerRegistrationKeys.QUERY)
+
+                    // Type A has an admin delivery time (3 days); type B has none.
+                    const [typeA] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "A", code: `a-${Date.now()}`, description: "" },
+                    ])
+                    const [typeB] = await fulfillmentModuleService.createShippingOptionTypes([
+                        { label: "B", code: `b-${Date.now()}`, description: "" },
+                    ])
+                    await deliveryService.createShippingOptionTypeDeliveries({
+                        shipping_option_type_id: typeA.id,
+                        estimated_delivery_days: 3,
+                    })
+
+                    // Create the option with type A → metadata stamped with 3.
+                    const created = await api.post(
+                        `/vendor/shipping-options`,
+                        {
+                            name: "Stale Stamp Shipping",
+                            service_zone_id: prerequisites.serviceZone.id,
+                            shipping_profile_id: prerequisites.shippingProfile.id,
+                            provider_id: "manual_manual",
+                            price_type: "flat",
+                            type_id: typeA.id,
+                            prices: [{ currency_code: "usd", amount: 1000 }],
+                        },
+                        seller1Headers
+                    )
+                    expect(created.status).toEqual(201)
+                    const optionId = created.data.shipping_option.id
+                    const before = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: optionId },
+                    })
+                    expect(Number(before.data[0].metadata.estimated_delivery_days)).toBe(3)
+
+                    // Switch to type B (no admin delivery) → the stale 3 must be cleared.
+                    const updated = await api.post(
+                        `/vendor/shipping-options/${optionId}`,
+                        { type_id: typeB.id },
+                        seller1Headers
+                    )
+                    expect(updated.status).toEqual(200)
+                    const after = await query.graph({
+                        entity: "shipping_option",
+                        fields: ["id", "metadata"],
+                        filters: { id: optionId },
+                    })
+                    // Cleared: null (Medusa merges metadata, so the stale value is
+                    // nulled, not deleted) — the settlement hold reads null as unset.
+                    expect(
+                        after.data[0].metadata?.estimated_delivery_days ?? null
+                    ).toBeNull()
                 })
 
                 it("should not allow seller to update another seller's shipping option", async () => {

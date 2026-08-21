@@ -3,9 +3,18 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
 import { defaultI18nOptions } from "../../../i18n/config";
+import { installPersianLocale } from "../../../i18n/persian-locale";
 import translations from "../../../i18n/translations";
 import customI18nResources from "virtual:mercur/i18n";
 import config from "virtual:mercur/config";
+
+// Persian-first panel with a per-app language key, kept independent from the
+// admin panel which would otherwise share the `lng` cookie on the same host.
+const VENDOR_LNG_KEY = "vendor_lng";
+const storedLng =
+  typeof localStorage !== "undefined"
+    ? localStorage.getItem(VENDOR_LNG_KEY)
+    : null;
 
 function deepMerge(
   target: Record<string, any>,
@@ -41,18 +50,24 @@ export const I18n = () => {
   i18n
     .use(
       new LanguageDetector(null, {
-        lookupCookie: "lng",
-        lookupLocalStorage: "lng",
+        order: ["localStorage", "navigator"],
+        lookupLocalStorage: VENDOR_LNG_KEY,
+        caches: ["localStorage"],
       }),
     )
     .use(initReactI18next)
     .init({
       ...defaultI18nOptions,
-      ...(config.i18n?.defaultLanguage && {
-        lng: config.i18n.defaultLanguage,
-      }),
+      detection: {
+        order: ["localStorage", "navigator"],
+        lookupLocalStorage: VENDOR_LNG_KEY,
+        caches: ["localStorage"],
+      },
+      lng: storedLng || config.i18n?.defaultLanguage || "fa",
       resources: mergedTranslations,
     });
+
+  installPersianLocale();
 
   return null;
 };

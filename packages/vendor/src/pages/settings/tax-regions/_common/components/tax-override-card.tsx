@@ -61,7 +61,7 @@ export const TaxOverrideCard = ({ taxRate }: TaxOverrideCardProps) => {
         <div className="flex items-center gap-x-2">
           <RadixCollapsible.Trigger asChild>
             <IconButton size="2xsmall" variant="transparent" className="group">
-              <TriangleRightMini className="text-ui-fg-muted transition-transform group-data-[state='open']:rotate-90" />
+              <TriangleRightMini className="text-ui-fg-muted transition-transform group-data-[state='open']:rotate-90 rtl:-scale-x-100 " />
             </IconButton>
           </RadixCollapsible.Trigger>
           <div className="flex items-center gap-x-1.5">

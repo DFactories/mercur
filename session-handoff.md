@@ -1,5 +1,30 @@
 # Session Handoff -- Mercur.js
 
+## Current Handoff: 2026-06-12 -- Phone (OTP) auth + notification pipeline (DESIGN ONLY)
+
+> Runs on the **private fork** `/Users/aminkhademian/Desktop/AI projects/mercur-fork`, branch
+> `dfactories/2.1.2`. The "## Last Session: 2026-05-15" below is upstream (`viktorholik/canary`) history.
+
+### What was accomplished
+- Design agreed and **durably recorded** — no feature code written yet.
+- New design record: **[`docs/features/phone-auth-and-notifications.md`](docs/features/phone-auth-and-notifications.md)** (read this first).
+- 4 features added to `feature_list.json` (`not_started`): `smsir-transport`, `phone-otp-auth`, `notification-pipeline`, `admin-notification-settings`.
+- Session 5 logged in `claude-progress.md`. Full plan at `~/.claude/plans/iridescent-gliding-spindle.md`.
+
+### Locked decisions (do not re-litigate)
+1. Passwordless **OTP** via sms.ir `POST /v1/send/verify` (we generate the code; sms.ir delivers via approved template).
+2. Phone login for **storefront + vendor only**; admin login stays email; admin owns the settings page.
+3. **Phone = primary/unique identity; email optional** secondary.
+4. Channel choice is **global per-event** (no per-user prefs in v1).
+5. OTP **+ all transactional** SMS, but each event's SMS is **gated on a DB `template_id`** (sms.ir templates need approval; only OTP is approved now).
+6. **Only `SMSIR_API_KEY` in env**; all template ids / channel state in DB, editable from admin.
+7. **OTP fully separated** from notifications. Subscribers never call the notification module directly → emit a `NotificationIntent` → one **5-step `sendNotificationWorkflow`**; dispatch sits on **`Modules.NOTIFICATION`**; catalog is **hybrid** (static + boot registry + DB).
+
+### What remains (next session)
+- Start **Phase 0** then features in priority order 2→3→4→5 (see design doc §8). Each ships with integration tests (mock the sms.ir client) and keeps `bun run build` + `bun run lint` green.
+- All new modules/providers go **inside `@mercurjs/core`** as subpath exports, auto-registered by `withMercur` (keeps the dfactories single-package publish pipeline unchanged).
+- Open risks to validate during build: Medusa 2.13.4 two-step OTP in the auth-provider contract; member `phone` field + migration; RBAC on `admin/notification-settings`; phone uniqueness vs existing accounts.
+
 ## Last Session: 2026-05-15
 
 ### What Was Accomplished

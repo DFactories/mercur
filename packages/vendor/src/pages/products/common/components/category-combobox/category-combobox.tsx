@@ -365,7 +365,7 @@ export const CategoryCombobox = forwardRef<
                 onMouseLeave={() => setFocusedIndex(-1)}
                 tabIndex={-1}
               >
-                <ArrowUturnLeft className="text-ui-fg-muted" />
+                <ArrowUturnLeft className="text-ui-fg-muted rtl:-scale-x-100  rtl:-scale-y-100" />
                 <Text size="small" leading="compact">
                   {getParentLabel(level)}
                 </Text>
@@ -430,7 +430,7 @@ export const CategoryCombobox = forwardRef<
                     onClick={handleLevelDown(option)}
                     tabIndex={-1}
                   >
-                    <TriangleRightMini className="rtl:rotate-180" />
+                    <TriangleRightMini className="rtl:-scale-x-100 " />
                   </button>
                 )}
               </div>

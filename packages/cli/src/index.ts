@@ -5,16 +5,12 @@ import { add } from "./commands/add";
 import { registryBuild } from "./commands/registry-build";
 import { registryCodegen } from "./commands/registry-codegen";
 import { codegen } from "./commands/codegen";
-import { create } from "./commands/create";
 import { diff } from "./commands/diff";
 import { info } from "./commands/info";
 import { init } from "./commands/init";
 import { search } from "./commands/search";
 import { telemetry } from "./commands/telemetry";
 import { view } from "./commands/view";
-import { build } from "./commands/build";
-import { develop } from "./commands/develop";
-import { start } from "./commands/start";
 import { pluginBuild } from "./commands/plugin-build";
 
 process.on("SIGINT", () => process.exit(0));
@@ -35,17 +31,13 @@ async function main() {
     .addCommand(registryBuild)
     .addCommand(registryCodegen)
     .addCommand(codegen)
-    .addCommand(create)
     .addCommand(diff)
     .addCommand(info)
     .addCommand(init)
     .addCommand(search)
     .addCommand(telemetry)
     .addCommand(view)
-    .addCommand(pluginBuild)
-    .addCommand(build)
-    .addCommand(develop)
-    .addCommand(start);
+    .addCommand(pluginBuild);
 
   program.parse();
 }

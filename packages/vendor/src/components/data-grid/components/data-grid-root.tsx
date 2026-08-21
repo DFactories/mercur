@@ -183,6 +183,7 @@ export const DataGridRoot = <
     onColumnVisibilityChange: setColumnVisibility,
     getSubRows,
     getCoreRowModel: getCoreRowModel(),
+    columnResizeMode: "onChange",
     defaultColumn: {
       size: 200,
       maxSize: 400,
@@ -337,6 +338,12 @@ export const DataGridRoot = <
     },
   })
   const virtualColumns = columnVirtualizer.getVirtualItems()
+
+  // The column virtualizer caches sizes from getSize(); re-measure when a resize changes them.
+  const columnSizing = grid.getState().columnSizing
+  useEffect(() => {
+    columnVirtualizer.measure()
+  }, [columnSizing, columnVirtualizer])
 
   let virtualPaddingLeft: number | undefined
   let virtualPaddingRight: number | undefined
@@ -680,9 +687,10 @@ export const DataGridRoot = <
           headerContent={headerContent}
         />
         <div className="size-full overflow-hidden">
+          {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <div
             ref={containerRef}
-            
+
             tabIndex={0}
             className="relative h-full select-none overflow-auto outline-none"
             onFocus={handleRestoreGridFocus}
@@ -742,6 +750,20 @@ export const DataGridRoot = <
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
+                          {header.column.getCanResize() && (
+                            <div
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              onClick={(e) => e.stopPropagation()}
+                              className={clx(
+                                "hover:bg-ui-fg-interactive absolute end-0 top-0 z-[2] h-full w-1 cursor-col-resize touch-none select-none",
+                                {
+                                  "bg-ui-fg-interactive":
+                                    header.column.getIsResizing(),
+                                }
+                              )}
+                            />
+                          )}
                         </div>
                       )
 
@@ -907,8 +929,15 @@ const DataGridHeader = ({
           )}
         </div>
       )}
-      {headerContent}
-      <div className="ml-auto flex items-center gap-x-2">
+      <div className="ms-auto flex items-center gap-x-2">
+        {headerContent && (
+          <div
+            className="flex items-center"
+            onFocusCapture={() => onHeaderInteractionChange(true)}
+          >
+            {headerContent}
+          </div>
+        )}
         {errorCount > 0 && (
           <Button
             size="small"
@@ -1141,6 +1170,7 @@ const DataGridRowSkeleton = ({
           <div
             key={`skeleton-cell-${vc.index}`}
             role="gridcell"
+            aria-label="Cell input"
             style={{ width: vc.size }}
             className="relative flex items-center border-b border-r p-0 outline-none"
           >

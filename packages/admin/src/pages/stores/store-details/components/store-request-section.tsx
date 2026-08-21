@@ -17,6 +17,7 @@ import {
   useSuspendSeller,
 } from "../../../../hooks/api/sellers";
 import { InferClientOutput } from "@mercurjs/client";
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared";
 import { sdk } from "@lib/client";
 
 type Seller = InferClientOutput<typeof sdk.admin.sellers.$id.query>["seller"];
@@ -71,7 +72,7 @@ export const StoreRequestSection = ({ seller }: StoreRequestSectionProps) => {
               {t("stores.request.confirm")}
             </Button>
           }
-          title={t("stores.request.confirmTitle", "Confirm request")}
+          title={t("stores.request.confirmTitle")}
           description={t(
             "stores.request.confirmDescription",
             "You are about to confirm this store request.",
@@ -98,7 +99,7 @@ export const StoreRequestSection = ({ seller }: StoreRequestSectionProps) => {
               {t("stores.request.reject")}
             </Button>
           }
-          title={t("stores.request.rejectTitle", "Reject request")}
+          title={t("stores.request.rejectTitle")}
           description={t(
             "stores.request.rejectDescription",
             "You are about to reject this store request.",
@@ -120,6 +121,7 @@ export const StoreRequestSection = ({ seller }: StoreRequestSectionProps) => {
           }}
         />
       </div>
+      <DisplayExtensionZone model="seller" zone="requests" data={seller} />
     </Container>
   );
 };
@@ -168,9 +170,9 @@ const RequestActionPrompt = ({
         <div className="border-ui-border-base border-t mt-3" />
         <div className="flex flex-col gap-y-3 px-6 py-3">
           <Text size="small" weight="plus" className="text-ui-fg-base">
-            {t("stores.request.noteLabel", "Notes for vendor")}{" "}
+            {t("stores.request.noteLabel")}{" "}
             <span className="text-ui-fg-muted font-normal">
-              ({t("fields.optional", "Optional")})
+              ({t("fields.optional")})
             </span>
           </Text>
           <Textarea

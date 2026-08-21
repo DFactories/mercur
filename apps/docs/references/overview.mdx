@@ -1,0 +1,62 @@
+---
+title: "Reference"
+sidebarTitle: "Overview"
+description: "Technical reference for Mercur's HTTP APIs, panel extensions, and configuration."
+---
+
+This section is the technical contract of the Mercur core plugin. The
+[Learn](/learn/introduction) tab explains concepts and the
+[Platform](/platform/store/overview) tab documents each domain's data models,
+workflows, service, and events. These pages cover the HTTP APIs, the panel
+extension helpers, and configuration.
+
+## HTTP API
+
+Mercur extends the Medusa server with three route surfaces. Start with the
+conventions page: authentication, seller scoping, and pagination work the same
+way across all of them.
+
+<CardGroup cols={2}>
+  <Card title="API conventions" href="/references/api/conventions">
+    Authentication, seller scoping, pagination, field selection, and webhooks.
+  </Card>
+  <Card title="Admin API" href="/references/api/admin">
+    Operator routes under <code>/admin/*</code>.
+  </Card>
+  <Card title="Vendor API" href="/references/api/vendor">
+    Seller-scoped routes under <code>/vendor/*</code>.
+  </Card>
+  <Card title="Store API" href="/references/api/store">
+    Storefront routes under <code>/store/*</code>.
+  </Card>
+</CardGroup>
+
+## Panel extensions
+
+File-based helpers for extending the Admin and Vendor panels without forking.
+
+<CardGroup cols={2}>
+  <Card title="Overview" href="/references/panel-extensions/overview">
+    Typed targets, persistence, and how the helpers fit together.
+  </Card>
+  <Card title="Widgets" href="/references/panel-extensions/widgets">
+    <code>defineWidgetConfig</code>: zones, config, and component props.
+  </Card>
+  <Card title="Custom Fields" href="/references/panel-extensions/custom-fields">
+    <code>defineCustomFieldsConfig</code>: forms, displays, and list columns.
+  </Card>
+  <Card title="Create a new page" href="/references/panel-extensions/create-page">
+    <code>defineNavigationConfig</code> and <code>createFormHelper</code>.
+  </Card>
+</CardGroup>
+
+## Configuration
+
+<CardGroup cols={2}>
+  <Card title="Configuration" href="/references/configuration">
+    <code>withMercur()</code>, environment variables, and provider options.
+  </Card>
+  <Card title="Platform modules" href="/platform/store/overview">
+    Data models, workflows, service, and events for each domain.
+  </Card>
+</CardGroup>

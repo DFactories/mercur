@@ -1,6 +1,8 @@
 import { ReactNode, Children } from "react"
 import { useLoaderData, useParams } from "react-router-dom"
 
+import { useLinkQuery, WidgetZone } from "@mercurjs/dashboard-shared"
+
 import { TwoColumnPageSkeleton } from "@components/common/skeleton"
 import { TwoColumnPage } from "@components/layout/pages"
 import { useInventoryItem } from "@hooks/api"
@@ -9,7 +11,7 @@ import { InventoryItemAttributeSection } from "./components/inventory-item-attri
 import { InventoryItemGeneralSection } from "./components/inventory-item-general-section"
 import { InventoryItemLocationLevelsSection } from "./components/inventory-item-location-levels"
 import { InventoryItemReservationsSection } from "./components/inventory-item-reservations"
-import { InventoryItemVariantsSection } from "./components/inventory-item-variants/variants-section"
+import { AssociatedOffersSection } from "./components/inventory-item-offers/associated-offers-section"
 import { INVENTORY_DETAIL_FIELDS } from "./constants"
 
 import type { inventoryItemLoader } from "./loader"
@@ -27,9 +29,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
     error,
   } = useInventoryItem(
     id!,
-    {
-      fields: INVENTORY_DETAIL_FIELDS,
-    },
+    useLinkQuery("inventory_item", INVENTORY_DETAIL_FIELDS),
     {
       initialData,
     }
@@ -57,20 +57,19 @@ const Root = ({ children }: { children?: ReactNode }) => {
   ) : (
     <TwoColumnPage data={inventory_item} showJSON showMetadata data-testid="inventory-detail-page">
       <TwoColumnPage.Main data-testid="inventory-detail-main">
-        <InventoryItemGeneralSection inventoryItem={inventory_item} />
-        <InventoryItemLocationLevelsSection
-          inventoryItem={inventory_item}
-        />
-        <InventoryItemReservationsSection inventoryItem={inventory_item} />
+        <WidgetZone id="inventory.detail.main" data={inventory_item}>
+          <InventoryItemGeneralSection inventoryItem={inventory_item} />
+          <InventoryItemLocationLevelsSection
+            inventoryItem={inventory_item}
+          />
+          <InventoryItemReservationsSection inventoryItem={inventory_item} />
+        </WidgetZone>
       </TwoColumnPage.Main>
       <TwoColumnPage.Sidebar data-testid="inventory-detail-sidebar">
-        {inventory_item.variants &&
-          inventory_item.variants?.length > 0 && (
-            <InventoryItemVariantsSection
-              variants={inventory_item.variants}
-            />
-          )}
-        <InventoryItemAttributeSection inventoryItem={inventory_item} />
+        <WidgetZone id="inventory.detail.side" data={inventory_item}>
+          <AssociatedOffersSection offers={inventory_item.offers} />
+          <InventoryItemAttributeSection inventoryItem={inventory_item} />
+        </WidgetZone>
       </TwoColumnPage.Sidebar>
     </TwoColumnPage>
   )
@@ -82,6 +81,6 @@ export const InventoryDetailPage = Object.assign(Root, {
   MainGeneralSection: InventoryItemGeneralSection,
   MainLocationLevelsSection: InventoryItemLocationLevelsSection,
   MainReservationsSection: InventoryItemReservationsSection,
-  SidebarVariantsSection: InventoryItemVariantsSection,
+  SidebarOffersSection: AssociatedOffersSection,
   SidebarAttributeSection: InventoryItemAttributeSection,
 })

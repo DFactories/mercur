@@ -49,10 +49,25 @@ const ROLE_LABEL_MAP: Record<string, string> = Object.fromEntries(
   ROLE_OPTIONS.map((r) => [r.value, r.labelKey]),
 );
 
+/** Iranian mobile: 09 + 9 digits = 11 digits. Mirrors the backend check. */
+const IRAN_MOBILE_RE = /^09\d{9}$/;
+
+const normalizePhone = (input: string): string => {
+  let p = input.replace(/[\s-]/g, "");
+  if (p.startsWith("+98")) p = "0" + p.slice(3);
+  else if (p.startsWith("0098")) p = "0" + p.slice(4);
+  else if (p.startsWith("98") && p.length === 12) p = "0" + p.slice(2);
+  return p;
+};
+
 const InviteUserSchema = zod.object({
-  email: zod
+  phone: zod
     .string()
-    .email({ message: i18n.t("users.inviteForm.validation.emailInvalid") }),
+    .trim()
+    .transform(normalizePhone)
+    .refine((v) => IRAN_MOBILE_RE.test(v), {
+      message: i18n.t("users.inviteForm.validation.phoneInvalid"),
+    }),
   role_id: zod
     .string()
     .min(1, { message: i18n.t("users.inviteForm.validation.roleRequired") }),
@@ -68,7 +83,7 @@ export const InviteUserForm = () => {
 
   const form = useForm<zod.infer<typeof InviteUserSchema>>({
     defaultValues: {
-      email: "",
+      phone: "",
       role_id: "",
     },
     resolver: zodResolver(InviteUserSchema),
@@ -104,7 +119,7 @@ export const InviteUserForm = () => {
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
       await mutateAsync({
-        email: values.email,
+        phone: values.phone,
         role_id: values.role_id as SellerRole,
       });
       form.reset();
@@ -154,13 +169,19 @@ export const InviteUserForm = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <Form.Field
                     control={form.control}
-                    name="email"
+                    name="phone"
                     render={({ field }) => {
                       return (
                         <Form.Item>
-                          <Form.Label>{t("fields.email")}</Form.Label>
+                          <Form.Label>{t("fields.phone")}</Form.Label>
                           <Form.Control>
-                            <Input {...field} />
+                            <Input
+                              type="tel"
+                              inputMode="tel"
+                              dir="ltr"
+                              placeholder="09xxxxxxxxx"
+                              {...field}
+                            />
                           </Form.Control>
                           <Form.ErrorMessage />
                         </Form.Item>
@@ -223,7 +244,7 @@ export const InviteUserForm = () => {
                     queryObject={raw}
                     prefix={PREFIX}
                     orderBy={[
-                      { key: "email", label: t("fields.email") },
+                      { key: "phone", label: t("fields.phone") },
                       {
                         key: "created_at",
                         label: t("fields.createdAt"),
@@ -247,9 +268,9 @@ const useColumns = () => {
 
   return useMemo(
     () => [
-      columnHelper.accessor("email", {
-        header: t("fields.email"),
-        cell: ({ getValue }) => getValue(),
+      columnHelper.accessor("phone", {
+        header: t("fields.phone"),
+        cell: ({ getValue }) => getValue() ?? "-",
       }),
       columnHelper.accessor("role_id", {
         header: t("fields.role"),

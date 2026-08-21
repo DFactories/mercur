@@ -1,43 +1,65 @@
-import { PencilSquare } from "@medusajs/icons";
-import { Container, Heading } from "@medusajs/ui";
+import { toast } from "@medusajs/ui";
+import {
+  ProductAttributeSection as SharedProductAttributeSection,
+} from "@mercurjs/dashboard-shared";
+import { MercurFeatureFlags, ProductAttributeDTO } from "@mercurjs/types";
 import { useTranslation } from "react-i18next";
-import { ActionMenu } from "@components/common/action-menu";
-import { SectionRow } from "@components/common/section";
-import { getFormattedCountry } from "@lib/addresses";
-import { useProductDetailContext } from "../../context";
 
-export const ProductAttributeSection = () => {
-  const { product } = useProductDetailContext();
+import { useFeatureFlags, useProductAttributes } from "@hooks/api";
+import { useBatchProductAttributes } from "@hooks/api/products";
+
+type ProductWithAttributes = {
+  id: string;
+  attributes?: ProductAttributeDTO[] | null;
+  categories?: { id?: string | null }[] | null;
+};
+
+export const ProductAttributeSection = ({
+  product,
+}: {
+  product: ProductWithAttributes;
+}) => {
   const { t } = useTranslation();
 
+  const { feature_flags } = useFeatureFlags();
+  const isProductRequestEnabled =
+    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST];
+
+  const categoryId = product.categories?.[0]?.id;
+  const { product_attributes } = useProductAttributes(
+    { category_id: categoryId, is_required: true },
+    { enabled: !!categoryId },
+  );
+
+  const { mutateAsync } = useBatchProductAttributes(product.id);
+
+  const onDeleteAttribute = async (attribute: ProductAttributeDTO) => {
+    try {
+      await mutateAsync(
+        { remove: [attribute.id] },
+        {
+          onSuccess: () => {
+            toast.success(
+              isProductRequestEnabled
+                ? t("products.edit.requestSuccessToast")
+                : t("products.edit.attributes.deleteSuccessToast"),
+            );
+          },
+          onError: (error) => {
+            toast.error(error.message);
+          },
+        },
+      );
+    } catch {
+      // Error surfaced via the mutation's onError toast.
+    }
+  };
+
   return (
-    <Container className="divide-y p-0">
-      <div className="flex items-center justify-between px-6 py-4">
-        <Heading level="h2">{t("products.attributes")}</Heading>
-        <ActionMenu
-          groups={[
-            {
-              actions: [
-                {
-                  label: t("actions.edit"),
-                  to: "attributes",
-                  icon: <PencilSquare />,
-                },
-              ],
-            },
-          ]}
-        />
-      </div>
-      <SectionRow title={t("fields.height")} value={product.height} />
-      <SectionRow title={t("fields.width")} value={product.width} />
-      <SectionRow title={t("fields.length")} value={product.length} />
-      <SectionRow title={t("fields.weight")} value={product.weight} />
-      <SectionRow title={t("fields.midCode")} value={product.mid_code} />
-      <SectionRow title={t("fields.hsCode")} value={product.hs_code} />
-      <SectionRow
-        title={t("fields.countryOfOrigin")}
-        value={getFormattedCountry(product.origin_country)}
-      />
-    </Container>
+    <SharedProductAttributeSection
+      product={product}
+      requiredAttributes={product_attributes}
+      onDeleteAttribute={onDeleteAttribute}
+    />
   );
 };

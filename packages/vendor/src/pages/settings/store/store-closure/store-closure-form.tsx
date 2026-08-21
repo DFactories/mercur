@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import i18n from "i18next";
-import { Button, DatePicker, Textarea, toast } from "@medusajs/ui";
+import { Button, Textarea, toast } from "@medusajs/ui";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { RouteDrawer, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
 import { HttpTypes } from "@mercurjs/types";
 import { useUpdateSeller } from "@hooks/api";
+import { JalaliDatePicker } from "@components/inputs/jalali-date-picker";
 
 type StoreClosureFormProps = {
   seller: HttpTypes.StoreSellerResponse["seller"];
@@ -30,6 +31,8 @@ const StoreClosureSchema = z.object({
 export const StoreClosureForm = ({ seller }: StoreClosureFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
+
+  const isEditing = Boolean(seller.closed_from);
 
   const form = useForm<z.infer<typeof StoreClosureSchema>>({
     defaultValues: {
@@ -53,7 +56,13 @@ export const StoreClosureForm = ({ seller }: StoreClosureFormProps) => {
       },
       {
         onSuccess: () => {
-          toast.success(t("store.timeOff.create.successToast"));
+          toast.success(
+            t(
+              isEditing
+                ? "store.timeOff.edit.successToast"
+                : "store.timeOff.create.successToast",
+            ),
+          );
           handleSuccess();
         },
         onError: (error: Error) => {
@@ -78,7 +87,7 @@ export const StoreClosureForm = ({ seller }: StoreClosureFormProps) => {
                       {t("store.timeOff.fields.firstDay")}
                     </Form.Label>
                     <Form.Control>
-                      <DatePicker
+                      <JalaliDatePicker
                         granularity="minute"
                         shouldCloseOnSelect={false}
                         {...field}
@@ -100,7 +109,7 @@ export const StoreClosureForm = ({ seller }: StoreClosureFormProps) => {
                       {t("store.timeOff.fields.lastDay")}
                     </Form.Label>
                     <Form.Control>
-                      <DatePicker
+                      <JalaliDatePicker
                         granularity="minute"
                         shouldCloseOnSelect={false}
                         {...field}

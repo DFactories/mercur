@@ -272,6 +272,7 @@ const Preview = ({
           return (
             <button
               type="button"
+              aria-label="Media file input"
               onClick={() => goTo(originalIndex)}
               className={clx(
                 "transition-fg size-7 overflow-hidden rounded-[4px] outline-none",
@@ -293,7 +294,7 @@ const Preview = ({
         type="button"
         onClick={next}
       >
-        <TriangleRightMini />
+        <TriangleRightMini className="rtl:-scale-x-100 "/>
       </IconButton>
     </div>
   )

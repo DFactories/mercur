@@ -13,6 +13,9 @@ export const CreateShippingOptionDetailsSchema = z.object({
   shipping_profile_id: z.string().min(1),
   provider_id: z.string().min(1),
   fulfillment_option_id: z.string().optional(),
+  // The admin-curated shipping method type. Its delivery time is stamped onto
+  // the option by the backend (drives the settlement return-window floor).
+  shipping_option_type_id: z.string().min(1),
 })
 
 export const ShippingOptionConditionalPriceSchema = z.object({

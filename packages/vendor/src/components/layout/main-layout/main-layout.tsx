@@ -8,9 +8,11 @@ import {
   Plus,
   ReceiptPercent,
   ShoppingCart,
+  StarSolid,
   Tag,
   Users,
 } from "@medusajs/icons";
+import components from "virtual:mercur/components";
 import { Avatar, Divider, DropdownMenu, Text, clx } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 
@@ -23,9 +25,27 @@ import { useMe, useSelectSeller, useSellers } from "../../../hooks/api";
 import { useSearch } from "../../../providers/search-provider";
 import { UserMenu } from "../user-menu";
 import { useDocumentDirection } from "../../../hooks/use-document-direction";
-import components from "virtual:mercur/components";
 import menuItemsModule from "virtual:mercur/menu-items";
+import {
+  applyNavOverrides,
+  useExtension,
+  type CoreNavItem,
+} from "@mercurjs/dashboard-shared";
 import { getMenuItemsByType, getNestedMenuItems } from "../../../utils/routes";
+
+const navId = (to: string) => to.replace(/^\//, "");
+
+const toCoreNavItem = (route: Omit<INavItem, "pathname">): CoreNavItem => ({
+  id: navId(route.to),
+  label: route.label,
+  to: route.to,
+  icon: route.icon,
+  items: route.items?.map((item) => ({
+    id: navId(item.to),
+    label: item.label,
+    to: item.to,
+  })),
+});
 
 export const MainLayout = () => {
   const Sidebar = components.MainSidebar ? components.MainSidebar : MainSidebar;
@@ -58,9 +78,13 @@ const addNestedItems = (
 
 const MainSidebar = () => {
   const coreRoutes = useCoreRoutes();
+  const navOverrides = useExtension().getNavOverrides();
   const customMenuItems = getMenuItemsByType(allMenuItems, "main");
 
-  const routesWithNested = coreRoutes.map((route) => ({
+  const routesWithNested = applyNavOverrides(
+    coreRoutes.map(toCoreNavItem),
+    navOverrides,
+  ).map((route) => ({
     ...route,
     items: addNestedItems(route.to, route.items),
   }));
@@ -160,8 +184,14 @@ const StoreList = ({ currentSellerId }: { currentSellerId: string }) => {
       {!!seller_members?.length && <DropdownMenu.Separator />}
       <DropdownMenu.Item
         onClick={() =>
+          // Phone is the primary identity for OTP sign-ups (where `email` is
+          // null), so both must travel — the onboarding wizard bounces to
+          // /login when it receives neither.
           navigate("/onboarding", {
-            state: { email: seller_member?.member.email },
+            state: {
+              email: seller_member?.member.email ?? undefined,
+              phone: seller_member?.member.phone ?? undefined,
+            },
           })
         }
         className="gap-x-2"
@@ -274,6 +304,10 @@ export const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       to: "/products",
       items: [
         {
+          label: t("offers.domain"),
+          to: "/offers",
+        },
+        {
           label: t("collections.domain"),
           to: "/collections",
         },
@@ -292,13 +326,23 @@ export const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       icon: <Buildings />,
       label: t("inventory.domain"),
       to: "/inventory",
-      items: [],
+      items: [
+        {
+          label: t("reservations.domain"),
+          to: "/reservations",
+        },
+      ],
     },
     {
       icon: <Users />,
       label: t("customers.domain"),
       to: "/customers",
-      items: [],
+      items: [
+        {
+          label: t("customerGroups.domain"),
+          to: "/customer-groups",
+        },
+      ],
     },
     {
       icon: <ReceiptPercent />,
@@ -320,6 +364,11 @@ export const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       icon: <CreditCardRefresh />,
       label: t("payouts.domain"),
       to: "/payouts",
+    },
+    {
+      icon: <StarSolid />,
+      label: t("reviews.domain"),
+      to: "/reviews",
     },
   ];
 };

@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 
 import {
   ArrowDownRightMini,
-  ArrowLongRight,
   ArrowPath,
   ArrowUturnLeft,
   DocumentText,
@@ -37,13 +36,17 @@ import {
 } from "@medusajs/ui";
 
 import type { AdminReservation } from "@medusajs/types";
+import { DisplayExtensionZone } from "@mercurjs/dashboard-shared";
 import { format } from "date-fns";
 import { ActionMenu } from "../../../../../components/common/action-menu/index.ts";
 import DisplayId from "../../../../../components/common/display-id/display-id.tsx";
 import { Thumbnail } from "../../../../../components/common/thumbnail/index.ts";
 import { useClaims } from "../../../../../hooks/api/claims.tsx";
 import { useExchanges } from "../../../../../hooks/api/exchanges.tsx";
-import { useOrderPreview } from "../../../../../hooks/api/orders.tsx";
+import {
+  useOrderCommissionLines,
+  useOrderPreview,
+} from "../../../../../hooks/api/orders.tsx";
 import { useMarkPaymentCollectionAsPaid } from "../../../../../hooks/api/payment-collections.tsx";
 import { useReservationItems } from "../../../../../hooks/api/reservations.tsx";
 import { useReturns } from "../../../../../hooks/api/returns.tsx";
@@ -79,47 +82,6 @@ export const OrderSummarySection = ({ order }: OrderSummarySectionProps) => {
   );
 
   const { order: orderPreview } = useOrderPreview(order.id!);
-
-  const { returns = [] } = useReturns({
-    status: "requested",
-    order_id: order.id,
-    fields: "+received_at",
-  });
-
-  const receivableReturns = useMemo(
-    () => returns.filter((r) => !r.canceled_at),
-    [returns],
-  );
-
-  const showReturns = !!receivableReturns.length;
-
-  /**
-   * Show Allocation button only if there are unfulfilled items that don't have reservations
-   */
-  const showAllocateButton = useMemo(() => {
-    if (!reservations) {
-      return false;
-    }
-
-    const reservationsMap = new Map(
-      reservations.map((r) => [r.line_item_id, r.id]),
-    );
-
-    for (const item of order.items) {
-      // Inventory is managed
-      if (item.variant?.manage_inventory) {
-        // There are items that are unfulfilled
-        if (item.quantity - item.detail.fulfilled_quantity > 0) {
-          // Reservation for this item doesn't exist
-          if (!reservationsMap.has(item.id)) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }, [order.items, reservations]);
 
   const unpaidPaymentCollection = order.payment_collections.find(
     (pc) => pc.status === "not_paid",
@@ -182,7 +144,7 @@ export const OrderSummarySection = ({ order }: OrderSummarySectionProps) => {
 
   return (
     <Container
-      className="divide-y divide-dashed p-0"
+      className="divide-y p-0"
       data-testid="order-summary-section"
     >
       <Header order={order} orderPreview={orderPreview} />
@@ -191,75 +153,11 @@ export const OrderSummarySection = ({ order }: OrderSummarySectionProps) => {
       <DiscountAndTotalBreakdown order={order} />
       <Total order={order} />
 
-      {(showAllocateButton || showReturns || showPayment || showRefund) && (
+      {(showPayment || showRefund) && (
         <div
           className="bg-ui-bg-subtle flex items-center justify-end gap-x-2 rounded-b-xl px-4 py-4"
           data-testid="order-summary-actions"
         >
-          {showReturns &&
-            (receivableReturns.length === 1 ? (
-              <Button
-                asChild
-                variant="secondary"
-                size="small"
-                data-testid="order-summary-receive-return-button"
-              >
-                <Link
-                  to={`/orders/${order.id}/returns/${receivableReturns[0].id}/receive`}
-                >
-                  {t("orders.returns.receive.action")}
-                </Link>
-              </Button>
-            ) : (
-              <ActionMenu
-                groups={[
-                  {
-                    actions: receivableReturns.map((r) => {
-                      let id = r.id;
-                      let returnType = "Return";
-
-                      if (r.exchange_id) {
-                        id = r.exchange_id;
-                        returnType = "Exchange";
-                      }
-
-                      if (r.claim_id) {
-                        id = r.claim_id;
-                        returnType = "Claim";
-                      }
-
-                      return {
-                        label: t("orders.returns.receive.receiveItems", {
-                          id: `#${id.slice(-7)}`,
-                          returnType,
-                        }),
-                        icon: <ArrowLongRight />,
-                        to: `/orders/${order.id}/returns/${r.id}/receive`,
-                      };
-                    }),
-                  },
-                ]}
-                data-testid="order-summary-receive-returns-menu"
-              >
-                <Button variant="secondary" size="small">
-                  {t("orders.returns.receive.action")}
-                </Button>
-              </ActionMenu>
-            ))}
-
-          {showAllocateButton && (
-            <Button
-              asChild
-              variant="secondary"
-              size="small"
-              data-testid="order-summary-allocate-items-button"
-            >
-              <Link to="allocate-items">
-                {t("orders.allocateItems.action")}
-              </Link>
-            </Button>
-          )}
-
           {showPayment && (
             <Button
               size="small"
@@ -290,6 +188,7 @@ export const OrderSummarySection = ({ order }: OrderSummarySectionProps) => {
           )}
         </div>
       )}
+      <DisplayExtensionZone model="order" zone="summary" data={order} />
     </Container>
   );
 };
@@ -411,13 +310,25 @@ const Item = ({
 }) => {
   const { t } = useTranslation();
 
-  const isInventoryManaged = item.variant?.manage_inventory;
+  // `offer` is wired through Mercur's order-line-item-offer link but
+  // isn't part of Medusa's public AdminOrderLineItem type — pull it off
+  // the runtime shape.
+  const offerInventoryLinks =
+    (
+      item as unknown as {
+        offer?: { inventory_item_link?: unknown[] | null };
+      }
+    ).offer?.inventory_item_link ?? [];
+  const isInventoryManaged = !!offerInventoryLinks.length;
   const hasInventoryKit =
-    isInventoryManaged &&
-    ((item.variant?.inventory_items?.length || 0) > 1 ||
-      item.variant?.inventory_items?.some((i) => i.required_quantity > 1));
+    (item.variant?.inventory_items?.length || 0) > 1 ||
+    item.variant?.inventory_items?.some((i) => i.required_quantity > 1);
   const hasUnfulfilledItems =
     item.quantity - item.detail.fulfilled_quantity > 0;
+
+  const offerSku =
+    (item as unknown as { offer?: { sku?: string | null } }).offer?.sku ?? null;
+  const captionSku = offerSku ?? item.variant_sku ?? null;
 
   return (
     <>
@@ -441,13 +352,13 @@ const Item = ({
               {item.title}
             </Text>
 
-            {item.variant_sku && (
+            {captionSku && (
               <div
                 className="flex items-center gap-x-1"
                 data-testid={`order-summary-item-${item.id}-sku`}
               >
-                <Text size="small">{item.variant_sku}</Text>
-                <Copy content={item.variant_sku} className="text-ui-fg-muted" />
+                <Text size="small">{captionSku}</Text>
+                <Copy content={captionSku} className="text-ui-fg-muted" />
               </div>
             )}
             <Text
@@ -614,6 +525,21 @@ const CostBreakdown = ({
   const { t } = useTranslation();
   const [isTaxOpen, setIsTaxOpen] = useState(false);
   const [isShippingOpen, setIsShippingOpen] = useState(false);
+  const [isCommissionOpen, setIsCommissionOpen] = useState(false);
+
+  const { commission_lines } = useOrderCommissionLines(order.id);
+  const hasCommission = commission_lines.length > 0;
+  const commissionTotal = commission_lines.reduce(
+    (acc, line) => acc + (line.amount ?? 0),
+    0
+  );
+  const commissionItemTitleById = useMemo(() => {
+    const map = new Map<string, string>();
+    order.items?.forEach((item) => {
+      map.set(item.id, item.product_title ?? item.title);
+    });
+    return map;
+  }, [order.items]);
 
   const taxCodes = useMemo(() => {
     const taxCodeMap: { [key: string]: { total: number; rate: number } } = {};
@@ -757,6 +683,59 @@ const CostBreakdown = ({
           </div>
         )}
       </>
+
+      {hasCommission && (
+        <>
+          <div className="flex justify-between">
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+            <div
+              onClick={() => setIsCommissionOpen((o) => !o)}
+              className="flex cursor-pointer items-center gap-1"
+            >
+              <span className="txt-small select-none">
+                {t("fields.commission")}
+              </span>
+              <TriangleDownMini
+                style={{
+                  transform: `rotate(${isCommissionOpen ? 0 : -90}deg)`,
+                }}
+              />
+            </div>
+
+            <div className="text-right">
+              <Text size="small" leading="compact">
+                {getLocaleAmount(commissionTotal, order.currency_code)}
+              </Text>
+            </div>
+          </div>
+          {isCommissionOpen && (
+            <div className="flex flex-col gap-1 pl-5">
+              {commission_lines.map((line) => {
+                const label = line.shipping_method_id
+                  ? t("fields.shipping")
+                  : commissionItemTitleById.get(line.item_id ?? "") ??
+                    line.code;
+                return (
+                  <div
+                    key={line.id}
+                    className="flex items-center justify-between gap-x-2"
+                  >
+                    <div>
+                      <span className="txt-small">{label}</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <div className="bottom-[calc(50% - 2px)] absolute h-[1px] w-full border-b border-dashed" />
+                    </div>
+                    <span className="txt-small text-ui-fg-muted">
+                      {getLocaleAmount(line.amount, order.currency_code)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
       <div className="text-ui-fg-base flex items-center justify-between">
         <Text className="text-ui-fg-subtle" size="small" leading="compact">
           {t("fields.total")}

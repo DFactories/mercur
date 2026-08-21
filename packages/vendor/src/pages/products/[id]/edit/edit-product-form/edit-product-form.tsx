@@ -1,4 +1,5 @@
 import { Button, Input, Text, Textarea, toast } from "@medusajs/ui";
+import { MercurFeatureFlags } from "@mercurjs/types";
 import { useTranslation } from "react-i18next";
 import * as zod from "zod";
 
@@ -6,11 +7,13 @@ import { ExtendedAdminProduct } from "@custom-types/products";
 import { Form } from "@components/common/form";
 import { SwitchBox } from "@components/common/switch-box";
 import { RouteDrawer, useRouteModal } from "@components/modals";
-import { useUpdateProduct } from "@hooks/api/products";
+import { useFeatureFlags, useUpdateProduct } from "@hooks/api";
 
 import { KeyboundForm } from "@components/utilities/keybound-form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  FormExtensionZone,
+  useExtendableForm,
+} from "@mercurjs/dashboard-shared";
 
 type EditProductFormProps = {
   product: ExtendedAdminProduct;
@@ -18,6 +21,7 @@ type EditProductFormProps = {
 
 const EditProductSchema = zod.object({
   title: zod.string().min(1),
+  subtitle: zod.string().optional(),
   handle: zod.string().min(1),
   description: zod.string().optional(),
   discountable: zod.boolean(),
@@ -27,38 +31,57 @@ export const EditProductForm = ({ product }: EditProductFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
 
-  const form = useForm({
+  const { feature_flags } = useFeatureFlags();
+  const isProductRequestEnabled =
+    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST];
+
+  const form = useExtendableForm({
+    schema: EditProductSchema,
+    model: "product",
+    zone: "edit",
+    data: product,
     defaultValues: {
       title: product.title,
+      subtitle: product.subtitle || "",
       handle: product.handle || "",
       description: product.description || "",
       discountable: product.discountable,
     },
-    resolver: zodResolver(EditProductSchema),
   });
 
   const { mutateAsync, isPending } = useUpdateProduct(product.id);
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    const { description, discountable, handle, title } = data;
+    const { description, discountable, handle, subtitle, title } = data;
+    const additional_data = data.additional_data;
+
+    const payload = {
+      description,
+      discountable,
+      handle,
+      subtitle: subtitle || null,
+      title,
+      ...(additional_data && Object.keys(additional_data).length
+        ? { additional_data }
+        : {}),
+    } as Parameters<typeof mutateAsync>[0];
 
     await mutateAsync(
+      payload,
       {
-        description,
-        discountable,
-        handle,
-        title,
-      },
-      {
-        onSuccess: ({ product }) => {
+        onSuccess: () => {
           toast.success(
-            t("products.edit.successToast", {
-              title: product.title,
-            }),
+            isProductRequestEnabled
+              ? t("products.edit.requestSuccessToast")
+              : t("products.edit.successToast", { title }),
           );
           handleSuccess(`/products/${product.id}`);
         },
         onError: (e) => {
+          if (/pending product change/i.test(e.message)) {
+            toast.error(t("products.edit.duplicateRequestErrorToast"));
+            return;
+          }
           toast.error(e.message);
         },
       },
@@ -124,14 +147,14 @@ export const EditProductForm = ({ product }: EditProductFormProps) => {
                   );
                 }}
               />
-              {/* <Form.Field
+              <Form.Field
                 control={form.control}
-                name='subtitle'
+                name="subtitle"
                 render={({ field }) => {
                   return (
                     <Form.Item>
                       <Form.Label optional>
-                        {t('fields.subtitle')}
+                        {t("fields.subtitle")}
                       </Form.Label>
                       <Form.Control>
                         <Input {...field} />
@@ -140,7 +163,7 @@ export const EditProductForm = ({ product }: EditProductFormProps) => {
                     </Form.Item>
                   );
                 }}
-              /> */}
+              />
               <Form.Field
                 control={form.control}
                 name="handle"
@@ -208,6 +231,12 @@ export const EditProductForm = ({ product }: EditProductFormProps) => {
               name="discountable"
               label={t("fields.discountable")}
               description={t("products.discountableHint")}
+            />
+            <FormExtensionZone
+              model="product"
+              zone="edit"
+              control={form.control}
+              data={product}
             />
           </div>
         </RouteDrawer.Body>

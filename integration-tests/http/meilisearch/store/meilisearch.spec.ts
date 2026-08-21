@@ -36,6 +36,11 @@ medusaIntegrationTestRunner({
 
       beforeEach(async () => {
         jest.clearAllMocks()
+        // `clearAllMocks` clears calls but not queued `mockResolvedValueOnce`
+        // values. The publishable-key test is rejected by middleware before the
+        // service is reached, so without this its queued value would be handed
+        // to the next test's search call.
+        mockSearchFn.mockReset()
 
         await createAdminUser(dbConnection, adminHeaders, appContainer)
 
@@ -59,14 +64,10 @@ medusaIntegrationTestRunner({
           {
             title: "Active Seller Shoes",
             status: "published",
-            options: [{ title: "Size", values: ["M"] }],
-            variants: [
-              {
-                title: "M",
-                options: { Size: "M" },
-                prices: [{ currency_code: "usd", amount: 50 }],
-              },
-            ],
+            // Variant axes come from product attributes on this version; a plain
+            // `options` array is replaced by an internal placeholder, so passing
+            // one here makes the variant supply more option values than exist.
+            variants: [{ title: "M" }],
           },
           resultActive.headers
         )
@@ -77,14 +78,10 @@ medusaIntegrationTestRunner({
           {
             title: "Suspended Seller Hat",
             status: "published",
-            options: [{ title: "Size", values: ["M"] }],
-            variants: [
-              {
-                title: "M",
-                options: { Size: "M" },
-                prices: [{ currency_code: "usd", amount: 30 }],
-              },
-            ],
+            // Variant axes come from product attributes on this version; a plain
+            // `options` array is replaced by an internal placeholder, so passing
+            // one here makes the variant supply more option values than exist.
+            variants: [{ title: "M" }],
           },
           resultSuspended.headers
         )
@@ -147,7 +144,7 @@ medusaIntegrationTestRunner({
           expect(response.data.totalHits).toBe(0)
         })
 
-        it("passes seller.status = 'active' filter to meilisearch (FR-003)", async () => {
+        it("passes seller.status = 'open' filter to meilisearch (FR-003)", async () => {
           mockSearchFn.mockResolvedValueOnce({
             hits: [],
             totalHits: 0,
@@ -165,7 +162,7 @@ medusaIntegrationTestRunner({
           )
 
           const searchOptions = mockSearchFn.mock.calls[0][1]
-          expect(searchOptions.filter).toContain('seller.status = "active"')
+          expect(searchOptions.filter).toContain('seller.status = "open"')
         })
 
         it("includes category filter when provided", async () => {
@@ -213,13 +210,15 @@ medusaIntegrationTestRunner({
         })
 
         it("returns 400 when request body is invalid", async () => {
-          const response = await api.post(
-            `/store/meilisearch/products/search`,
-            { hitsPerPage: 9999 },
-            storeHeaders
-          )
+          const err = await api
+            .post(
+              `/store/meilisearch/products/search`,
+              { hitsPerPage: 9999 },
+              storeHeaders
+            )
+            .catch((e: { response: { status: number } }) => e)
 
-          expect(response.status).toBe(400)
+          expect(err.response.status).toEqual(400)
         })
 
         it("requires x-publishable-api-key header — returns 401 without it", async () => {
@@ -233,13 +232,15 @@ medusaIntegrationTestRunner({
             query: "",
           })
 
-          const response = await api.post(
-            `/store/meilisearch/products/search`,
-            { query: "test" },
-            { headers: {} }
-          )
+          const err = await api
+            .post(
+              `/store/meilisearch/products/search`,
+              { query: "test" },
+              { headers: {} }
+            )
+            .catch((e: { response: { status: number } }) => e)
 
-          expect([400, 401]).toContain(response.status)
+          expect([400, 401]).toContain(err.response.status)
         })
 
         it("hydrates products from Medusa DB in meilisearch relevance order", async () => {
