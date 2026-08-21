@@ -967,7 +967,8 @@
         "alreadyManaged": "این آیتم موجودی تحت عنوان {{title}} در حال ویرایش است.",
         "alreadyManagedWithSku": "این آیتم موجودی تحت عنوان {{title}} ({{sku}}) در حال ویرایش است."
       }
-    }
+    },
+    "missingRequiredAttributesHint": "لطفاً اطلاعات الزامی را وارد کنید"
   },
   "collections": {
     "domain": "مجموعه‌ها",
@@ -1111,7 +1112,11 @@
       "requiresShipping": "آیا نیاز به حمل و نقل دارد؟",
       "requiresShippingHint": "آیا این آیتم موجودی نیاز به حمل و نقل دارد؟",
       "successToast": "آیتم موجودی با موفقیت ایجاد شد.",
-      "descriptionPlaceholder": "توضیحات مورد"
+      "descriptionPlaceholder": "توضیحات مورد",
+      "attributesHint": "این‌ها مقادیر پیش‌فرض برای توصیف کالا هستند و توسط مارکت‌پلیس تعیین نمی‌شوند.",
+      "errors": {
+        "titleRequired": "لطفاً یک عنوان وارد کنید"
+      }
     },
     "reservation": {
       "header": "رزرو {{itemName}}",
@@ -1133,18 +1138,33 @@
       "deleteSuccessToast": "رزرو با موفقیت حذف شد.",
       "errors": {
         "noAvaliableQuantity": "این مکان موجودی ندارد.",
-        "quantityOutOfRange": "حداقل مقدار ۱ و حداکثر مقدار {{max}} است."
-      }
+        "quantityOutOfRange": "حداقل مقدار ۱ و حداکثر مقدار {{max}} است.",
+        "enterQuantity": "لطفاً تعداد را وارد کنید",
+        "idRequired": "انتخاب کالای انبار الزامی است",
+        "pleaseEnterQuantity": "لطفاً تعداد را وارد کنید",
+        "selectLocation": "لطفاً یک انبار انتخاب کنید"
+      },
+      "deleteBlockedDescription": "این رزرو قابل حذف نیست چون به یک سفارش انجام‌نشده متصل است.",
+      "deleteDescription": "در حال حذف یک رزرو هستید. این عمل قابل بازگشت نیست.",
+      "deleteTitle": "حذف رزرو",
+      "goToInventoryItem": "رفتن به کالای انبار",
+      "gotIt": "متوجه شدم",
+      "itemId": "شناسه کالا",
+      "itemPlaceholder": "انتخاب کالا",
+      "locationPlaceholder": "انتخاب انبار",
+      "reserved": "رزروشده"
     },
     "adjustInventory": {
       "errors": {
-        "stockedQuantity": "مقدار موجودی نمی‌تواند کمتر از مقدار رزرو شده‌ی {{quantity}} باشد."
+        "stockedQuantity": "مقدار موجودی نمی‌تواند کمتر از مقدار رزرو شده‌ی {{quantity}} باشد.",
+        "enterQuantity": "لطفاً تعداد را وارد کنید"
       }
     },
     "toast": {
       "updateLocations": "مکان‌ها با موفقیت به‌روزرسانی شدند.",
       "updateLevel": "میزان موجودی با موفقیت به‌روزرسانی شد.",
-      "updateItem": "آیتم موجودی با موفقیت به‌روزرسانی شد."
+      "updateItem": "آیتم موجودی با موفقیت به‌روزرسانی شد.",
+      "deleteItem": "کالای انبار با موفقیت حذف شد."
     },
     "stock": {
       "title": "به‌روزرسانی میزان موجودی",
@@ -1158,7 +1178,31 @@
     },
     "manageLocationQuantity": "مدیریت موجودی مکان",
     "quantityAcrossLocations": "{{quantity}} در {{locations}} مکان",
-    "levelDeleted": "سطح موجودی با موفقیت حذف شد."
+    "levelDeleted": "سطح موجودی با موفقیت حذف شد.",
+    "associatedOffers": "آفرهای مرتبط",
+    "attributes": {
+      "tip": "این‌ها مقادیر پیش‌فرض برای توصیف کالا هستند و توسط مارکت‌پلیس مدیریت نمی‌شوند."
+    },
+    "item": {
+      "deleteDescription": "در حال حذف یک کالای انبار هستید. این عمل قابل بازگشت نیست.",
+      "deleteTitle": "حذف کالای انبار"
+    },
+    "level": {
+      "deleteDescription": "در حال حذف موجودی انبار «{{location}}» هستید. با این کار موجودی و رزروهای این انبار حذف می‌شود و قابل بازگشت نیست.",
+      "deleteTitle": "حذف موجودی انبار"
+    },
+    "list": {
+      "noRecordsMessage": "برای مدیریت موجودی، کالای انبار بسازید",
+      "noRecordsTitle": "هنوز کالای انباری ثبت نشده"
+    },
+    "locations": {
+      "noRecordsMessage": "برای شروع مدیریت موجودی، یک انبار اضافه کنید",
+      "noRecordsTitle": "هنوز انباری ثبت نشده"
+    },
+    "reservations": {
+      "noRecordsMessage": "رزروی برای نمایش وجود ندارد",
+      "noRecordsTitle": "هنوز رزروی ثبت نشده"
+    }
   },
   "giftCards": {
     "domain": "کارت‌های هدیه",
@@ -2416,6 +2460,14 @@
       "percentageOffProduct": {
         "title": "تخفیف درصدی روی محصول",
         "description": "تخفیف درصدی روی محصولات انتخاب‌شده"
+      },
+      "amountOffOffers": {
+        "description": "تخفیف روی کالاهای انتخاب‌شده",
+        "title": "تخفیف مبلغی روی کالاها"
+      },
+      "buyGet": {
+        "description": "با خرید X عدد، Y عدد دریافت کنید",
+        "title": "بخر X بگیر Y"
       }
     },
     "domain": "تبلیغات",
@@ -2468,17 +2520,31 @@
       "allocationTooltip": "گزینه «هر» محدودیت تعداد را برای هر قلم اعمال می‌کند، در حالی که «یک‌بار» محدودیت را برای کل سبد خرید اعمال می‌کند",
       "taxInclusive": "شامل مالیات",
       "usageLimit": "سقف استفاده",
-      "usage": "استفاده"
+      "usage": "استفاده",
+      "typeLabels": {
+        "amountItems": "تخفیف مبلغی روی کالاها",
+        "amountOrder": "تخفیف مبلغی روی سفارش",
+        "amountShipping": "تخفیف مبلغی روی ارسال",
+        "percentageItems": "تخفیف درصدی روی کالاها",
+        "percentageOrder": "تخفیف درصدی روی سفارش",
+        "percentageShipping": "تخفیف درصدی روی ارسال"
+      },
+      "unlimited": "نامحدود"
     },
     "tooltips": {
       "campaignType": "برای تنظیم بودجه، کد ارز باید در تبلیغ انتخاب شود."
     },
     "errors": {
       "requiredField": "فیلد الزامی",
-      "promotionTabError": "قبل از ادامه، خطاهای تب تبلیغات را برطرف کنید"
+      "promotionTabError": "قبل از ادامه، خطاهای تب تبلیغات را برطرف کنید",
+      "applyToQuantityRequired": "تعداد کالاهایی که تخفیف روی آن‌ها اعمال می‌شود را مشخص کنید.",
+      "buyRulesMinQuantityRequired": "حداقل تعداد کالای موردنیاز برای خرید را مشخص کنید.",
+      "maxQuantityLowerThanApplyTo": "حداکثر تعداد باید بزرگ‌تر یا مساوی تعدادی باشد که تخفیف روی آن اعمال می‌شود."
     },
     "toasts": {
-      "promotionCreateSuccess": "تبلیغ ({{code}}) با موفقیت ایجاد شد."
+      "promotionCreateSuccess": "تبلیغ ({{code}}) با موفقیت ایجاد شد.",
+      "promotionDeleteSuccess": "تخفیف ({{code}}) با موفقیت حذف شد.",
+      "promotionUpdateSuccess": "تخفیف با موفقیت به‌روزرسانی شد."
     },
     "create": {},
     "edit": {
@@ -2608,6 +2674,10 @@
       "limit": {
         "title": "سقف استفاده",
         "description": "حداکثر دفعاتی که این تخفیف می‌تواند در همه سفارش‌ها استفاده شود. برای استفاده نامحدود خالی بگذارید."
+      },
+      "usageLimit": {
+        "description": "حداکثر دفعاتی که این تخفیف در کل سفارش‌ها قابل استفاده است. برای استفادهٔ نامحدود، خالی بگذارید.",
+        "title": "محدودیت استفاده"
       }
     },
     "deleteWarning": "شما در حال حذف تبلیغ {{code}} هستید. این عمل قابل بازگشت نیست.",
@@ -2622,7 +2692,17 @@
     "campaignSection": {
       "noRecordsTitle": "بخشی از کمپین نیست",
       "noRecordsMessage": "این تخفیف را به یک کمپین موجود اضافه کنید",
-      "addToCampaign": "افزودن به کمپین"
+      "addToCampaign": "افزودن به کمپین",
+      "warnings": {
+        "promotionExpires": "با پایان کمپین، این تخفیف نیز منقضی می‌شود.",
+        "promotionMustBeActive": "برای کارکرد کمپین، وضعیت تخفیف باید «فعال» باشد."
+      }
+    },
+    "list": {
+      "noRecords": {
+        "message": "برای تخفیف روی آفرها، تخفیف بسازید",
+        "title": "هنوز تخفیفی ثبت نشده"
+      }
     }
   },
   "campaigns": {
@@ -2649,7 +2729,8 @@
         "header": "ویرایش پیکربندی کمپین",
         "description": "پیکربندی کمپین را ویرایش کنید.",
         "successToast": "پیکربندی کمپین با موفقیت به‌روزرسانی شد."
-      }
+      },
+      "expiryWarning": "با پایان کمپین، این تخفیف نیز منقضی می‌شود."
     },
     "create": {
       "title": "ایجاد کمپین",
@@ -2669,7 +2750,9 @@
       "campaign_id": {
         "hint": "فقط کمپین‌هایی که کد ارز آن‌ها با تبلیغ یکسان است در این لیست نمایش داده می‌شوند."
       },
-      "totalUsedByAttribute": "کل استفاده‌شده"
+      "totalUsedByAttribute": "کل استفاده‌شده",
+      "identifier_tooltip": "شناسه، کد کمپین شما برای یکپارچه‌سازی، گزارش‌گیری و تشخیص آسان کمپین است — این همان شناسهٔ فنی دیتابیس نیست.",
+      "type": "نوع"
     },
     "budget": {
       "create": {
@@ -2686,7 +2769,8 @@
         "budgetAttributeTooltip": "تعیین کنید هر مشتری یا ایمیل چند بار می‌تواند از تخفیف استفاده کند.",
         "totalUsedByAttribute": "سقف بودجه بر اساس: {{attribute}}",
         "totalUsedByAttributeCustomerId": "سقف بودجه به ازای هر مشتری",
-        "totalUsedByAttributeEmail": "سقف بودجه به ازای هر ایمیل"
+        "totalUsedByAttributeEmail": "سقف بودجه به ازای هر ایمیل",
+        "selectCurrency": "انتخاب واحد پول"
       },
       "type": {
         "spend": {
@@ -2702,6 +2786,10 @@
           "titleCustomerId": "استفاده به ازای هر مشتری",
           "titleEmail": "استفاده به ازای هر ایمیل",
           "description": "محدودیتی برای تعداد دفعات استفاده از تخفیف بر اساس یک مقدار ویژگی مشخص تعیین کنید."
+        },
+        "use_by_attribute": {
+          "description": "تعیین کنید این تخفیف چند بار قابل استفاده باشد.",
+          "title": "میزان استفاده"
         }
       },
       "edit": {
@@ -2709,8 +2797,10 @@
       },
       "attribute": {
         "customer_id": "مشتری",
-        "customer_email": "ایمیل"
-      }
+        "customer_email": "ایمیل",
+        "promotion_code": "کد تخفیف"
+      },
+      "noLimitHint": "اگر محدودیتی تعیین نکنید، بودجهٔ کمپین نامحدود خواهد بود."
     },
     "promotions": {
       "remove": {
@@ -2721,19 +2811,30 @@
       "alreadyAddedDiffCampaign": "این تبلیغ قبلاً به یک کمپین دیگر اضافه شده است ({{name}}).",
       "currencyMismatch": "ارز تبلیغ و کمپین مطابقت ندارد",
       "toast": {
-        "success": "{{count}} تبلیغ با موفقیت به کمپین اضافه شد."
+        "success": "{{count}} تبلیغ با موفقیت به کمپین اضافه شد.",
+        "added_one": "تخفیف با موفقیت به کمپین اضافه شد.",
+        "added_other": "تخفیف‌ها با موفقیت به کمپین اضافه شدند.",
+        "removed_one": "تخفیف با موفقیت از کمپین حذف شد.",
+        "removed_other": "تخفیف‌ها با موفقیت از کمپین حذف شدند."
       },
       "add": {
         "list": {
           "noRecordsMessage": "ابتدا یک تبلیغ ایجاد کنید."
-        }
+        },
+        "tip": "فقط تخفیف‌هایی را می‌توانید اضافه کنید که در کمپین دیگری نباشند."
       },
       "list": {
-        "noRecordsMessage": "هیچ تبلیغی در کمپین وجود ندارد."
+        "noRecordsMessage": "هیچ تبلیغی در کمپین وجود ندارد.",
+        "noRecordsTitle": "هنوز تخفیفی ثبت نشده"
       }
     },
     "deleteCampaignWarning": "شما در حال حذف کمپین {{name}} هستید. این عمل قابل بازگشت نیست.",
-    "totalSpend": "<0>{{amount}}</0> <1>{{currency}}</1>"
+    "totalSpend": "<0>{{amount}}</0> <1>{{currency}}</1>",
+    "validation": {
+      "currency_required": "لطفاً یک واحد پول انتخاب کنید",
+      "identifier_required": "لطفاً یک شناسه وارد کنید",
+      "name_required": "لطفاً یک نام وارد کنید"
+    }
   },
   "priceLists": {
     "domain": "لیست‌های قیمت",
@@ -2755,6 +2856,10 @@
         "list": {
           "noRecordsMessage": "ابتدا یک محصول ایجاد کنید."
         }
+      },
+      "validation": {
+        "description": "لطفاً یک توضیح وارد کنید",
+        "title": "لطفاً یک عنوان وارد کنید"
       }
     },
     "edit": {
@@ -2773,7 +2878,8 @@
       "header": "محصولات",
       "actions": {
         "addProducts": "افزودن محصولات",
-        "editPrices": "ویرایش قیمت‌ها"
+        "editPrices": "ویرایش قیمت‌ها",
+        "editPricesDisabled": "پیش از ویرایش قیمت‌ها، آفر اضافه کنید"
       },
       "delete": {
         "confirmation_one": "شما در حال حذف قیمت‌های {{count}} محصول در لیست قیمت هستید. این عمل قابل بازگشت نیست.",
@@ -2807,6 +2913,10 @@
           "draft": "پیش‌نویس",
           "expired": "منقضی شده",
           "scheduled": "زمان‌بندی شده"
+        },
+        "descriptions": {
+          "active": "مشتریان این لیست قیمت را می‌بینند",
+          "draft": "مشتریان این لیست قیمت را نمی‌بینند"
         }
       },
       "type": {
@@ -2837,6 +2947,26 @@
         "hint": "گروه‌های مشتری که لیست قیمت باید روی آن‌ها اعمال شود را انتخاب کنید.",
         "placeholder": "جستجوی گروه‌های مشتری",
         "attribute": "گروه‌های مشتری"
+      },
+      "offerVariant": "آفر/تنوع"
+    },
+    "customerAvailability": {
+      "add": "افزودن گروه مشتری",
+      "edit": {
+        "description": "انتخاب کنید این لیست قیمت برای کدام گروه‌های مشتری اعمال شود.",
+        "header": "دسترسی مشتریان",
+        "successToast": "لیست قیمت با موفقیت به‌روزرسانی شد."
+      },
+      "header": "دسترسی مشتریان",
+      "list": {
+        "noRecordsMessage": "برای محدود کردن مشتریانی که این لیست قیمت شامل‌شان می‌شود، گروه مشتری اضافه کنید.",
+        "noRecordsTitle": "گروه مشتری‌ای وجود ندارد"
+      }
+    },
+    "list": {
+      "noRecords": {
+        "message": "برای حراج و بازنویسی قیمت، لیست قیمت بسازید",
+        "title": "هنوز لیست قیمتی ثبت نشده"
       }
     }
   },
@@ -3268,7 +3398,21 @@
   "reservations": {
     "domain": "رزروها",
     "subtitle": "مقدار رزرو شده از اقلام موجودی را مدیریت کنید.",
-    "deleteWarning": "شما در حال حذف یک رزرو هستید. این عمل قابل بازگشت نیست."
+    "deleteWarning": "شما در حال حذف یک رزرو هستید. این عمل قابل بازگشت نیست.",
+    "delete": {
+      "description": "در حال حذف یک رزرو هستید. این عمل قابل بازگشت نیست.",
+      "lockedDescription": "این رزرو قابل حذف نیست چون به یک سفارش انجام‌نشده متصل است.",
+      "lockedTitle": "حذف رزرو",
+      "title": "حذف رزرو"
+    },
+    "edit": {
+      "lockedDescription": "این رزرو قابل ویرایش نیست چون به یک سفارش انجام‌نشده متصل است.",
+      "lockedTitle": "ویرایش رزرو"
+    },
+    "list": {
+      "noRecordsMessage": "برای مدیریت تعداد رزروشدهٔ کالاهای انبار، رزرو بسازید",
+      "noRecordsTitle": "هنوز رزروی ثبت نشده"
+    }
   },
   "salesChannels": {
     "domain": "کانال‌های فروش",
@@ -3906,6 +4050,10 @@
       },
       "shipping": {
         "successToast": "پیکربندی ارسال با موفقیت به‌روزرسانی شد."
+      },
+      "inventory": {
+        "allowBackordersHint": "با فعال بودن این گزینه، مشتریان می‌توانند این تنوع را حتی بدون موجودی خریداری کنند.",
+        "manageInventoryHint": "با فعال بودن این گزینه، هنگام ثبت سفارش و مرجوعی، موجودی به‌صورت خودکار به‌روزرسانی می‌شود."
       }
     },
     "pricing": {
@@ -3918,7 +4066,24 @@
       "header": "مدیریت اقلام موجودی",
       "description": "برای هر مورد، پیوست، جدا کردن یا تغییر تعداد مورد نیاز را انجام دهید.",
       "successToast": "سطوح موجودی با موفقیت به‌روزرسانی شدند.",
-      "empty": "هیچ مورد موجودی پیوست نشده است"
+      "empty": "هیچ مورد موجودی پیوست نشده است",
+      "defineHint": "کالاهای انبار موردنیاز این تنوع را مشخص کنید. با افزودن چند کالا، یک بستهٔ انبار ساخته می‌شود.",
+      "editVariant": "ویرایش تنوع",
+      "itemPlaceholder": "انتخاب کالای انبار",
+      "itemsHeading": "کالاهای انبار",
+      "itemsManageSuccessToast": "کالاهای انبار با موفقیت به‌روزرسانی شد.",
+      "kitHeading": "بستهٔ انبار",
+      "manageItemsAction": "مدیریت کالاهای انبار",
+      "manageItemsButton": "مدیریت کالاهای انبار",
+      "noItemsDesc": "کالاهای انبار موردنیاز این تنوع را مدیریت کنید",
+      "noItemsTitle": "هنوز کالای انباری ثبت نشده",
+      "notManagedDesc": "برای پیگیری موجودی این تنوع، «مدیریت موجودی» را روشن کنید.",
+      "notManagedTitle": "موجودی مدیریت نمی‌شود",
+      "quantityPlaceholder": "تعداد موردنیاز را وارد کنید",
+      "validation": {
+        "itemId": "لطفاً کالای انبار را انتخاب کنید",
+        "quantity": "لطفاً تعداد موردنیاز را وارد کنید"
+      }
     },
     "delete": {
       "description": "شما در حال حذف پیشنهاد {{sku}} هستید. این عملیات قابل بازگشت نیست.",
@@ -3959,7 +4124,10 @@
       "notEnabled": "غیرفعال شده",
       "enabled": "فعال",
       "variantsCount_one": "{{count}} متغیر",
-      "variantsCount_other": "{{count}} متغیر"
+      "variantsCount_other": "{{count}} متغیر",
+      "allowBackorders": "اجازهٔ خرید بدون موجودی",
+      "manageInventory": "مدیریت موجودی",
+      "store": "فروشگاه"
     },
     "status": {
       "published": "منتشر شده",
@@ -4365,5 +4533,50 @@
   },
   "currencies": {
     "toman": "تومان"
+  },
+  "reviews": {
+    "detail": {
+      "customer": "مشتری",
+      "order": "سفارش"
+    },
+    "domain": "نظرات",
+    "fields": {
+      "content": "متن نظر",
+      "rating": "امتیاز",
+      "response": "پاسخ"
+    },
+    "filters": {
+      "stars_one": "{{count}} ستاره",
+      "stars_other": "{{count}} ستاره"
+    },
+    "list": {
+      "columns": {
+        "content": "متن نظر",
+        "customer": "مشتری",
+        "date": "تاریخ",
+        "rating": "امتیاز",
+        "response": "پاسخ",
+        "reviewId": "شناسه نظر",
+        "status": "وضعیت"
+      },
+      "noRecordsMessage": "وقتی مشتریان نظر ثبت کنند، اینجا نمایش داده می‌شود",
+      "noRecordsTitle": "هنوز نظری ثبت نشده",
+      "noResultsMessage": "فیلترها یا عبارت جست‌وجو را تغییر دهید",
+      "noResultsTitle": "نتیجه‌ای یافت نشد"
+    },
+    "respond": {
+      "action": "پاسخ",
+      "confirmDescription": "پاسخ شما در فروشگاه منتشر می‌شود و برای مشتریان قابل مشاهده است. پس از ذخیره، امکان ویرایش یا حذف آن وجود ندارد.",
+      "confirmTitle": "پاسخ به نظر",
+      "header": "پاسخ به نظر",
+      "label": "پاسخ",
+      "successToast": "پاسخ با موفقیت ارسال شد.",
+      "validation": "لطفاً یک پاسخ بنویسید"
+    },
+    "status": {
+      "pending": "در انتظار بررسی",
+      "published": "منتشرشده",
+      "rejected": "ردشده"
+    }
   }
 }
