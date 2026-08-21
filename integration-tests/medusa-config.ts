@@ -1,3 +1,5 @@
+import path from 'path'
+
 import { loadEnv } from '@medusajs/framework/utils'
 import { withMercur } from '@mercurjs/core'
 
@@ -35,5 +37,23 @@ module.exports = withMercur({
         disable: true
       }
     },
+    // Meilisearch block — registered only when the env vars are present, i.e. the
+    // dedicated `test:integration:meilisearch` script. The block ships in
+    // @mercurjs/registry rather than @mercurjs/core, so the default HTTP run has
+    // no meilisearch module and jest.config.js skips those specs.
+    ...(process.env.MEILISEARCH_HOST
+      ? [
+          {
+            resolve: path.join(
+              __dirname,
+              '../packages/registry/src/meilisearch/modules/meilisearch'
+            ),
+            options: {
+              host: process.env.MEILISEARCH_HOST,
+              apiKey: process.env.MEILISEARCH_API_KEY,
+            },
+          },
+        ]
+      : []),
   ],
 })
