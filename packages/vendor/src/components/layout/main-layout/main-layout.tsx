@@ -8,6 +8,7 @@ import {
   Plus,
   ReceiptPercent,
   ShoppingCart,
+  StarSolid,
   Tag,
   Users,
 } from "@medusajs/icons";
@@ -325,7 +326,12 @@ export const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       icon: <Buildings />,
       label: t("inventory.domain"),
       to: "/inventory",
-      items: [],
+      items: [
+        {
+          label: t("reservations.domain"),
+          to: "/reservations",
+        },
+      ],
     },
     {
       icon: <Users />,
@@ -358,6 +364,11 @@ export const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
       icon: <CreditCardRefresh />,
       label: t("payouts.domain"),
       to: "/payouts",
+    },
+    {
+      icon: <StarSolid />,
+      label: t("reviews.domain"),
+      to: "/reviews",
     },
   ];
 };

@@ -326,11 +326,11 @@ export type Routes = {
         };
         promotions: typeof import("@medusajs/medusa/api/admin/promotions/route") & {
             $id: typeof import("@medusajs/medusa/api/admin/promotions/[id]/route") & {
-                $ruleType: typeof import("@mercurjs/core/api/admin/promotions/[id]/[rule_type]/route");
+                $ruleType: typeof import("../src/api/admin/promotions/[id]/[rule_type]/route");
                 buyRules: {
                     batch: typeof import("@medusajs/medusa/api/admin/promotions/[id]/buy-rules/batch/route");
                 };
-                cost: typeof import("@mercurjs/core/api/admin/promotions/[id]/cost/route");
+                cost: typeof import("../src/api/admin/promotions/[id]/cost/route");
                 rules: {
                     batch: typeof import("@medusajs/medusa/api/admin/promotions/[id]/rules/batch/route");
                 };
@@ -339,11 +339,11 @@ export type Routes = {
                 };
             };
             ruleAttributeOptions: {
-                $ruleType: typeof import("@mercurjs/core/api/admin/promotions/rule-attribute-options/[rule_type]/route");
+                $ruleType: typeof import("../src/api/admin/promotions/rule-attribute-options/[rule_type]/route");
             };
             ruleValueOptions: {
                 $ruleType: {
-                    $ruleAttributeId: typeof import("@mercurjs/core/api/admin/promotions/rule-value-options/[rule_type]/[rule_attribute_id]/route");
+                    $ruleAttributeId: typeof import("../src/api/admin/promotions/rule-value-options/[rule_type]/[rule_attribute_id]/route");
                 };
             };
         };
@@ -511,6 +511,11 @@ export type Routes = {
         };
         notificationReadState: typeof import("../src/api/admin/notification-read-state/route");
         notificationSettings: typeof import("../src/api/admin/notification-settings/route");
+        reviews: typeof import("../src/api/admin/reviews/route") & {
+            $id: typeof import("../src/api/admin/reviews/[id]/route") & {
+                respond: typeof import("../src/api/admin/reviews/[id]/respond/route");
+            };
+        };
         shippingTemplates: typeof import("../src/api/admin/shipping-templates/route") & {
             $id: typeof import("../src/api/admin/shipping-templates/[id]/route");
         };
@@ -647,6 +652,9 @@ export type Routes = {
                 requestOtp: typeof import("../src/api/store/auth/phone/request-otp/route");
                 verifyOtp: typeof import("../src/api/store/auth/phone/verify-otp/route");
             };
+        };
+        reviews: typeof import("../src/api/store/reviews/route") & {
+            $id: typeof import("../src/api/store/reviews/[id]/route");
         };
     };
     vendor: {
@@ -946,5 +954,8 @@ export type Routes = {
             };
         };
         notificationReadState: typeof import("../src/api/vendor/notification-read-state/route");
+        reviews: typeof import("../src/api/vendor/reviews/route") & {
+            $id: typeof import("../src/api/vendor/reviews/[id]/route");
+        };
     };
 };

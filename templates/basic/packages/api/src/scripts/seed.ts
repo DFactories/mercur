@@ -2,15 +2,21 @@ import { ExecArgs } from "@medusajs/framework/types";
 import {
   ContainerRegistrationKeys,
   Modules,
+  toHandle,
 } from "@medusajs/framework/utils";
-import { ProductStatus } from "@mercurjs/types";
+import {
+  AttributeType,
+  ProductStatus,
+  type CreateOfferDTO,
+  type CreateProductDTO,
+} from "@mercurjs/types";
 import {
   approveSellerWorkflow,
   createOffersWorkflow,
+  createProductAttributesWorkflow,
   createProductsWorkflow,
   createSellerAccountWorkflow,
   createSellerShippingOptionsWorkflow,
-  createSellerShippingProfilesWorkflow,
   createSellerStockLocationsWorkflow,
 } from "@mercurjs/core/workflows";
 import {
@@ -25,12 +31,177 @@ import {
   createRegionsWorkflow,
   createSalesChannelsWorkflow,
   createServiceZonesWorkflow,
+  createShippingProfilesWorkflow,
   createTaxRegionsWorkflow,
   linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
   updateStoresStep,
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows";
+
+// Demo catalog with fictional brands and generic product names. Titles, brands,
+// and colorways are invented for a trademark-safe marketplace demo — they do not
+// reference any real brand or protected product design. Product images are generic
+// AI-generated renders hosted from /static via the jsDelivr GitHub CDN (main branch).
+type SeedCatalogItem = {
+  title: string;
+  brand: string;
+  colorway: string;
+  category: "Sandals" | "Sneakers" | "Boots" | "Sport" | "Accessories";
+  price: number;
+  footwear: boolean;
+  description: string;
+  images: string[];
+};
+
+const seedCatalog: SeedCatalogItem[] = [
+  {
+    title: "Meridian Twin-Strap Buckle Sandal",
+    brand: "Meridian",
+    colorway: "Black - Regular/Wide",
+    price: 155,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/meridian-twin-strap-buckle-sandal-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Meridian Twin-Strap Buckle Sandal in Black - Regular/Wide.",
+  },
+  {
+    title: "Meridian Twin-Strap Sandal",
+    brand: "Meridian",
+    colorway: "Pearl White - Narrow",
+    price: 125,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/meridian-twin-strap-sandal-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Meridian Twin-Strap Sandal in Pearl White - Narrow.",
+  },
+  {
+    title: "Meridian Clog Slide",
+    brand: "Meridian",
+    colorway: "Anthracite",
+    price: 232,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/meridian-clog-slide-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Meridian Clog Slide in Anthracite.",
+  },
+  {
+    title: "Cloudpeak Golden Slide",
+    brand: "Cloudpeak",
+    colorway: "Dark Sand",
+    price: 72,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/cloudpeak-golden-slide-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Cloudpeak Golden Slide in Dark Sand.",
+  },
+  {
+    title: "Meridian Wire Buckle Clog",
+    brand: "Meridian",
+    colorway: "Vintage Wood Roast",
+    price: 226,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/meridian-wire-buckle-clog-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Meridian Wire Buckle Clog in Vintage Wood Roast.",
+  },
+  {
+    title: "Cloudpeak Golden Sandal",
+    brand: "Cloudpeak",
+    colorway: "Bay Fog",
+    price: 78,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/cloudpeak-golden-sandal-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Cloudpeak Golden Sandal in Bay Fog.",
+  },
+  {
+    title: "Apex Pool Slides",
+    brand: "Apex",
+    colorway: "Black",
+    price: 47,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/apex-pool-slides-1.png",
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/apex-pool-slides-2.png",
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/apex-pool-slides-3.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Apex Pool Slides in Black.",
+  },
+  {
+    title: "Strive Mule Slides",
+    brand: "Strive",
+    colorway: "Core Black Gum",
+    price: 106,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/strive-mule-slides-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Strive Mule Slides in Core Black Gum.",
+  },
+  {
+    title: "Nimbus Classic Clog",
+    brand: "Nimbus",
+    colorway: "Pond",
+    price: 60,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/nimbus-classic-clog-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Nimbus Classic Clog in Pond.",
+  },
+  {
+    title: "Cloudpeak Starlet Sandal",
+    brand: "Cloudpeak",
+    colorway: "Sand",
+    price: 83,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/cloudpeak-starlet-sandal-1.png",
+    ],
+    category: "Sandals",
+    footwear: true,
+    description: "Cloudpeak Starlet Sandal in Sand.",
+  },
+  {
+    title: "Cityline Canvas High Top",
+    brand: "Cityline",
+    colorway: "Black Denim",
+    price: 82,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/cityline-canvas-high-top-1.png",
+    ],
+    category: "Sneakers",
+    footwear: true,
+    description: "Cityline Canvas High Top in Black Denim.",
+  },
+  {
+    title: "Vantage 204 Runner",
+    brand: "Vantage",
+    colorway: "Beige Brown",
+    price: 95,
+    images: [
+      "https://cdn.jsdelivr.net/gh/mercurjs/mercur@main/static/vantage-204-runner-1.png",
+    ],
+    category: "Sneakers",
+    footwear: true,
+    description: "Vantage 204 Runner in Beige Brown.",
+  },
+];
 
 const updateStoreCurrencies = createWorkflow(
   "update-store-currencies",
@@ -76,7 +247,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
   });
 
   if (!defaultSalesChannel.length) {
-    // create the default sales channel
     const { result: salesChannelResult } = await createSalesChannelsWorkflow(
       container
     ).run({
@@ -118,7 +288,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
   logger.info("Seeding region data...");
   const regionModuleService = container.resolve(Modules.REGION);
 
-  // Check if any of the countries are already assigned to a region
   const existingRegions = await regionModuleService.listRegions({}, {
     relations: ["countries"],
   });
@@ -134,13 +303,11 @@ export default async function seedDemoData({ container }: ExecArgs) {
 
   let region;
   if (unassignedCountries.length === 0) {
-    // All countries already assigned - find the region that has most of our countries
     region = existingRegions.find(r =>
       r.countries?.some(c => countries.includes(c.iso_2))
     ) || existingRegions[0];
     logger.info("Countries already assigned to a region, skipping region creation.");
   } else if (unassignedCountries.length < countries.length) {
-    // Some countries assigned, some not - only create with unassigned ones
     logger.info(`Some countries already assigned, creating region with: ${unassignedCountries.join(", ")}`);
     const { result: regionResult } = await createRegionsWorkflow(container).run({
       input: {
@@ -156,7 +323,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
     });
     region = regionResult[0];
   } else {
-    // No countries assigned - create full region
     const { result: regionResult } = await createRegionsWorkflow(container).run({
       input: {
         regions: [
@@ -221,7 +387,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
     publishableApiKey = publishableApiKeyResult
   }
 
-  // Link sales channel to API key (idempotent)
   try {
     await linkSalesChannelsToApiKeyWorkflow(container).run({
       input: {
@@ -240,399 +405,632 @@ export default async function seedDemoData({ container }: ExecArgs) {
 
   logger.info("Seeding product categories...");
   const productModule = container.resolve(Modules.PRODUCT);
-  const categoryNames = ["Shirts", "Sweatshirts", "Pants", "Merch"];
-  const existingCategories = await productModule.listProductCategories({
-    name: categoryNames,
-  });
 
-  let categoryResult;
-  if (existingCategories.length === categoryNames.length) {
-    categoryResult = existingCategories;
-    logger.info("Product categories already exist, skipping.");
-  } else {
-    const categoriesToCreate = categoryNames.filter(
-      (name) => !existingCategories.find((c) => c.name === name)
-    );
-    const { result: newCategories } = await createProductCategoriesWorkflow(
-      container
-    ).run({
+  // Departments (roots) and their sub-categories; array order sets nav `rank`.
+  const CATEGORY_TREE: Record<string, string[]> = {
+    Sandals: ["Slides", "Flip Flops", "Clogs"],
+    Sneakers: ["Low Top", "High Top", "Retro"],
+    Boots: ["Chelsea Boots", "Winter Boots", "Work Boots"],
+    Sport: ["Football", "Running", "Basketball"],
+    Accessories: ["Bags", "Headwear", "Wallets"],
+  };
+  const parentNames = Object.keys(CATEGORY_TREE);
+  const childNames = Object.values(CATEGORY_TREE).flat();
+
+  const existingCats = await productModule.listProductCategories({
+    name: [...parentNames, ...childNames],
+  });
+  const catByName = new Map(existingCats.map((c) => [c.name, c]));
+
+  const missingParents = parentNames.filter((name) => !catByName.has(name));
+  if (missingParents.length) {
+    const { result } = await createProductCategoriesWorkflow(container).run({
       input: {
-        product_categories: categoriesToCreate.map((name) => ({
+        product_categories: missingParents.map((name) => ({
           name,
           is_active: true,
+          rank: parentNames.indexOf(name),
         })),
       },
     });
-    categoryResult = [...existingCategories, ...newCategories];
+    result.forEach((c) => catByName.set(c.name, c));
+  }
+
+  const childInputs: {
+    name: string;
+    is_active: boolean;
+    rank: number;
+    parent_category_id: string;
+  }[] = [];
+  for (const parent of parentNames) {
+    CATEGORY_TREE[parent].forEach((childName, rank) => {
+      if (!catByName.has(childName)) {
+        childInputs.push({
+          name: childName,
+          is_active: true,
+          rank,
+          parent_category_id: catByName.get(parent)!.id,
+        });
+      }
+    });
+  }
+  if (childInputs.length) {
+    const { result } = await createProductCategoriesWorkflow(container).run({
+      input: { product_categories: childInputs },
+    });
+    result.forEach((c) => catByName.set(c.name, c));
   }
   logger.info("Finished seeding product categories.");
 
-  const SELLER_EMAIL = "seller@mercur.dev";
+  // Global product attributes (Mercur product-attribute module). Each is a
+  // multi_select variant axis so it maps to a native Medusa product option and
+  // powers `/store/products` filtering via `variants.options`. Products restrict
+  // Color/Condition to a single value each, so variant count stays size-driven.
+  logger.info("Seeding global product attributes...");
+
+  const FOOTWEAR_SIZES = ["40", "41", "42", "43", "44", "45"];
+  const COLOR_VALUES = [
+    "Black",
+    "White",
+    "Grey",
+    "Brown",
+    "Beige",
+    "Green",
+    "Blue",
+    "Red",
+    "Yellow",
+    "Orange",
+    "Purple",
+    "Pink",
+    "Multicolor",
+  ];
+  const CONDITION_VALUES = ["New", "Like New", "Used"];
+
+  const ATTRIBUTE_DEFS = [
+    { name: "Size", handle: "size", values: FOOTWEAR_SIZES },
+    { name: "Color", handle: "color", values: COLOR_VALUES },
+    { name: "Condition", handle: "condition", values: CONDITION_VALUES },
+  ];
+
+  type SeededAttribute = {
+    id: string;
+    handle: string;
+    values: { id: string; name: string }[];
+  };
+
+  const loadAttributes = async () => {
+    const { data } = await query.graph({
+      entity: "product_attribute",
+      fields: ["id", "handle", "values.id", "values.name"],
+      filters: {
+        handle: ATTRIBUTE_DEFS.map((a) => a.handle),
+        product_id: null,
+      },
+    });
+    return new Map(
+      (data as SeededAttribute[]).map((a) => [a.handle, a])
+    );
+  };
+
+  let attrByHandle = await loadAttributes();
+  const missingAttrs = ATTRIBUTE_DEFS.filter((a) => !attrByHandle.has(a.handle));
+
+  if (missingAttrs.length) {
+    await createProductAttributesWorkflow(container).run({
+      input: {
+        attributes: missingAttrs.map((attr, index) => ({
+          name: attr.name,
+          handle: attr.handle,
+          type: AttributeType.MULTI_SELECT,
+          is_variant_axis: true,
+          is_filterable: true,
+          rank: index,
+          values: attr.values.map((name, rank) => ({ name, rank })),
+        })),
+      },
+    });
+    attrByHandle = await loadAttributes();
+  }
+
+  const sizeAttr = attrByHandle.get("size")!;
+  const colorAttr = attrByHandle.get("color")!;
+  const conditionAttr = attrByHandle.get("condition")!;
+
+  const valueId = (attr: SeededAttribute, name: string) =>
+    attr.values.find((v) => v.name === name)?.id;
+
+  const COLOR_KEYWORDS: [string, string][] = [
+    ["black", "Black"],
+    ["white", "White"],
+    ["pearl", "White"],
+    ["cream", "Beige"],
+    ["sand", "Beige"],
+    ["beige", "Beige"],
+    ["wheat", "Beige"],
+    ["tan", "Beige"],
+    ["nubuck", "Beige"],
+    ["grey", "Grey"],
+    ["gray", "Grey"],
+    ["anthracite", "Grey"],
+    ["quarry", "Grey"],
+    ["graphite", "Grey"],
+    ["platinum", "Grey"],
+    ["brown", "Brown"],
+    ["chocolate", "Brown"],
+    ["cocoa", "Brown"],
+    ["wood", "Brown"],
+    ["hickory", "Brown"],
+    ["chestnut", "Brown"],
+    ["roast", "Brown"],
+    ["truffle", "Brown"],
+    ["olive", "Green"],
+    ["camo", "Green"],
+    ["neon", "Green"],
+    ["green", "Green"],
+    ["sapphire", "Blue"],
+    ["cobalt", "Blue"],
+    ["turquoise", "Blue"],
+    ["aurora", "Blue"],
+    ["blue", "Blue"],
+    ["maroon", "Red"],
+    ["red", "Red"],
+    ["yellow", "Yellow"],
+    ["orange", "Orange"],
+    ["purple", "Purple"],
+    ["pink", "Pink"],
+    ["multi", "Multicolor"],
+  ];
+  const mapColor = (colorway: string) => {
+    const c = colorway.toLowerCase();
+    for (const [keyword, color] of COLOR_KEYWORDS) {
+      if (c.includes(keyword)) {
+        return color;
+      }
+    }
+    return "Multicolor";
+  };
+  const conditionForIndex = (index: number) =>
+    ["New", "New", "New", "Like New", "Used"][index % 5];
+
+  logger.info("Finished seeding global product attributes.");
+
   const SELLER_PASSWORD = "supersecret";
+  const SELLER_CONFIGS = [
+    { name: "Sole Society", email: "seller@mercur.dev", first_name: "Demo", last_name: "Seller", city: "Berlin", country_code: "DE", address_1: "Alexanderplatz 1" },
+    { name: "Kickz Corner", email: "kickz@mercur.dev", first_name: "Kai", last_name: "Corner", city: "Amsterdam", country_code: "NL", address_1: "Damrak 12" },
+    { name: "Trailhead Outfitters", email: "trailhead@mercur.dev", first_name: "Tara", last_name: "Head", city: "Munich", country_code: "DE", address_1: "Marienplatz 3" },
+  ];
+  const PRIMARY_SELLER_EMAIL = SELLER_CONFIGS[0].email;
+
+  // DiceBear renders a crisp initials avatar per seller name; Picsum returns a
+  // deterministic photo for the same seed, so re-seeding is stable.
+  const sellerLogo = (name: string) =>
+    `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`;
+  const sellerBanner = (name: string) =>
+    `https://picsum.photos/seed/${toHandle(name)}/1200/320`;
 
   const { data: existingSellers } = await query.graph({
     entity: "seller",
     fields: ["id"],
-    filters: { email: SELLER_EMAIL },
+    filters: { email: PRIMARY_SELLER_EMAIL },
   });
 
   if (existingSellers[0]) {
     logger.info(
-      "Demo seller already exists, skipping seller, product and offer seeding."
+      "Demo sellers already exist, skipping seller, product and offer seeding."
     );
     logger.info("Finished seeding.");
     return;
   }
 
-  logger.info("Seeding demo seller...");
   const authModuleService = container.resolve(Modules.AUTH);
 
-  let authIdentityId: string;
-  const registerResponse = await authModuleService.register("emailpass", {
-    body: { email: SELLER_EMAIL, password: SELLER_PASSWORD },
+  // One marketplace-wide shipping profile shared by every seller's shipping
+  // options and every offer. createOffersWorkflow links each offer's product to
+  // this profile, so the cart-refresh orphan-cleanup keeps per-seller shipping
+  // methods (it matches option profile against the product's profile).
+  let sharedShippingProfileId: string;
+  const { data: existingProfiles } = await query.graph({
+    entity: "shipping_profile",
+    fields: ["id"],
+    filters: { name: "Marketplace Shipping" },
   });
-
-  if (registerResponse.success && registerResponse.authIdentity) {
-    authIdentityId = registerResponse.authIdentity.id;
+  if (existingProfiles[0]) {
+    sharedShippingProfileId = existingProfiles[0].id as string;
   } else {
-    const [providerIdentity] = await authModuleService.listProviderIdentities({
-      entity_id: SELLER_EMAIL,
-      provider: "emailpass",
+    const {
+      result: [createdProfile],
+    } = await createShippingProfilesWorkflow(container).run({
+      input: { data: [{ name: "Marketplace Shipping", type: "default" }] },
     });
-    authIdentityId = providerIdentity.auth_identity_id!;
+    sharedShippingProfileId = createdProfile.id;
   }
 
-  const { result: demoSeller } = await createSellerAccountWorkflow(
-    container
-  ).run({
-    input: {
-      auth_identity_id: authIdentityId,
-      member_email: SELLER_EMAIL,
-      first_name: "Demo",
-      last_name: "Seller",
-      seller: {
-        name: "Demo Store",
-        email: SELLER_EMAIL,
-        currency_code: "eur",
-        description:
-          "A demo marketplace seller with a full catalog of offers.",
-      },
-    },
-  });
+  type SeededSeller = {
+    id: string;
+    name: string;
+    memberId: string;
+    stockLocationId: string;
+    shippingProfileId: string;
+  };
+  const sellers: SeededSeller[] = [];
 
-  await approveSellerWorkflow(container).run({
-    input: { seller_id: demoSeller.id },
-  });
+  for (const [index, sellerConfig] of SELLER_CONFIGS.entries()) {
+    logger.info(`Seeding seller "${sellerConfig.name}"...`);
+
+    let authIdentityId: string;
+    const registerResponse = await authModuleService.register("emailpass", {
+      body: { email: sellerConfig.email, password: SELLER_PASSWORD },
+    });
+
+    if (registerResponse.success && registerResponse.authIdentity) {
+      authIdentityId = registerResponse.authIdentity.id;
+    } else {
+      const [providerIdentity] =
+        await authModuleService.listProviderIdentities({
+          entity_id: sellerConfig.email,
+          provider: "emailpass",
+        });
+      authIdentityId = providerIdentity.auth_identity_id!;
+    }
+
+    const { result: seller } = await createSellerAccountWorkflow(
+      container
+    ).run({
+      input: {
+        auth_identity_id: authIdentityId,
+        member_email: sellerConfig.email,
+        first_name: sellerConfig.first_name,
+        last_name: sellerConfig.last_name,
+        seller: {
+          name: sellerConfig.name,
+          email: sellerConfig.email,
+          currency_code: "eur",
+          description: `${sellerConfig.name} — a demo marketplace footwear seller.`,
+          logo: sellerLogo(sellerConfig.name),
+          banner: sellerBanner(sellerConfig.name),
+        },
+      },
+    });
+
+    await approveSellerWorkflow(container).run({
+      input: { seller_id: seller.id },
+    });
 
   const { data: members } = await query.graph({
-    entity: "member",
-    fields: ["id"],
-    filters: { email: SELLER_EMAIL },
-  });
-  const demoSellerMemberId = members[0].id;
+      entity: "member",
+      fields: ["id"],
+      filters: { email: sellerConfig.email },
+    });
+    const memberId = members[0].id;
 
-  const { result: sellerStockLocations } =
-    await createSellerStockLocationsWorkflow(container).run({
-      input: {
-        seller_id: demoSeller.id,
-        locations: [
-          {
-            name: "Demo Store Warehouse",
-            address: {
-              city: "Berlin",
-              country_code: "DE",
-              address_1: "Alexanderplatz 1",
+    const { result: stockLocations } =
+      await createSellerStockLocationsWorkflow(container).run({
+        input: {
+          seller_id: seller.id,
+          locations: [
+            {
+              name: `${sellerConfig.name} Warehouse`,
+              address: {
+                city: sellerConfig.city,
+                country_code: sellerConfig.country_code,
+                address_1: sellerConfig.address_1,
+              },
             },
+          ],
+        },
+      });
+    const stockLocation = stockLocations[0];
+
+    await link.create({
+      [Modules.STOCK_LOCATION]: { stock_location_id: stockLocation.id },
+      [Modules.FULFILLMENT]: { fulfillment_provider_id: "manual_manual" },
+    });
+
+    await linkSalesChannelsToStockLocationWorkflow(container).run({
+      input: {
+        id: stockLocation.id,
+        add: [defaultSalesChannel[0].id],
+      },
+    });
+
+    if (index === 0) {
+      await updateStoresWorkflow(container).run({
+        input: {
+          selector: { id: store.id },
+          update: {
+            default_location_id: stockLocation.id,
+          },
+        },
+      });
+    }
+
+    await createLocationFulfillmentSetWorkflow(container).run({
+      input: {
+        location_id: stockLocation.id,
+        fulfillment_set_data: {
+          name: `${sellerConfig.name} delivery`,
+          type: "shipping",
+        },
+      },
+    });
+
+    const {
+      data: [locationWithSet],
+    } = await query.graph({
+      entity: "stock_location",
+      fields: ["id", "fulfillment_sets.id"],
+      filters: { id: stockLocation.id },
+    });
+    const fulfillmentSetId = locationWithSet?.fulfillment_sets?.[0]?.id;
+    if (!fulfillmentSetId) {
+      throw new Error(
+        `Fulfillment set was not created for seller "${sellerConfig.name}"`
+      );
+    }
+
+    const { result: serviceZones } = await createServiceZonesWorkflow(
+      container
+    ).run({
+      input: {
+        data: [
+          {
+            fulfillment_set_id: fulfillmentSetId,
+            name: `${sellerConfig.name} Europe`,
+            geo_zones: countries.map((country_code) => ({
+              country_code,
+              type: "country" as const,
+            })),
           },
         ],
       },
     });
-  const sellerStockLocation = sellerStockLocations[0];
+    const serviceZoneId = serviceZones[0].id;
 
-  await link.create({
-    [Modules.STOCK_LOCATION]: { stock_location_id: sellerStockLocation.id },
-    [Modules.FULFILLMENT]: { fulfillment_provider_id: "manual_manual" },
-  });
+    const shippingProfileId = sharedShippingProfileId;
 
-  await linkSalesChannelsToStockLocationWorkflow(container).run({
-    input: {
-      id: sellerStockLocation.id,
-      add: [defaultSalesChannel[0].id],
-    },
-  });
-
-  await updateStoresWorkflow(container).run({
-    input: {
-      selector: { id: store.id },
-      update: {
-        default_location_id: sellerStockLocation.id,
-      },
-    },
-  });
-
-  await createLocationFulfillmentSetWorkflow(container).run({
-    input: {
-      location_id: sellerStockLocation.id,
-      fulfillment_set_data: {
-        name: "Demo Store delivery",
-        type: "shipping",
-      },
-    },
-  });
-
-  const {
-    data: [locationWithSet],
-  } = await query.graph({
-    entity: "stock_location",
-    fields: ["id", "fulfillment_sets.id"],
-    filters: { id: sellerStockLocation.id },
-  });
-  const sellerFulfillmentSetId = locationWithSet.fulfillment_sets[0].id;
-
-  const { result: sellerServiceZones } = await createServiceZonesWorkflow(
-    container
-  ).run({
-    input: {
-      data: [
-        {
-          fulfillment_set_id: sellerFulfillmentSetId,
-          name: "Europe",
-          geo_zones: countries.map((country_code) => ({
-            country_code,
-            type: "country" as const,
-          })),
-        },
-      ],
-    },
-  });
-  const sellerServiceZoneId = sellerServiceZones[0].id;
-
-  const { result: sellerShippingProfiles } =
-    await createSellerShippingProfilesWorkflow(container).run({
+    await createSellerShippingOptionsWorkflow(container).run({
       input: {
-        seller_id: demoSeller.id,
-        shipping_profiles: [{ name: "Demo Store Shipping", type: "default" }],
+        seller_id: seller.id,
+        shipping_options: [
+          {
+            name: "Standard Shipping",
+            price_type: "flat",
+            provider_id: "manual_manual",
+            service_zone_id: serviceZoneId,
+            shipping_profile_id: shippingProfileId,
+            type: {
+              label: "Standard",
+              description: "Ship in 2-3 days.",
+              code: "standard",
+            },
+            prices: [
+              { currency_code: "usd", amount: 10 },
+              { currency_code: "eur", amount: 10 },
+              { region_id: region.id, amount: 10 },
+            ],
+            rules: [
+              { attribute: "enabled_in_store", value: "true", operator: "eq" },
+              { attribute: "is_return", value: "false", operator: "eq" },
+            ],
+          },
+          {
+            name: "Express Shipping",
+            price_type: "flat",
+            provider_id: "manual_manual",
+            service_zone_id: serviceZoneId,
+            shipping_profile_id: shippingProfileId,
+            type: {
+              label: "Express",
+              description: "Ship in 24 hours.",
+              code: "express",
+            },
+            prices: [
+              { currency_code: "usd", amount: 10 },
+              { currency_code: "eur", amount: 10 },
+              { region_id: region.id, amount: 10 },
+            ],
+            rules: [
+              { attribute: "enabled_in_store", value: "true", operator: "eq" },
+              { attribute: "is_return", value: "false", operator: "eq" },
+            ],
+          },
+        ],
       },
     });
-  const sellerShippingProfileId = sellerShippingProfiles[0].id;
 
-  await createSellerShippingOptionsWorkflow(container).run({
-    input: {
-      seller_id: demoSeller.id,
-      shipping_options: [
-        {
-          name: "Standard Shipping",
-          price_type: "flat",
-          provider_id: "manual_manual",
-          service_zone_id: sellerServiceZoneId,
-          shipping_profile_id: sellerShippingProfileId,
-          type: {
-            label: "Standard",
-            description: "Ship in 2-3 days.",
-            code: "standard",
-          },
-          prices: [
-            { currency_code: "usd", amount: 10 },
-            { currency_code: "eur", amount: 10 },
-            { region_id: region.id, amount: 10 },
-          ],
-          rules: [
-            { attribute: "enabled_in_store", value: "true", operator: "eq" },
-            { attribute: "is_return", value: "false", operator: "eq" },
-          ],
-        },
-        {
-          name: "Express Shipping",
-          price_type: "flat",
-          provider_id: "manual_manual",
-          service_zone_id: sellerServiceZoneId,
-          shipping_profile_id: sellerShippingProfileId,
-          type: {
-            label: "Express",
-            description: "Ship in 24 hours.",
-            code: "express",
-          },
-          prices: [
-            { currency_code: "usd", amount: 10 },
-            { currency_code: "eur", amount: 10 },
-            { region_id: region.id, amount: 10 },
-          ],
-          rules: [
-            { attribute: "enabled_in_store", value: "true", operator: "eq" },
-            { attribute: "is_return", value: "false", operator: "eq" },
-          ],
-        },
-      ],
-    },
-  });
-  logger.info("Finished seeding demo seller.");
+    sellers.push({
+      id: seller.id,
+      name: sellerConfig.name,
+      memberId,
+      stockLocationId: stockLocation.id,
+      shippingProfileId,
+    });
+    logger.info(`Finished seeding seller "${sellerConfig.name}".`);
+  }
+
+  const primarySeller = sellers[0];
+  logger.info(`Finished seeding ${sellers.length} sellers.`);
 
   logger.info("Seeding product data...");
-  const productPrices = [
-    { amount: 10, currency_code: "eur" },
-    { amount: 15, currency_code: "usd" },
-  ];
+
+  const catalog = seedCatalog;
+
+  const slugify = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/'/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+  const usedHandles = new Set<string>();
+  const uniqueHandle = (title: string) => {
+    const base = slugify(title);
+    let handle = base;
+    let n = 2;
+    while (usedHandles.has(handle)) {
+      handle = `${base}-${n++}`;
+    }
+    usedHandles.add(handle);
+    return handle;
+  };
+
+  const childCursor: Record<string, number> = {};
+  const nextChildId = (parent: string) => {
+    const children = CATEGORY_TREE[parent];
+    const i = (childCursor[parent] ?? 0) % children.length;
+    childCursor[parent] = i + 1;
+    return catByName.get(children[i])!.id;
+  };
+
+  const products: CreateProductDTO[] = catalog.map((item, index) => {
+    const handle = uniqueHandle(item.title);
+    const skuBase = handle.toUpperCase().replace(/-/g, "");
+    const images = item.images.map((url) => ({ url }));
+
+    const color = mapColor(item.colorway);
+    const condition = conditionForIndex(index);
+
+    const attributes = [
+      ...(item.footwear
+        ? [
+            {
+              id: sizeAttr.id,
+              value_ids: FOOTWEAR_SIZES.map((size) =>
+                valueId(sizeAttr, size)
+              ).filter((id): id is string => Boolean(id)),
+            },
+          ]
+        : []),
+      {
+        id: colorAttr.id,
+        value_ids: [valueId(colorAttr, color)].filter(
+          (id): id is string => Boolean(id)
+        ),
+      },
+      {
+        id: conditionAttr.id,
+        value_ids: [valueId(conditionAttr, condition)].filter(
+          (id): id is string => Boolean(id)
+        ),
+      },
+    ];
+
+    const variants = item.footwear
+      ? FOOTWEAR_SIZES.map((size) => ({
+          title: `EU ${size}`,
+          sku: `${skuBase}-EU${size}`,
+          options: { Size: size, Color: color, Condition: condition },
+        }))
+      : [
+          {
+            title: "One Size",
+            sku: `${skuBase}-OS`,
+            options: { Color: color, Condition: condition },
+          },
+        ];
+
+    return {
+      title: item.title,
+      category_ids: [nextChildId(item.category)],
+      description: item.description,
+      handle,
+      weight: item.footwear ? 1200 : 400,
+      status: ProductStatus.PUBLISHED,
+      thumbnail: images[0].url,
+      images,
+      attributes,
+      variants,
+    };
+  });
 
   await createProductsWorkflow(container).run({
     input: {
-      created_by: demoSellerMemberId,
-      products: [
-        {
-          title: "Basic T-Shirt",
-          category_ids: [
-            categoryResult.find((cat: { name: string }) => cat.name === "Shirts")!.id,
-          ],
-          description:
-            "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
-          handle: "t-shirt",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: sellerShippingProfileId,
-          seller_ids: [demoSeller.id],
-          images: [
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png" },
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png" },
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-front.png" },
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-back.png" },
-          ],
-          attributes: [
-            { title: "Size", values: ["S", "M", "L", "XL"], is_variant_axis: true },
-            { title: "Color", values: ["Black", "White"], is_variant_axis: true },
-          ],
-          variants: [
-            { title: "S / Black", sku: "SHIRT-S-BLACK", options: { Size: "S", Color: "Black" }, prices: productPrices },
-            { title: "S / White", sku: "SHIRT-S-WHITE", options: { Size: "S", Color: "White" }, prices: productPrices },
-            { title: "M / Black", sku: "SHIRT-M-BLACK", options: { Size: "M", Color: "Black" }, prices: productPrices },
-            { title: "M / White", sku: "SHIRT-M-WHITE", options: { Size: "M", Color: "White" }, prices: productPrices },
-            { title: "L / Black", sku: "SHIRT-L-BLACK", options: { Size: "L", Color: "Black" }, prices: productPrices },
-            { title: "L / White", sku: "SHIRT-L-WHITE", options: { Size: "L", Color: "White" }, prices: productPrices },
-            { title: "XL / Black", sku: "SHIRT-XL-BLACK", options: { Size: "XL", Color: "Black" }, prices: productPrices },
-            { title: "XL / White", sku: "SHIRT-XL-WHITE", options: { Size: "XL", Color: "White" }, prices: productPrices },
-          ],
-          sales_channels: [{ id: defaultSalesChannel[0].id }],
-        },
-        {
-          title: "Basic Sweatshirt",
-          category_ids: [
-            categoryResult.find((cat: { name: string }) => cat.name === "Sweatshirts")!.id,
-          ],
-          description:
-            "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
-          handle: "sweatshirt",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: sellerShippingProfileId,
-          seller_ids: [demoSeller.id],
-          images: [
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png" },
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png" },
-          ],
-          attributes: [
-            { title: "Size", values: ["S", "M", "L", "XL"], is_variant_axis: true },
-          ],
-          variants: [
-            { title: "S", sku: "SWEATSHIRT-S", options: { Size: "S" }, prices: productPrices },
-            { title: "M", sku: "SWEATSHIRT-M", options: { Size: "M" }, prices: productPrices },
-            { title: "L", sku: "SWEATSHIRT-L", options: { Size: "L" }, prices: productPrices },
-            { title: "XL", sku: "SWEATSHIRT-XL", options: { Size: "XL" }, prices: productPrices },
-          ],
-          sales_channels: [{ id: defaultSalesChannel[0].id }],
-        },
-        {
-          title: "Basic Sweatpants",
-          category_ids: [
-            categoryResult.find((cat: { name: string }) => cat.name === "Pants")!.id,
-          ],
-          description:
-            "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
-          handle: "sweatpants",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: sellerShippingProfileId,
-          seller_ids: [demoSeller.id],
-          images: [
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png" },
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png" },
-          ],
-          attributes: [
-            { title: "Size", values: ["S", "M", "L", "XL"], is_variant_axis: true },
-          ],
-          variants: [
-            { title: "S", sku: "SWEATPANTS-S", options: { Size: "S" }, prices: productPrices },
-            { title: "M", sku: "SWEATPANTS-M", options: { Size: "M" }, prices: productPrices },
-            { title: "L", sku: "SWEATPANTS-L", options: { Size: "L" }, prices: productPrices },
-            { title: "XL", sku: "SWEATPANTS-XL", options: { Size: "XL" }, prices: productPrices },
-          ],
-          sales_channels: [{ id: defaultSalesChannel[0].id }],
-        },
-        {
-          title: "Basic Shorts",
-          category_ids: [
-            categoryResult.find((cat: { name: string }) => cat.name === "Merch")!.id,
-          ],
-          description:
-            "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
-          handle: "shorts",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: sellerShippingProfileId,
-          seller_ids: [demoSeller.id],
-          images: [
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-front.png" },
-            { url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png" },
-          ],
-          attributes: [
-            { title: "Size", values: ["S", "M", "L", "XL"], is_variant_axis: true },
-          ],
-          variants: [
-            { title: "S", sku: "SHORTS-S", options: { Size: "S" }, prices: productPrices },
-            { title: "M", sku: "SHORTS-M", options: { Size: "M" }, prices: productPrices },
-            { title: "L", sku: "SHORTS-L", options: { Size: "L" }, prices: productPrices },
-            { title: "XL", sku: "SHORTS-XL", options: { Size: "XL" }, prices: productPrices },
-          ],
-          sales_channels: [{ id: defaultSalesChannel[0].id }],
-        },
-      ],
+      created_by: primarySeller.memberId,
+      products,
     },
   });
-  logger.info("Finished seeding product data.");
+  logger.info(`Finished seeding ${products.length} products.`);
 
-  logger.info("Creating offers for the demo seller...");
+  logger.info("Creating randomized offers across sellers...");
+
+  // Deterministic PRNG (mulberry32) so re-seeding produces the same spread.
+  let rngState = 0x9e3779b9;
+  const rand = () => {
+    rngState = (rngState + 0x6d2b79f5) | 0;
+    let t = rngState;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const randInt = (min: number, max: number) =>
+    min + Math.floor(rand() * (max - min + 1));
+
+  const priceByHandle = new Map(
+    products.map((product, index) => [product.handle, catalog[index].price])
+  );
   const { data: seededProducts } = await query.graph({
     entity: "product",
-    fields: ["id", "variants.id", "variants.sku"],
+    fields: ["id", "handle", "variants.id", "variants.sku"],
     filters: {
-      handle: ["t-shirt", "sweatshirt", "sweatpants", "shorts"],
+      handle: products
+        .map((product) => product.handle)
+        .filter((handle): handle is string => Boolean(handle)),
     },
   });
 
-  const offers = seededProducts.flatMap((product) =>
-    product.variants.map((variant: { id: string; sku: string }) => ({
-      seller_id: demoSeller.id,
-      created_by: demoSellerMemberId,
-      sku: `OFFER-${variant.sku}`,
-      variant_id: variant.id,
-      shipping_profile_id: sellerShippingProfileId,
-      inventory_items: [
-        {
-          sku: `OFFER-${variant.sku}`,
-          stock_levels: [
-            {
-              location_id: sellerStockLocation.id,
-              stocked_quantity: 1000000,
-            },
-          ],
-        },
-      ],
-      prices: [
-        { amount: 10, currency_code: "eur" },
-        { amount: 15, currency_code: "usd" },
-      ],
-    }))
-  );
+  const offers: CreateOfferDTO[] = [];
+
+  for (const product of seededProducts) {
+    const basePrice = priceByHandle.get(product.handle) ?? 50;
+
+    // At least one seller always carries the product; the rest are random.
+    const shuffledSellers = [...sellers].sort(() => rand() - 0.5);
+    const participantCount = randInt(1, sellers.length);
+    const participants = shuffledSellers.slice(0, participantCount);
+
+    for (const seller of participants) {
+      for (const variant of product.variants as {
+        id: string;
+        sku: string | null;
+      }[]) {
+        const offerCount = randInt(1, 2);
+        for (let o = 0; o < offerCount; o++) {
+          const jitter = 1 + (rand() * 0.3 - 0.15); // ±15%
+          const eur = Math.max(1, Math.round(basePrice * jitter));
+          const usd = Math.round(eur * 1.08);
+          const sku = `OFFER-${seller.id.slice(-4)}-${variant.sku}-${o + 1}`;
+          offers.push({
+            seller_id: seller.id,
+            created_by: seller.memberId,
+            sku,
+            variant_id: variant.id,
+            shipping_profile_id: seller.shippingProfileId,
+            inventory_items: [
+              {
+                sku,
+                stock_levels: [
+                  {
+                    location_id: seller.stockLocationId,
+                    stocked_quantity: 1000000,
+                  },
+                ],
+              },
+            ],
+            prices: [
+              { amount: eur, currency_code: "eur" },
+              { amount: usd, currency_code: "usd" },
+            ],
+          });
+        }
+      }
+    }
+  }
 
   await createOffersWorkflow(container).run({ input: { offers } });
-  logger.info("Finished creating offers for the demo seller.");
+  logger.info(
+    `Finished creating ${offers.length} offers across ${sellers.length} sellers.`
+  );
 
   logger.info("Finished seeding.");
 }

@@ -29,6 +29,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 import { Form } from "@components/common/form"
+import { SwitchBox } from "@components/common/switch-box"
 import { DeprecatedPercentageInput } from "@components/inputs/percentage-input"
 import { RouteFocusModal, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
@@ -50,6 +51,8 @@ const defaultValues = {
   code: '',
   type: 'standard' as PromotionTypeValues,
   status: 'draft' as PromotionStatusValues,
+  is_tax_inclusive: false,
+  limit: null,
   rules: [],
   application_method: {
     allocation: 'each' as ApplicationMethodAllocationValues,
@@ -135,6 +138,34 @@ export const CreatePromotionForm = () => {
           }));
       };
 
+      // Buyget promotions require both quantities and a max_quantity >=
+      // apply_to_quantity (enforced by the promotion module). Fail fast with a
+      // clear message instead of surfacing a raw backend 400.
+      if (data.type === 'buyget') {
+        const applyToQuantity = applicationMethodRuleData.apply_to_quantity;
+        const buyRulesMinQuantity =
+          applicationMethodRuleData.buy_rules_min_quantity;
+        const maxQuantity = applicationMethodData.max_quantity;
+
+        if (!applyToQuantity || applyToQuantity < 1) {
+          setTab(Tab.PROMOTION);
+          toast.error(t('promotions.errors.applyToQuantityRequired'));
+          return;
+        }
+
+        if (!buyRulesMinQuantity || buyRulesMinQuantity < 1) {
+          setTab(Tab.PROMOTION);
+          toast.error(t('promotions.errors.buyRulesMinQuantityRequired'));
+          return;
+        }
+
+        if (typeof maxQuantity !== 'number' || maxQuantity < applyToQuantity) {
+          setTab(Tab.PROMOTION);
+          toast.error(t('promotions.errors.maxQuantityLowerThanApplyTo'));
+          return;
+        }
+      }
+
       createPromotion(
         {
           ...promotionData,
@@ -143,10 +174,12 @@ export const CreatePromotionForm = () => {
           application_method: {
             ...applicationMethodData,
             ...applicationMethodRuleData,
+            value: Number(applicationMethodData.value),
             target_rules: buildRulesData(targetRulesData),
-            type: 'percentage'
+            buy_rules: buildRulesData(buyRulesData)
           },
-          is_automatic: is_automatic === 'true'
+          is_automatic: is_automatic === 'true',
+          limit: is_automatic === 'true' ? undefined : promotionData.limit
         },
         {
           onSuccess: ({ promotion }) => {
@@ -290,6 +323,10 @@ export const CreatePromotionForm = () => {
   useEffect(() => {
     if (watchAllocation === 'across') {
       setValue('application_method.max_quantity', null);
+    }
+
+    if (watchAllocation === 'once') {
+      setValue('application_method.max_quantity', 1);
     }
   }, [watchAllocation, setValue]);
 
@@ -597,6 +634,15 @@ export const CreatePromotionForm = () => {
                     />
                   </div>
 
+                  {!currentTemplate?.hiddenFields?.includes('is_tax_inclusive') && (
+                    <SwitchBox
+                      control={form.control}
+                      name="is_tax_inclusive"
+                      label={t('promotions.form.taxInclusive.title')}
+                      description={t('promotions.form.taxInclusive.description')}
+                    />
+                  )}
+
                   {!currentTemplate?.hiddenFields?.includes('type') && (
                     <Form.Field
                       control={form.control}
@@ -680,6 +726,44 @@ export const CreatePromotionForm = () => {
                     />
                   )}
 
+                  {isTypeStandard &&
+                    !currentTemplate?.hiddenFields?.includes('application_method.allocation') && (
+                      <Form.Field
+                        control={form.control}
+                        name="application_method.allocation"
+                        render={({ field }) => {
+                          return (
+                            <Form.Item>
+                              <Form.Label>{t('promotions.fields.allocation')}</Form.Label>
+
+                              <Form.Control>
+                                <RadioGroup
+                                  className="flex gap-y-3"
+                                  {...field}
+                                  onValueChange={field.onChange}
+                                >
+                                  <RadioGroup.ChoiceBox
+                                    value={'each'}
+                                    label={t('promotions.form.allocation.each.title')}
+                                    description={t('promotions.form.allocation.each.description')}
+                                    className={clx('basis-1/2')}
+                                  />
+
+                                  <RadioGroup.ChoiceBox
+                                    value={'once'}
+                                    label={t('promotions.form.allocation.once.title')}
+                                    description={t('promotions.form.allocation.once.description')}
+                                    className={clx('basis-1/2')}
+                                  />
+                                </RadioGroup>
+                              </Form.Control>
+                              <Form.ErrorMessage />
+                            </Form.Item>
+                          );
+                        }}
+                      />
+                    )}
+
                   <div className="flex gap-x-2 gap-y-4">
                     {!currentTemplate?.hiddenFields?.includes('application_method.value') && (
                       <Form.Field
@@ -711,7 +795,7 @@ export const CreatePromotionForm = () => {
                                     code={currencyCode || 'USD'}
                                     symbol={currencyCode ? getCurrencySymbol(currencyCode) : '$'}
                                     value={value}
-                                    // disabled={!currencyCode}
+                                    disabled={!currencyCode}
                                   />
                                 ) : (
                                   <DeprecatedPercentageInput
@@ -751,7 +835,9 @@ export const CreatePromotionForm = () => {
                       />
                     )}
 
-                    {isTypeStandard && watchAllocation === 'each' && (
+                    {isTypeStandard &&
+                      (watchAllocation === 'each' ||
+                        watchAllocation === 'once') && (
                       <Form.Field
                         control={form.control}
                         name="application_method.max_quantity"
@@ -789,44 +875,6 @@ export const CreatePromotionForm = () => {
                     )}
                   </div>
 
-                  {isTypeStandard &&
-                    !currentTemplate?.hiddenFields?.includes('application_method.allocation') && (
-                      <Form.Field
-                        control={form.control}
-                        name="application_method.allocation"
-                        render={({ field }) => {
-                          return (
-                            <Form.Item>
-                              <Form.Label>{t('promotions.fields.allocation')}</Form.Label>
-
-                              <Form.Control>
-                                <RadioGroup
-                                  className="flex gap-y-3"
-                                  {...field}
-                                  onValueChange={field.onChange}
-                                >
-                                  <RadioGroup.ChoiceBox
-                                    value={'each'}
-                                    label={t('promotions.form.allocation.each.title')}
-                                    description={t('promotions.form.allocation.each.description')}
-                                    className={clx('basis-1/2')}
-                                  />
-
-                                  <RadioGroup.ChoiceBox
-                                    value={'across'}
-                                    label={t('promotions.form.allocation.across.title')}
-                                    description={t('promotions.form.allocation.across.description')}
-                                    className={clx('basis-1/2')}
-                                  />
-                                </RadioGroup>
-                              </Form.Control>
-                              <Form.ErrorMessage />
-                            </Form.Item>
-                          );
-                        }}
-                      />
-                    )}
-
                   {!isTypeStandard && (
                     <>
                       <RulesFormField
@@ -847,6 +895,45 @@ export const CreatePromotionForm = () => {
                       />
                     </>
                   )}
+
+                  <Divider />
+
+                  <Form.Field
+                    control={form.control}
+                    name="limit"
+                    render={({ field: { onChange, value, ...field } }) => {
+                      return (
+                        <Form.Item>
+                          <Form.Label optional>
+                            {t('promotions.form.usageLimit.title')}
+                          </Form.Label>
+                          <Form.Control>
+                            <Input
+                              type="number"
+                              min={1}
+                              {...field}
+                              value={value ?? ''}
+                              onChange={e => {
+                                onChange(
+                                  e.target.value === ''
+                                    ? null
+                                    : parseInt(e.target.value)
+                                );
+                              }}
+                            />
+                          </Form.Control>
+                          <Text
+                            size="small"
+                            leading="compact"
+                            className="text-ui-fg-subtle"
+                          >
+                            {t('promotions.form.usageLimit.description')}
+                          </Text>
+                          <Form.ErrorMessage />
+                        </Form.Item>
+                      );
+                    }}
+                  />
                 </div>
               </div>
             </ProgressTabs.Content>

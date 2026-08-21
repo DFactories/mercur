@@ -660,6 +660,7 @@
     "attributeProductInformationDescription": "Attributes used for informational purposes",
     "attributeRequiredByMarketplace": "This attribute is required by the marketplace.",
     "attributeRequiredDeleteDisabledTooltip": "Required attributes cannot be removed.",
+    "missingRequiredAttributesHint": "Please provide the required information",
     "addAttribute": "Add Attribute",
     "deleteAttributeWarning": "Are you sure you want to delete the attribute \"{{title}}\"? This action cannot be undone.",
     "attributesSection": {
@@ -1117,7 +1118,11 @@
       "requiresShipping": "Requires shipping",
       "requiresShippingHint": "Does the inventory item require shipping?",
       "descriptionPlaceholder": "The item description",
-      "successToast": "Inventory item was successfully created."
+      "successToast": "Inventory item was successfully created.",
+      "errors": {
+        "titleRequired": "Please enter a title"
+      },
+      "attributesHint": "These are default values used to describe the item. They are not defined by Marketplace."
     },
     "reservation": {
       "header": "Reservation of {{itemName}}",
@@ -1138,19 +1143,34 @@
       "updateSuccessToast": "Reservation was successfully updated.",
       "deleteSuccessToast": "Reservation was successfully deleted.",
       "errors": {
-        "noAvaliableQuantity": "Stock location doesn't have available quantity.",
-        "quantityOutOfRange": "Minimum quantity is 1 and maximum quantity is {{max}}"
-      }
+        "noAvaliableQuantity": "Stock location doesn't have available quantity",
+        "quantityOutOfRange": "Minimum quantity is 1 and maximum quantity is {{max}}",
+        "idRequired": "Inventory item is required",
+        "selectLocation": "Please select a location",
+        "enterQuantity": "Please enter a quantity",
+        "pleaseEnterQuantity": "Please enter quantity"
+      },
+      "deleteTitle": "Delete reservation",
+      "deleteDescription": "You are about to delete a reservation. This action cannot be undone.",
+      "deleteBlockedDescription": "This reservation cannot be deleted because it's linked to an unfulfilled order.",
+      "gotIt": "Got it",
+      "locationPlaceholder": "Select location",
+      "itemId": "Item ID",
+      "goToInventoryItem": "Go to inventory item",
+      "reserved": "Reserved",
+      "itemPlaceholder": "Select item"
     },
     "adjustInventory": {
       "errors": {
-        "stockedQuantity": "Stocked quantity cannot be updated to less than the reserved quantity of {{quantity}}."
+        "stockedQuantity": "Stocked quantity cannot be updated to less than the reserved quantity of {{quantity}}.",
+        "enterQuantity": "Please enter quantity"
       }
     },
     "toast": {
       "updateLocations": "Locations updated successfully.",
       "updateLevel": "Inventory level updated successfully.",
-      "updateItem": "Inventory item updated successfully."
+      "updateItem": "Inventory item updated successfully.",
+      "deleteItem": "Inventory item was successfully deleted."
     },
     "stock": {
       "title": "Update inventory levels",
@@ -1161,6 +1181,30 @@
       "disablePrompt_other": "You are about to disable {{count}} location levels. This action cannot be undone.",
       "disabledToggleTooltip": "Cannot disable: clear incoming and/or reserved quantity before disabling.",
       "successToast": "Inventory levels updated successfully."
+    },
+    "associatedOffers": "Associated offers",
+    "attributes": {
+      "tip": "These are default values used to describe the item. They are not managed by Marketplace."
+    },
+    "item": {
+      "deleteTitle": "Delete inventory item",
+      "deleteDescription": "You are about to delete an inventory item. This action cannot be undone."
+    },
+    "level": {
+      "deleteTitle": "Delete inventory level",
+      "deleteDescription": "You're about to delete inventory level from {{location}}. This will delete stock and reservations for this location and cannot be undone."
+    },
+    "list": {
+      "noRecordsTitle": "No inventory items yet",
+      "noRecordsMessage": "Create inventory items to manage inventory"
+    },
+    "locations": {
+      "noRecordsTitle": "No locations yet",
+      "noRecordsMessage": "Add a location to start managing stock levels"
+    },
+    "reservations": {
+      "noRecordsTitle": "No reservations yet",
+      "noRecordsMessage": "There are no reservations to show"
     }
   },
   "offers": {
@@ -1203,6 +1247,10 @@
       },
       "shipping": {
         "successToast": "Shipping configuration was successfully updated."
+      },
+      "inventory": {
+        "manageInventoryHint": "When enabled, we'll change the inventory quantity for you when orders and returns are created.",
+        "allowBackordersHint": "When enabled, customers can purchase the variant even if there's no available quantity."
       }
     },
     "pricing": {
@@ -1215,7 +1263,24 @@
       "header": "Manage inventory items",
       "description": "Attach, detach, or change the required quantity per item.",
       "successToast": "Stock levels were successfully updated.",
-      "empty": "No inventory items attached"
+      "empty": "No inventory items attached",
+      "itemsHeading": "Inventory items",
+      "kitHeading": "Inventory kit",
+      "defineHint": "Define inventory items required for this variant. Add multiple items to create an inventory kit.",
+      "itemPlaceholder": "Select inventory item",
+      "quantityPlaceholder": "Enter required quantity",
+      "manageItemsAction": "Manage inventory Items",
+      "manageItemsButton": "Manage inventory items",
+      "notManagedTitle": "Inventory is not managed",
+      "notManagedDesc": "Turn on \"Manage Inventory\" to track the variant's inventory.",
+      "editVariant": "Edit variant",
+      "noItemsTitle": "No inventory items yet",
+      "noItemsDesc": "Manage inventory items required for this variant",
+      "itemsManageSuccessToast": "Inventory items were successfully updated.",
+      "validation": {
+        "itemId": "Please select inventory item",
+        "quantity": "Please enter required quantity"
+      }
     },
     "delete": {
       "description": "You are about to delete offer {{sku}}. This cannot be undone.",
@@ -1256,7 +1321,10 @@
       "notEnabled": "Not enabled",
       "enabled": "Enabled",
       "variantsCount_one": "{{count}} variant",
-      "variantsCount_other": "{{count}} variants"
+      "variantsCount_other": "{{count}} variants",
+      "manageInventory": "Manage inventory",
+      "allowBackorders": "Allow backorders",
+      "store": "Store"
     },
     "status": {
       "published": "Published",
@@ -1917,7 +1985,7 @@
       "title": "Create Refund",
       "sendNotificationHint": "Notify customers about the created refund.",
       "systemPayment": "System payment",
-      "systemPaymentDesc": "One or more of your payments is a system payment. Be aware, that captures and refunds are not handled by Medusa for such payments.",
+      "systemPaymentDesc": "One or more of your payments is a system payment. Be aware, that captures and refunds are not handled by Mercur for such payments.",
       "error": {
         "amountToLarge": "Cannot refund more than the original order amount.",
         "amountNegative": "Refund amount must be a positive number.",
@@ -2539,9 +2607,17 @@
   },
   "promotions": {
     "templates": {
+      "amountOffOffers": {
+        "title": "Amount off items",
+        "description": "Discount selected items"
+      },
       "percentageOffProduct": {
-        "title": "Percentage off product",
-        "description": "Discounts a percentage off selected products"
+        "title": "Percentage off items",
+        "description": "Discounts a percentage off selected items"
+      },
+      "buyGet": {
+        "title": "Buy X Get Y",
+        "description": "Buy X item(s), get Y item(s)"
       }
     },
     "domain": "Promotions",
@@ -2553,8 +2629,22 @@
       "details": "Details",
       "campaign": "Campaign"
     },
+    "list": {
+      "noRecords": {
+        "title": "No promotions yet",
+        "message": "Create promotions for offer discounts"
+      }
+    },
     "fields": {
       "type": "Type",
+      "typeLabels": {
+        "percentageItems": "Percentage off items",
+        "percentageShipping": "Percentage off shipping",
+        "percentageOrder": "Percentage off order",
+        "amountItems": "Amount off items",
+        "amountShipping": "Amount off shipping",
+        "amountOrder": "Amount off order"
+      },
       "value_type": "Value Type",
       "value": "Value",
       "campaign": "Campaign",
@@ -2563,8 +2653,9 @@
       "allocationTooltip": "Each enforces the quantity limit per item, while Once enforces the quantity limit across the entire cart",
       "addCondition": "Add condition",
       "clearAll": "Clear all",
-      "taxInclusive": "Tax Inclusive",
+      "taxInclusive": "Taxes Included",
       "usageLimit": "Usage Limit",
+      "unlimited": "Unlimited",
       "usage": "Usage",
       "amount": {
         "tooltip": "Select the currency code to enable setting the amount"
@@ -2601,10 +2692,15 @@
     },
     "errors": {
       "requiredField": "Required field",
-      "promotionTabError": "Fix errors in Promotion Tab before proceeding"
+      "promotionTabError": "Fix errors in Promotion Tab before proceeding",
+      "applyToQuantityRequired": "Set the quantity of items the promotion applies to.",
+      "buyRulesMinQuantityRequired": "Set the minimum quantity of items to buy.",
+      "maxQuantityLowerThanApplyTo": "Max quantity must be greater than or equal to the quantity the promotion applies to."
     },
     "toasts": {
-      "promotionCreateSuccess": "Promotion ({{code}}) was successfully created."
+      "promotionCreateSuccess": "Promotion ({{code}}) was successfully created.",
+      "promotionUpdateSuccess": "Promotion was successfully updated.",
+      "promotionDeleteSuccess": "Promotion ({{code}}) was successfully deleted."
     },
     "create": {},
     "edit": {
@@ -2635,7 +2731,11 @@
     "campaignSection": {
       "noRecordsTitle": "Not part of a campaign",
       "noRecordsMessage": "Add this promotion to an existing campaign",
-      "addToCampaign": "Add to Campaign"
+      "addToCampaign": "Add to Campaign",
+      "warnings": {
+        "promotionExpires": "The promotion will expire when campaign expires.",
+        "promotionMustBeActive": "The promotion must have an Active status for the campaign to work."
+      }
     },
     "form": {
       "required": "Required",
@@ -2694,6 +2794,10 @@
         "title": "Maximum Quantity",
         "description": "Maximum quantity of items this promotion applies to."
       },
+      "usageLimit": {
+        "title": "Usage Limit",
+        "description": "Maximum number of times this promotion can be used across all orders. Leave empty for unlimited usage."
+      },
       "type": {
         "standard": {
           "title": "Standard",
@@ -2707,7 +2811,7 @@
       "allocation": {
         "each": {
           "title": "Each",
-          "description": "Applies value on each item"
+          "description": "Applies the promotion to every eligible item separately"
         },
         "across": {
           "title": "Across",
@@ -2715,12 +2819,12 @@
         },
         "once": {
           "title": "Once",
-          "description": "Applies value to a limited number of items"
+          "description": "Applies the promotion to a limited total number of eligible items across the entire cart"
         }
       },
       "code": {
         "title": "Code",
-        "description": "The code your customers will enter during checkout."
+        "description": "The code your customers will enter during checkout. If a promotion is automatic, it will be applied automatically."
       },
       "value": {
         "title": "Promotion Value",
@@ -2760,21 +2864,22 @@
       "scheduled": "Scheduled"
     },
     "delete": {
-      "title": "Are you sure?",
-      "description": "You are about to delete the campaign '{{name}}'. This action cannot be undone.",
-      "successToast": "Campaign '{{name}}' was successfully deleted."
+      "title": "Delete campaign",
+      "description": "You are about to delete a campaign {{name}}. This action cannot be undone.",
+      "successToast": "Campaign was successfully deleted."
     },
     "edit": {
       "header": "Edit Campaign",
       "description": "Edit the details of the campaign.",
-      "successToast": "Campaign '{{name}}' was successfully updated."
+      "successToast": "Campaign was successfully updated."
     },
     "configuration": {
       "header": "Configuration",
+      "expiryWarning": "The promotion will expire when campaign expires.",
       "edit": {
         "header": "Edit Campaign Configuration",
         "description": "Edit the configuration of the campaign.",
-        "successToast": "Campaign configuration was successfully updated."
+        "successToast": "Campaign was successfully updated."
       }
     },
     "create": {
@@ -2782,11 +2887,18 @@
       "description": "Create a promotional campaign.",
       "hint": "Create a promotional campaign.",
       "header": "Create Campaign",
-      "successToast": "Campaign '{{name}}' was successfully created."
+      "successToast": "Campaign was successfully created."
+    },
+    "validation": {
+      "name_required": "Please enter a name",
+      "identifier_required": "Please enter an identifier",
+      "currency_required": "Please select a currency"
     },
     "fields": {
       "name": "Name",
       "identifier": "Identifier",
+      "identifier_tooltip": "The identifier is your business-friendly campaign code that you use for integrations, reporting, and easily recognizing the campaign – it is not the technical ID from the database.",
+      "type": "Type",
       "start_date": "Start date",
       "end_date": "End date",
       "total_spend": "Budget spent",
@@ -2800,16 +2912,19 @@
     "budget": {
       "attribute": {
         "customer_id": "customer",
-        "customer_email": "email"
+        "customer_email": "email",
+        "promotion_code": "promotion code"
       },
       "create": {
         "hint": "Create a budget for the campaign.",
         "header": "Campaign Budget"
       },
-      "details": "Campaign budget",
+      "noLimitHint": "If you don't set any limits, the campaign budget will have no limit.",
+      "details": "Budget",
       "fields": {
         "type": "Type",
         "currency": "Currency",
+        "selectCurrency": "Select currency",
         "limit": "Limit",
         "used": "Used",
         "budgetAttribute": "Limit usage per",
@@ -2827,6 +2942,10 @@
           "title": "Usage",
           "description": "Set a limit on how many times the promotion can be used."
         },
+        "use_by_attribute": {
+          "title": "Usage",
+          "description": "Set a limit on how many times the promotion can be used."
+        },
         "useByAttribute": {
           "title": "Usage by attribute (customer id, email, etc.)",
           "titleCustomerId": "Usage per customer",
@@ -2840,22 +2959,27 @@
     },
     "promotions": {
       "remove": {
-        "title": "Remove promotion from campaign",
+        "title": "Remove promotions",
         "description": "You are about to remove {{count}} promotion(s) from the campaign. This action cannot be undone."
       },
       "alreadyAdded": "This promotion has already been added to the campaign.",
       "alreadyAddedDiffCampaign": "This promotion has already been added to a different campaign ({{name}}).",
       "currencyMismatch": "Currency of the promotion and campaign doesn't match",
       "toast": {
-        "success": "Successfully added {{count}} promotion(s) to campaign"
+        "added_one": "Promotion was successfully added to campaign.",
+        "added_other": "Promotions were successfully added to campaign.",
+        "removed_one": "Promotion was successfully removed from campaign.",
+        "removed_other": "Promotions were successfully removed from campaign."
       },
       "add": {
+        "tip": "You can only add promotions that are not already in another campaign.",
         "list": {
           "noRecordsMessage": "Create a promotion first."
         }
       },
       "list": {
-        "noRecordsMessage": "There are no promotions in the campaign."
+        "noRecordsTitle": "No promotions yet",
+        "noRecordsMessage": "This campaign doesn't have any promotions"
       }
     },
     "deleteCampaignWarning": "You are about to delete the campaign {{name}}. This action cannot be undone.",
@@ -2870,10 +2994,10 @@
     },
     "create": {
       "header": "Create Price List",
-      "subheader": "Create a new price list to manage the prices of your products.",
+      "subheader": "Create a new price list to manage the prices of your offers.",
       "tabs": {
         "details": "Details",
-        "products": "Products",
+        "products": "Offers",
         "prices": "Prices"
       },
       "successToast": "Price list {{title}} was successfully created.",
@@ -2881,34 +3005,52 @@
         "list": {
           "noRecordsMessage": "Create a product first."
         }
+      },
+      "validation": {
+        "title": "Please enter a title",
+        "description": "Please enter a description"
       }
     },
     "edit": {
       "header": "Edit Price List",
-      "successToast": "Price list {{title}} was successfully updated."
+      "successToast": "Price list was successfully updated."
     },
     "configuration": {
       "header": "Configuration",
       "edit": {
         "header": "Edit Price List Configuration",
         "description": "Edit the configuration of the price list.",
-        "successToast": "Price list configuration was successfully updated."
+        "successToast": "Price list was successfully updated."
+      }
+    },
+    "customerAvailability": {
+      "header": "Customer availability",
+      "add": "Add customer groups",
+      "list": {
+        "noRecordsTitle": "No customer groups",
+        "noRecordsMessage": "Add customer groups to restrict which customers this price list applies to."
+      },
+      "edit": {
+        "header": "Customer availability",
+        "description": "Choose which customer groups the price list should be applied to.",
+        "successToast": "Price list was successfully updated."
       }
     },
     "products": {
-      "header": "Products",
+      "header": "Offers",
       "actions": {
-        "addProducts": "Add products",
-        "editPrices": "Edit prices"
+        "addProducts": "Add offers",
+        "editPrices": "Edit prices",
+        "editPricesDisabled": "Add offers before editing prices"
       },
       "delete": {
-        "confirmation_one": "You are about to delete the prices for {{count}} product in the price list. This action cannot be undone.",
-        "confirmation_other": "You are about to delete the prices for {{count}} products in the price list. This action cannot be undone.",
-        "successToast_one": "Successfully deleted prices for {{count}} product.",
-        "successToast_other": "Successfully deleted prices for {{count}} products."
+        "confirmation_one": "You are about to remove {{count}} offer from the price list. This action cannot be undone.",
+        "confirmation_other": "You are about to remove {{count}} offers from the price list. This action cannot be undone.",
+        "successToast_one": "Successfully removed {{count}} offer from the price list.",
+        "successToast_other": "Successfully removed {{count}} offers from the price list."
       },
       "add": {
-        "successToast": "Prices were successfully added to the price list.",
+        "successToast": "Price list was successfully updated.",
         "atLeastOnePrice": "At least one price must be added.",
         "alreadyInPriceList": "This product is already in the price list",
         "noVariants": "This product has no variants",
@@ -2916,7 +3058,7 @@
         "description": "Add products and set prices for the price list"
       },
       "edit": {
-        "successToast": "Prices were successfully updated.",
+        "successToast": "Price list was successfully updated.",
         "title": "Edit Prices for {{title}}",
         "description": "Update prices for products in the price list"
       }
@@ -2933,6 +3075,10 @@
           "draft": "Draft",
           "expired": "Expired",
           "scheduled": "Scheduled"
+        },
+        "descriptions": {
+          "draft": "Customers will not be able to see the price list",
+          "active": "Customers will be able to see the price list"
         }
       },
       "type": {
@@ -2941,7 +3087,7 @@
         "options": {
           "sale": {
             "label": "Sale",
-            "description": "Sale prices are temporary price changes for products."
+            "description": "Sale prices are temporary price changes for offers."
           },
           "override": {
             "label": "Override",
@@ -2950,11 +3096,11 @@
         }
       },
       "startsAt": {
-        "label": "Price list has a start date?",
+        "label": "Start date",
         "hint": "Schedule the price list to activate in the future."
       },
       "endsAt": {
-        "label": "Price list has an expiry date?",
+        "label": "Expiry date",
         "hint": "Schedule the price list to deactivate in the future."
       },
       "customerAvailability": {
@@ -2963,6 +3109,13 @@
         "hint": "Choose which customer groups the price list should be applied to.",
         "placeholder": "Search for customer groups",
         "attribute": "Customer groups"
+      },
+      "offerVariant": "Offer/Variant"
+    },
+    "list": {
+      "noRecords": {
+        "title": "No price lists yet",
+        "message": "Create price lists for sales and price overrides"
       }
     }
   },
@@ -2976,6 +3129,51 @@
       "paid": "Paid",
       "failed": "Failed",
       "canceled": "Canceled"
+    }
+  },
+  "reviews": {
+    "domain": "Reviews",
+    "status": {
+      "pending": "Pending",
+      "published": "Published",
+      "rejected": "Rejected"
+    },
+    "fields": {
+      "rating": "Rating",
+      "content": "Content",
+      "response": "Response"
+    },
+    "filters": {
+      "stars_one": "{{count}} star",
+      "stars_other": "{{count}} stars"
+    },
+    "list": {
+      "columns": {
+        "reviewId": "Review ID",
+        "rating": "Rating",
+        "content": "Content",
+        "customer": "Customer",
+        "date": "Date",
+        "status": "Status",
+        "response": "Response"
+      },
+      "noRecordsTitle": "No reviews yet",
+      "noRecordsMessage": "Once customer submit reviews, they'll appear here",
+      "noResultsTitle": "No results",
+      "noResultsMessage": "Try changing the filters or search query"
+    },
+    "detail": {
+      "customer": "Customer",
+      "order": "Order"
+    },
+    "respond": {
+      "action": "Respond",
+      "header": "Respond to review",
+      "label": "Response",
+      "confirmTitle": "Respond to review",
+      "confirmDescription": "Your response will be published on the storefront and visible to customers. Once saved, it cannot be edited or deleted.",
+      "successToast": "Response was successfully sent.",
+      "validation": "Please write a response"
     }
   },
   "profile": {
@@ -2992,7 +3190,7 @@
       "header": "Edit Profile",
       "languageHint": "The language you want to use in the vendor dashboard. This doesn't change the language of your store.",
       "languagePlaceholder": "Select language",
-      "usageInsightsHint": "Share usage insights and help us improve Medusa. You can read more about what we collect and how we use it in our <0>documentation</0>."
+      "usageInsightsHint": "Share usage insights and help us improve Mercur. You can read more about what we collect and how we use it in our <0>documentation</0>."
     },
     "toast": {
       "edit": "Profiles changes saved"
@@ -3059,7 +3257,7 @@
       "manageEntities": "Manage entities",
       "manageLocales": "Manage locales"
     },
-    "subtitle": "Manage translations of your data in Medusa",
+    "subtitle": "Manage translations of your data in Mercur",
     "list": {
       "metrics": "{{translated}} of {{total}} translations"
     },
@@ -3443,7 +3641,21 @@
   "reservations": {
     "domain": "Reservations",
     "subtitle": "Manage the reserved quantity of inventory items.",
-    "deleteWarning": "You are about to delete a reservation. This action cannot be undone."
+    "deleteWarning": "You are about to delete a reservation. This action cannot be undone.",
+    "list": {
+      "noRecordsTitle": "No reservations yet",
+      "noRecordsMessage": "Create reservations to manage the reserved quantity of inventory items"
+    },
+    "delete": {
+      "title": "Delete reservation",
+      "description": "You are about to delete a reservation. This action cannot be undone.",
+      "lockedTitle": "Delete reservation",
+      "lockedDescription": "This reservation cannot be deleted because it's linked to an unfulfilled order."
+    },
+    "edit": {
+      "lockedTitle": "Edit reservation",
+      "lockedDescription": "This reservation cannot be edited because it's linked to an unfulfilled order."
+    }
   },
   "salesChannels": {
     "domain": "Sales Channels",
@@ -3507,7 +3719,7 @@
       "createPublishableHeader": "Create Publishable API Key",
       "createPublishableHint": "Create a new publishable API key to limit the scope of requests to specific sales channels.",
       "createSecretHeader": "Create Secret API Key",
-      "createSecretHint": "Create a new secret API key to access the Medusa API as an authenticated admin user.",
+      "createSecretHint": "Create a new secret API key to access the Mercur API as an authenticated admin user.",
       "secretKeyCreatedHeader": "Secret Key Created",
       "secretKeyCreatedHint": "Your new secret key has been generated. Copy and securely store it now. This is the only time it will be displayed.",
       "copySecretTokenSuccess": "Secret key was copied to clipboard.",
@@ -3868,7 +4080,7 @@
   },
   "workflowExecutions": {
     "domain": "Workflows",
-    "subtitle": "View and keep track of workflow executions in your Medusa application.",
+    "subtitle": "View and keep track of workflow executions in your Mercur application.",
     "transactionIdLabel": "Transaction ID",
     "workflowIdLabel": "Workflow ID",
     "progressLabel": "Progress",
@@ -3983,7 +4195,7 @@
       "description": "You don't have any notifications at the moment, but once you do they will live here."
     },
     "accessibility": {
-      "description": "Notifications about Medusa activities will be listed here."
+      "description": "Notifications about Mercur activities will be listed here."
     }
   },
   "errors": {

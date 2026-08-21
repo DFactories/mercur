@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/cli",
-  "version": "2.2.0-dfactories.3",
+  "version": "2.3.1-dfactories.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mercurjs/mercur",
@@ -38,16 +38,16 @@
     "routes-manifest": "bun scripts/generate-routes-manifest.ts"
   },
   "dependencies": {
-    "@antfu/ni": "^27.0.1",
-    "@medusajs/admin-bundler": "2.17.2",
-    "@medusajs/framework": "2.17.2",
-    "@mercurjs/dashboard-sdk": "2.2.0-dfactories.3",
+    "@antfu/ni": "^30.3.0",
+    "@medusajs/admin-bundler": "2.18.0",
+    "@medusajs/framework": "2.18.0",
+    "@mercurjs/dashboard-sdk": "2.3.1-dfactories.0",
     "@vitejs/plugin-react": "^6.0.3",
     "commander": "^15.0.0",
     "cosmiconfig": "^9.0.0",
     "deepmerge": "^4.3.1",
     "diff": "^8.0.2",
-    "execa": "^9.6.0",
+    "execa": "9.6.1",
     "fast-glob": "^3.3.3",
     "fs-extra": "^11.3.2",
     "kleur": "^4.1.5",

@@ -141,6 +141,8 @@ declare module "@mercurjs/dashboard-sdk" {
     "price-lists": true
     "products": true
     "promotions": true
+    "reservations": true
+    "reviews": true
   }
 
   interface NavParentRegistry {
@@ -151,6 +153,7 @@ declare module "@mercurjs/dashboard-sdk" {
     "price-lists": true
     "products": true
     "promotions": true
+    "reviews": true
   }
 
   interface CustomFieldsRegistry {
@@ -158,7 +161,7 @@ declare module "@mercurjs/dashboard-sdk" {
       formZones: "edit"
       formTabs: Record<string, string>
       displayZones: "budget" | "configuration" | "general" | "promotions" | "spend"
-      displayFieldIds: "campaign_identifier" | "currency_code" | "description" | "name" | "status"
+      displayFieldIds: "campaign_identifier" | "description" | "name" | "status"
     }
     "category": {
       formZones: never
@@ -187,7 +190,7 @@ declare module "@mercurjs/dashboard-sdk" {
     "inventory_item": {
       formZones: "edit"
       formTabs: Record<string, string>
-      displayZones: "attributes" | "general" | "locations" | "variants"
+      displayZones: "attributes" | "general" | "locations" | "reservations" | "variants"
       displayFieldIds: "available" | "in_stock" | "reserved" | "sku" | "title"
     }
     "member": {
@@ -223,20 +226,20 @@ declare module "@mercurjs/dashboard-sdk" {
     "product": {
       formZones: "create" | "edit"
       formTabs: { "create": "attributes" | "details" | "organize" | "variants" }
-      displayZones: "attributes" | "general" | "media" | "organize" | "sales-channels" | "shipping-profile" | "variants"
+      displayZones: "general" | "media" | "organize" | "sales-channels" | "shipping-profile" | "variants"
       displayFieldIds: "description" | "discountable" | "handle" | "status" | "subtitle" | "title"
     }
     "promotion": {
       formZones: "edit"
       formTabs: Record<string, string>
       displayZones: "campaign" | "general"
-      displayFieldIds: "allocation" | "code" | "code_value" | "is_automatic" | "status" | "type" | "value"
+      displayFieldIds: "allocation" | "code" | "code_value" | "is_automatic" | "status" | "tax_inclusive" | "type" | "usage_limit" | "value"
     }
     "reservation": {
       formZones: "edit"
       formTabs: Record<string, string>
       displayZones: "general"
-      displayFieldIds: "available_quantity" | "description" | "line_item_id" | "location" | "reserved_quantity" | "stocked_quantity" | "title"
+      displayFieldIds: "available_quantity" | "description" | "item_id" | "location" | "reserved_quantity" | "stocked_quantity" | "title"
     }
     "seller": {
       formZones: "address" | "edit" | "onboarding" | "payment-details" | "professional-details"

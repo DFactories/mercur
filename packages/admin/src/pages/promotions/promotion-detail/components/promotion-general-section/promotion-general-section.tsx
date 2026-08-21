@@ -1,5 +1,6 @@
 import { PencilSquare, Trash } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
+import { PromotionCostDTO } from "@mercurjs/types"
 import {
   Badge,
   Container,
@@ -7,6 +8,7 @@ import {
   Heading,
   StatusBadge,
   Text,
+  toast,
   usePrompt,
 } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
@@ -24,7 +26,8 @@ import { ActionMenu } from "../../../../../components/common/action-menu"
 import { useDeletePromotion, usePromotion } from "../../../../../hooks/api/promotions"
 import { formatCurrency } from "../../../../../lib/format-currency"
 import { formatPercentage } from "../../../../../lib/percentage-helpers"
-import { getPromotionStatus } from "../../../../../lib/promotions"
+import { getPromotionStatus, getPromotionType } from "../../../../../lib/promotions"
+import { PROMOTION_DETAIL_BASE_FIELDS } from "../../loader"
 
 type PromotionGeneralSectionProps = {
   promotion?: HttpTypes.AdminPromotion
@@ -36,9 +39,12 @@ const GENERAL_FIELD_IDS = [
   "is_automatic",
   "code_badge",
   "type",
+  "coverage",
+  "owner",
   "value",
   "allocation",
   "is_tax_inclusive",
+  "usage_limit",
 ]
 
 function getDisplayValue(promotion: HttpTypes.AdminPromotion) {
@@ -70,7 +76,7 @@ export const PromotionGeneralSection = ({
   const prompt = usePrompt()
   const navigate = useNavigate()
   const { id } = useParams()
-  const linkQuery = useLinkQuery("promotion")
+  const linkQuery = useLinkQuery("promotion", PROMOTION_DETAIL_BASE_FIELDS)
   const { promotion: fetched } = usePromotion(id!, linkQuery, {
     enabled: !promotionProp,
   })
@@ -100,10 +106,20 @@ export const PromotionGeneralSection = ({
 
     await mutateAsync(undefined, {
       onSuccess: () => {
+        toast.success(t("promotions.toasts.promotionDeleteSuccess"))
         navigate("/promotions", { replace: true })
+      },
+      onError: (e) => {
+        toast.error((e as Error).message)
       },
     })
   }
+
+  const costBearer = (
+    promotion as HttpTypes.AdminPromotion & {
+      promotion_cost?: PromotionCostDTO | null
+    }
+  ).promotion_cost?.cost_bearer
 
   const [color, text] = getPromotionStatus(promotion)
   const displayValue = getDisplayValue(promotion)
@@ -117,7 +133,7 @@ export const PromotionGeneralSection = ({
           </DisplayField>
         </div>
 
-        <div className="flex items-center gap-x-2">
+        <div className="flex items-center gap-x-4">
           <DisplayField model="promotion" zone="general" id="status" data={promotion}>
             <StatusBadge color={color} data-testid="promotion-general-section-status">{text}</StatusBadge>
           </DisplayField>
@@ -146,6 +162,18 @@ export const PromotionGeneralSection = ({
           />
         </div>
       </div>
+
+      <DisplayField model="promotion" zone="general" id="type" data={promotion}>
+      <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-type">
+        <Text size="small" weight="plus" leading="compact" data-testid="promotion-general-section-type-label">
+          {t("promotions.fields.type")}
+        </Text>
+
+        <Text size="small" leading="compact" className="text-pretty" data-testid="promotion-general-section-type-value">
+          {getPromotionType(promotion)}
+        </Text>
+      </div>
+      </DisplayField>
 
       <DisplayField model="promotion" zone="general" id="is_automatic" data={promotion}>
       <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-method">
@@ -185,17 +213,37 @@ export const PromotionGeneralSection = ({
       </div>
       </DisplayField>
 
-      <DisplayField model="promotion" zone="general" id="type" data={promotion}>
-      <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-type">
-        <Text size="small" weight="plus" leading="compact" data-testid="promotion-general-section-type-label">
-          {t("promotions.fields.type")}
-        </Text>
+      {promotion.application_method?.type === "fixed" && (
+        <DisplayField model="promotion" zone="general" id="is_tax_inclusive" data={promotion}>
+        <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-tax-inclusive">
+          <Text size="small" weight="plus" leading="compact" data-testid="promotion-general-section-tax-inclusive-label">
+            {t("promotions.fields.taxInclusive")}
+          </Text>
 
-        <Text size="small" leading="compact" className="text-pretty capitalize" data-testid="promotion-general-section-type-value">
-          {promotion.type}
-        </Text>
-      </div>
-      </DisplayField>
+          <div className="flex items-center gap-x-2" data-testid="promotion-general-section-tax-inclusive-value">
+            <Text className="inline" size="small" leading="compact">
+              {promotion.is_tax_inclusive
+                ? t("general.yes")
+                : t("general.no")}
+            </Text>
+          </div>
+        </div>
+        </DisplayField>
+      )}
+
+      {costBearer && (
+        <DisplayField model="promotion" zone="general" id="coverage" data={promotion}>
+        <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-coverage">
+          <Text size="small" weight="plus" leading="compact" data-testid="promotion-general-section-coverage-label">
+            {t("promotions.fields.coverage")}
+          </Text>
+
+          <Text size="small" leading="compact" className="text-pretty" data-testid="promotion-general-section-coverage-value">
+            {t(`promotions.form.costBearer.${costBearer}.title`)}
+          </Text>
+        </div>
+        </DisplayField>
+      )}
 
       <DisplayField model="promotion" zone="general" id="value" data={promotion}>
       <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-value">
@@ -228,23 +276,30 @@ export const PromotionGeneralSection = ({
       </div>
       </DisplayField>
 
-      {promotion.application_method?.type === "fixed" && (
-        <DisplayField model="promotion" zone="general" id="is_tax_inclusive" data={promotion}>
-        <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-tax-inclusive">
-          <Text size="small" weight="plus" leading="compact" data-testid="promotion-general-section-tax-inclusive-label">
-            {t("promotions.fields.taxInclusive")}
-          </Text>
+      <DisplayField model="promotion" zone="general" id="usage_limit" data={promotion}>
+      <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-usage-limit">
+        <Text size="small" weight="plus" leading="compact" data-testid="promotion-general-section-usage-limit-label">
+          {t("promotions.fields.usageLimit")}
+        </Text>
 
-          <div className="flex items-center gap-x-2" data-testid="promotion-general-section-tax-inclusive-value">
-            <Text className="inline" size="small" leading="compact">
-              {promotion.is_tax_inclusive
-                ? t("fields.true")
-                : t("fields.false")}
-            </Text>
-          </div>
-        </div>
-        </DisplayField>
-      )}
+        <Text size="small" leading="compact" className="text-pretty" data-testid="promotion-general-section-usage-limit-value">
+          {promotion.limit ?? t("promotions.fields.unlimited")}
+        </Text>
+      </div>
+      </DisplayField>
+
+      <DisplayField model="promotion" zone="general" id="owner" data={promotion}>
+      <div className="text-ui-fg-subtle grid grid-cols-2 items-start px-6 py-4" data-testid="promotion-general-section-owner">
+        <Text size="small" weight="plus" leading="compact" data-testid="promotion-general-section-owner-label">
+          {t("promotions.fields.owner")}
+        </Text>
+
+        <Text size="small" leading="compact" className="text-pretty" data-testid="promotion-general-section-owner-value">
+          {(promotion as HttpTypes.AdminPromotion & { seller?: { name?: string } | null }).seller?.name
+            ?? t("promotions.fields.platformOwner")}
+        </Text>
+      </div>
+      </DisplayField>
 
       <DisplayExtensionZone
         model="promotion"

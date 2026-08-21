@@ -709,6 +709,11 @@ export function getRouteMap({
                                 lazy: () =>
                                   import("./pages/offers/[id]/variants/[offer_id]/inventory"),
                               },
+                              {
+                                path: "manage-items",
+                                lazy: () =>
+                                  import("./pages/offers/[id]/variants/[offer_id]/manage-items"),
+                              },
                             ],
                           },
                         ],
@@ -1010,6 +1015,13 @@ export function getRouteMap({
                               import("./pages/price-lists/[id]/configuration"),
                           },
                           {
+                            path: "customer-availability",
+                            lazy: () =>
+                              import(
+                                "./pages/price-lists/[id]/customer-availability"
+                              ),
+                          },
+                          {
                             path: "products/add",
                             lazy: () =>
                               import("./pages/price-lists/[id]/products/add"),
@@ -1031,11 +1043,115 @@ export function getRouteMap({
                 ],
               },
 
-              // RESERVATIONS - disabled
-              // {
-              //   path: "/reservations",
-              //   ...
-              // },
+              // REVIEWS
+              {
+                path: "/reviews",
+                errorElement: <ErrorBoundary />,
+                handle: { breadcrumb: () => t("reviews.domain") },
+                children: [
+                  {
+                    path: "",
+                    lazy: async () => {
+                      const { ReviewListPage } = await import("./pages/reviews");
+                      return {
+                        Component: ReviewListPage,
+                      };
+                    },
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { loader } = await import("./pages/reviews/[id]");
+                      const { Breadcrumb } = await import(
+                        "./pages/reviews/[id]/breadcrumb"
+                      );
+                      return {
+                        Component: Outlet,
+                        loader,
+                        handle: {
+                          breadcrumb: (match: UIMatch<any>) => (
+                            <Breadcrumb {...match} />
+                          ),
+                        },
+                      };
+                    },
+                    children: [
+                      {
+                        path: "",
+                        lazy: async () => {
+                          const { ReviewDetailPage } = await import(
+                            "./pages/reviews/[id]"
+                          );
+                          return {
+                            Component: ReviewDetailPage,
+                          };
+                        },
+                        children: [
+                          {
+                            path: "respond",
+                            lazy: () => import("./pages/reviews/[id]/respond"),
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+
+              // RESERVATIONS
+              {
+                path: "/reservations",
+                errorElement: <ErrorBoundary />,
+                handle: { breadcrumb: () => t("reservations.domain") },
+                children: [
+                  {
+                    path: "",
+                    lazy: () => import("./pages/reservations"),
+                    children: [
+                      {
+                        path: "create",
+                        lazy: () => import("./pages/reservations/create"),
+                      },
+                    ],
+                  },
+                  {
+                    path: ":id",
+                    lazy: async () => {
+                      const { Breadcrumb } = await import(
+                        "./pages/reservations/[id]"
+                      );
+                      return {
+                        Component: Outlet,
+                        handle: {
+                          breadcrumb: (match: UIMatch<any>) => (
+                            <Breadcrumb {...match} />
+                          ),
+                        },
+                      };
+                    },
+                    children: [
+                      {
+                        path: "",
+                        lazy: () => import("./pages/reservations/[id]"),
+                        children: [
+                          {
+                            path: "edit",
+                            lazy: () =>
+                              import(
+                                "./pages/reservations/[id]/_components/edit-reservation"
+                              ),
+                          },
+                          {
+                            path: "metadata/edit",
+                            lazy: () =>
+                              import("./pages/reservations/[id]/metadata"),
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
             customMainRoutes,
           ),

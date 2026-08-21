@@ -6,6 +6,8 @@ export * from "./inventory-item"
 export * from "./order-group"
 export * from "./price-list"
 export * from "./promotion"
+export * from "./promotion-cost"
+export * from "./review"
 export * from "./seller"
 export * from "./shipping-option"
 export * from "./shipping-profile"
@@ -19,3 +21,4 @@ export * from './product-edit'
 export * from './offer'
 export * from './media'
 export * from './order'
+export * from './review'

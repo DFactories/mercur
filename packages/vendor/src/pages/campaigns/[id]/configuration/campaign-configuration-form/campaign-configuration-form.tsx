@@ -70,7 +70,9 @@ export const CampaignConfigurationForm = ({
               render={({ field }) => {
                 return (
                   <Form.Item>
-                    <Form.Label>{t("campaigns.fields.start_date")}</Form.Label>
+                    <Form.Label optional>
+                      {t("campaigns.fields.start_date")}
+                    </Form.Label>
 
                     <Form.Control>
                       <JalaliDatePicker
@@ -93,7 +95,9 @@ export const CampaignConfigurationForm = ({
               render={({ field }) => {
                 return (
                   <Form.Item>
-                    <Form.Label>{t("campaigns.fields.end_date")}</Form.Label>
+                    <Form.Label optional>
+                      {t("campaigns.fields.end_date")}
+                    </Form.Label>
 
                     <Form.Control>
                       <JalaliDatePicker

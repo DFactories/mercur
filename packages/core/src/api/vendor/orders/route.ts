@@ -6,6 +6,11 @@ import {
 import { OrderDTO } from "@medusajs/framework/types"
 import { HttpTypes } from "@mercurjs/types"
 
+import {
+  normalizeOrderPaymentCollections,
+  withCartPaymentCollectionFields,
+} from "./helpers"
+
 export const GET = async (
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse<HttpTypes.VendorOrderListResponse>
@@ -21,7 +26,7 @@ export const GET = async (
   const workflow = getOrdersListWorkflow(req.scope)
   const { result } = await workflow.run({
     input: {
-      fields: req.queryConfig.fields,
+      fields: withCartPaymentCollectionFields(req.queryConfig.fields),
       variables,
     },
   })
@@ -30,6 +35,8 @@ export const GET = async (
     rows: OrderDTO[]
     metadata: any
   }
+
+  rows.forEach((order) => normalizeOrderPaymentCollections(order as never))
 
   res.json({
     orders: rows as unknown as HttpTypes.VendorOrderListResponse["orders"],

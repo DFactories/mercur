@@ -15,4 +15,6 @@ export enum MercurModules {
     OTP = "otp",
     NOTIFICATION_SETTINGS = "notification_settings",
     SEARCH = "search",
+    PROMOTION_COST = "promotion_cost",
+    REVIEW = "review",
 }

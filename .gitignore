@@ -48,3 +48,6 @@ graphify-out/
 .graphifyignore
 **/.graphifyignore
 .claude/settings.json
+
+# Local spec tracker (not versioned)
+docs/specs/

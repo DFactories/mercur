@@ -1,13 +1,19 @@
 import { useMemo } from "react";
 
 import { PencilSquare, Trash } from "@medusajs/icons";
-import { createDataTableColumnHelper, toast, usePrompt } from "@medusajs/ui";
+import {
+  createDataTableColumnHelper,
+  DataTableColumnDef,
+  toast,
+  usePrompt,
+} from "@medusajs/ui";
 
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import type { ExtendedInventoryItemLevel } from "@custom-types/inventory";
 
+import { ActionMenu } from "@components/common/action-menu";
 import { PlaceholderCell } from "@components/table/table-cells/common/placeholder-cell";
 
 import {
@@ -20,16 +26,23 @@ import { queryClient } from "@lib/query-client";
 
 const columnHelper = createDataTableColumnHelper<ExtendedInventoryItemLevel>();
 
-export const useLocationListTableColumns = () => {
+export const useLocationListTableColumns =
+  (): DataTableColumnDef<ExtendedInventoryItemLevel>[] => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const prompt = usePrompt();
 
   const handleDelete = async (level: ExtendedInventoryItemLevel) => {
+    const locationName = level.stock_locations
+      ?.map((location) => location.name)
+      .join(", ");
+
     const res = await prompt({
-      title: t("general.areYouSure"),
-      description: t("inventory.deleteWarning"),
+      title: t("inventory.level.deleteTitle"),
+      description: t("inventory.level.deleteDescription", {
+        location: locationName || t("fields.location"),
+      }),
       confirmText: t("actions.delete"),
       cancelText: t("actions.cancel"),
     });
@@ -136,30 +149,39 @@ export const useLocationListTableColumns = () => {
           );
         },
       }),
-      columnHelper.action({
-        actions: (ctx) => {
-          const level = ctx.row.original;
-          return [
-            [
-              {
-                icon: <PencilSquare />,
-                label: t("actions.edit"),
-
-                onClick: () => {
-                  navigate(`locations/${level.location_id}`);
+      columnHelper.display({
+        id: "actions",
+        cell: ({ row }) => {
+          const level = row.original;
+          return (
+            <ActionMenu
+              groups={[
+                {
+                  actions: [
+                    {
+                      icon: <PencilSquare />,
+                      label: t("actions.edit"),
+                      onClick: () => {
+                        navigate(`locations/${level.location_id}`);
+                      },
+                    },
+                  ],
                 },
-              },
-            ],
-            [
-              {
-                icon: <Trash />,
-                label: t("actions.delete"),
-                onClick: () => handleDelete(level),
-                disabled:
-                  level.reserved_quantity > 0 || level.stocked_quantity > 0,
-              },
-            ],
-          ];
+                {
+                  actions: [
+                    {
+                      icon: <Trash />,
+                      label: t("actions.delete"),
+                      onClick: () => handleDelete(level),
+                      disabled:
+                        level.reserved_quantity > 0 ||
+                        level.stocked_quantity > 0,
+                    },
+                  ],
+                },
+              ]}
+            />
+          );
         },
       }),
     ],

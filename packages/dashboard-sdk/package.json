@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/dashboard-sdk",
-  "version": "2.2.0-dfactories.3",
+  "version": "2.3.1-dfactories.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mercurjs/mercur",
@@ -34,9 +34,9 @@
     "lint": "oxlint --max-warnings 0"
   },
   "dependencies": {
-    "@babel/parser": "7.25.6",
+    "@babel/parser": "8.0.4",
     "@babel/traverse": "7.25.6",
-    "@babel/types": "7.25.6",
+    "@babel/types": "8.0.4",
     "esbuild-register": "^3.6.0"
   },
   "devDependencies": {
@@ -44,6 +44,6 @@
     "tsup": "^8.0.2",
     "typescript": "5.9.3",
     "vite": "^8.1.3",
-    "@types/react": "^19.2.17"
+    "@types/react": "^18.3.2"
   }
 }

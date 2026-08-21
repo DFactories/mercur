@@ -2,6 +2,7 @@ import {
   InventoryItemDTO,
   MoneyAmountDTO,
   ShippingProfileDTO,
+  StoreCalculatedPrice,
 } from "@medusajs/types"
 
 import { ProductDTO, ProductVariantDTO } from "../product/common"
@@ -50,6 +51,8 @@ export interface OfferDTO {
   sku: string
   ean: string | null
   upc: string | null
+  manage_inventory: boolean
+  allow_backorder: boolean
   created_by: string
   metadata: Record<string, unknown> | null
   created_at: Date
@@ -61,6 +64,12 @@ export interface OfferDTO {
    * so this is effectively the variant count for the grouped row.
    */
   variant_count?: number | null
+  /**
+   * Every offer id in the grouped row's (product, seller) group, computed only
+   * when offers are grouped by seller (`group_by_seller`). Used by the admin
+   * offers list to delete all of a store's offers on a product at once.
+   */
+  offer_ids?: string[] | null
   /**
    * Joined through the writable `offer ↔ price` list-link defined in
    * `packages/core/src/links/offer-price-link.ts`. Carries the offer's
@@ -82,4 +91,10 @@ export interface OfferDTO {
   product_variant?: ProductVariantDTO
   /** The offer's shipping profile (joined through `offer ↔ shipping_profile`). */
   shipping_profile?: ShippingProfileDTO
+  /**
+   * Per-offer calculated price for the request's pricing context, populated by
+   * the store offers route when a pricing context is supplied. Absent on
+   * writes and on admin/vendor reads.
+   */
+  calculated_price?: StoreCalculatedPrice
 }

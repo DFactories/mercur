@@ -83,6 +83,8 @@ const CreateOffer = z
     prices: z.array(VendorOfferPrice).min(1),
     ean: z.string().min(1).nullish(),
     upc: z.string().min(1).nullish(),
+    manage_inventory: z.boolean().optional(),
+    allow_backorder: z.boolean().optional(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
   })
   .strict()
@@ -94,6 +96,8 @@ const UpdateOffer = z
   .object({
     sku: z.string().min(1).optional(),
     shipping_profile_id: z.string().min(1).optional(),
+    manage_inventory: z.boolean().optional(),
+    allow_backorder: z.boolean().optional(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
     prices: z.array(VendorOfferUpsertPrice).optional(),
   })
@@ -141,6 +145,8 @@ const VendorCreateOffersBatchItem = z
     inventory_items: z.array(VendorOfferInventoryItem).min(1),
     ean: z.string().min(1).nullish(),
     upc: z.string().min(1).nullish(),
+    manage_inventory: z.boolean().optional(),
+    allow_backorder: z.boolean().optional(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
   })
   .strict()

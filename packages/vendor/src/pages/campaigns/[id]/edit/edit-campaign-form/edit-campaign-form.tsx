@@ -10,7 +10,6 @@ import { Form } from "@components/common/form"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { useUpdateCampaign } from "@hooks/api/campaigns"
-import { JalaliDatePicker } from "@components/inputs/jalali-date-picker"
 
 type EditCampaignFormProps = {
   campaign: AdminCampaign
@@ -20,8 +19,6 @@ const EditCampaignSchema = zod.object({
   name: zod.string(),
   description: zod.string().optional(),
   campaign_identifier: zod.string().optional(),
-  starts_at: zod.date().optional(),
-  ends_at: zod.date().optional(),
 })
 
 export const EditCampaignForm = ({ campaign }: EditCampaignFormProps) => {
@@ -37,8 +34,6 @@ export const EditCampaignForm = ({ campaign }: EditCampaignFormProps) => {
       name: campaign.name || "",
       description: campaign.description || "",
       campaign_identifier: campaign.campaign_identifier || "",
-      starts_at: campaign.starts_at ? new Date(campaign.starts_at) : undefined,
-      ends_at: campaign.ends_at ? new Date(campaign.ends_at) : undefined,
     },
   })
 
@@ -50,8 +45,6 @@ export const EditCampaignForm = ({ campaign }: EditCampaignFormProps) => {
         name: data.name,
         description: data.description,
         campaign_identifier: data.campaign_identifier,
-        starts_at: data.starts_at,
-        ends_at: data.ends_at,
       },
       {
         onSuccess: ({ campaign }) => {
@@ -95,24 +88,6 @@ export const EditCampaignForm = ({ campaign }: EditCampaignFormProps) => {
 
             <Form.Field
               control={form.control}
-              name="description"
-              render={({ field }) => {
-                return (
-                  <Form.Item>
-                    <Form.Label>{t("fields.description")}</Form.Label>
-
-                    <Form.Control>
-                      <Input {...field} />
-                    </Form.Control>
-
-                    <Form.ErrorMessage />
-                  </Form.Item>
-                )
-              }}
-            />
-
-            <Form.Field
-              control={form.control}
               name="campaign_identifier"
               render={({ field }) => {
                 return (
@@ -131,41 +106,14 @@ export const EditCampaignForm = ({ campaign }: EditCampaignFormProps) => {
 
             <Form.Field
               control={form.control}
-              name="starts_at"
+              name="description"
               render={({ field }) => {
                 return (
                   <Form.Item>
-                    <Form.Label>{t("campaigns.fields.start_date")}</Form.Label>
+                    <Form.Label optional>{t("fields.description")}</Form.Label>
 
                     <Form.Control>
-                      <JalaliDatePicker
-                        granularity="minute"
-                        hourCycle={12}
-                        shouldCloseOnSelect={false}
-                        {...field}
-                      />
-                    </Form.Control>
-
-                    <Form.ErrorMessage />
-                  </Form.Item>
-                )
-              }}
-            />
-
-            <Form.Field
-              control={form.control}
-              name="ends_at"
-              render={({ field }) => {
-                return (
-                  <Form.Item>
-                    <Form.Label>{t("campaigns.fields.end_date")}</Form.Label>
-
-                    <Form.Control>
-                      <JalaliDatePicker
-                        granularity="minute"
-                        shouldCloseOnSelect={false}
-                        {...field}
-                      />
+                      <Input {...field} />
                     </Form.Control>
 
                     <Form.ErrorMessage />

@@ -1,6 +1,6 @@
-import { PencilSquare, Trash } from "@medusajs/icons"
+import { PencilSquare, ReceiptPercent, Trash } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import { Button, Container, Heading, usePrompt } from "@medusajs/ui"
+import { Button, Container, Heading, toast, usePrompt } from "@medusajs/ui"
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
 import { useExtendableTable, useLinkQuery } from "@mercurjs/dashboard-shared"
 import { Children, ReactNode, useMemo } from "react"
@@ -112,7 +112,14 @@ export const PromotionListDataTable = () => {
       pagination
       isLoading={isLoading}
       queryObject={raw}
+      noRecords={{
+        icon: <ReceiptPercent className="text-ui-fg-subtle" />,
+        title: t("promotions.list.noRecords.title"),
+        message: t("promotions.list.noRecords.message"),
+        action: { to: "create", label: t("actions.create") },
+      }}
       navigateTo={(row) => `${row.original.id}`}
+      defaultOrder="-created_at"
       orderBy={[
         { key: "created_at", label: t("fields.createdAt") },
         { key: "updated_at", label: t("fields.updatedAt") },
@@ -158,17 +165,15 @@ const PromotionActions = ({ promotion }: { promotion: HttpTypes.AdminPromotion }
       return
     }
 
-    try {
-      await mutateAsync(undefined, {
-        onSuccess: () => {
-          navigate("/promotions", { replace: true })
-        },
-      })
-    } catch {
-      throw new Error(
-        `Promotion with code ${promotion.code} could not be deleted`
-      )
-    }
+    await mutateAsync(undefined, {
+      onSuccess: () => {
+        toast.success(t("promotions.toasts.promotionDeleteSuccess"))
+        navigate("/promotions", { replace: true })
+      },
+      onError: (e) => {
+        toast.error((e as Error).message)
+      },
+    })
   }
 
   return (

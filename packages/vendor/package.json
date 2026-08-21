@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/vendor",
-  "version": "2.2.0-dfactories.12",
+  "version": "2.3.1-dfactories.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mercurjs/mercur",
@@ -12,15 +12,18 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./pages": {
       "types": "./dist/pages/index.d.ts",
-      "import": "./dist/pages/index.js"
+      "import": "./dist/pages/index.js",
+      "default": "./dist/pages/index.js"
     },
     "./extension-targets": {
       "types": "./dist/extension-targets.d.ts",
-      "import": "./dist/extension-targets.js"
+      "import": "./dist/extension-targets.js",
+      "default": "./dist/extension-targets.js"
     },
     "./index.css": "./dist/index.css"
   },
@@ -31,47 +34,47 @@
     "dev": "tsup --watch",
     "generate:targets": "bun run scripts/generate-extension-targets.ts",
     "build": "tsup && bun run generate:targets",
-    "test": "vitest run",
-    "lint": "oxlint --max-warnings 0"
+    "lint": "oxlint --max-warnings 0",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@mercurjs/dashboard-shared": "2.2.0-dfactories.8",
-    "@mercurjs/client": "2.2.0-dfactories.3",
+    "@mercurjs/dashboard-shared": "2.3.1-dfactories.0",
+    "@mercurjs/client": "2.3.1-dfactories.0",
     "@ariakit/react": "^0.4.15",
-    "@babel/runtime": "^7.26.10",
+    "@babel/runtime": "^8.0.0",
     "@dnd-kit/core": "^6.1.0",
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/error-message": "^2.0.1",
-    "@hookform/resolvers": "3.4.2",
-    "@medusajs/admin-shared": "2.17.2",
-    "@medusajs/dashboard": "2.17.2",
-    "@medusajs/icons": "2.17.2",
+    "@hookform/resolvers": "5.4.0",
+    "@medusajs/admin-shared": "2.18.0",
+    "@medusajs/dashboard": "2.18.0",
+    "@medusajs/icons": "2.18.0",
     "@medusajs/ui": "4.1.19",
     "@radix-ui/react-dialog": "1.1.19",
     "@radix-ui/react-dismissable-layer": "1.1.4",
     "@tanstack/react-query": "5.64.2",
-    "@tanstack/react-table": "8.20.5",
+    "@tanstack/react-table": "8.21.3",
     "@tanstack/react-virtual": "^3.8.3",
     "@uiw/react-json-view": "^2.0.0-alpha.17",
-    "cmdk": "^0.2.0",
+    "cmdk": "^1.1.1",
     "copy-to-clipboard": "^4.0.2",
     "date-fns": "^3.6.0",
     "i18next": "26.3.5",
     "i18next-browser-languagedetector": "7.2.0",
-    "i18next-http-backend": "2.4.2",
+    "i18next-http-backend": "3.0.5",
     "lodash.debounce": "^4.0.8",
     "lodash.isequal": "^4.5.0",
-    "match-sorter": "^6.3.4",
+    "match-sorter": "^8.3.0",
     "motion": "^11.15.0",
     "qs": "^6.12.1",
-    "radix-ui": "1.6.1",
+    "radix-ui": "1.1.2",
     "react-country-flag": "^3.1.0",
-    "react-currency-input-field": "^3.6.11",
-    "react-helmet-async": "^2.0.5",
+    "react-currency-input-field": "^4.0.6",
+    "react-helmet-async": "^3.0.0",
     "react-hook-form": "7.49.1",
     "react-i18next": "17.0.8",
-    "react-jwt": "^1.2.0",
+    "react-jwt": "^2.1.1",
     "react-router-dom": "7.18.1",
     "zod": "4.4.3",
     "@radix-ui/react-direction": "^1.1.0"
@@ -81,18 +84,18 @@
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "vitest": "4.1.10",
-    "@medusajs/ui-preset": "2.17.2",
-    "@types/react": "^19.2.17",
+    "@medusajs/ui-preset": "2.18.0",
+    "@types/react": "^18.3.2",
     "@types/react-dom": "^18.2.22",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.3.2",
     "tsup": "^8.0.2",
     "typescript": "5.9.3",
-    "@medusajs/types": "2.17.2",
-    "@mercurjs/core": "2.2.0-dfactories.12",
-    "@mercurjs/dashboard-sdk": "2.2.0-dfactories.3",
-    "@mercurjs/types": "2.2.0-dfactories.3"
+    "@medusajs/types": "2.18.0",
+    "@mercurjs/core": "2.3.1-dfactories.0",
+    "@mercurjs/dashboard-sdk": "2.3.1-dfactories.0",
+    "@mercurjs/types": "2.3.1-dfactories.0",
+    "vitest": "4.1.10"
   }
 }

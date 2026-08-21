@@ -20,13 +20,19 @@ import { adminCommissionRatesMiddlewares } from "./commission-rates/middlewares"
 import { adminNotificationSettingsMiddlewares } from "./notification-settings/middlewares"
 
 import { adminProductsMiddlewares } from "./products/middlewares"
+import { adminPromotionsMiddlewares } from "./promotions/middlewares"
+import { adminCampaignsMiddlewares } from "./campaigns/middlewares"
+import { adminPriceListsMiddlewares } from "./price-lists/middlewares"
 import { adminCollectionsMiddlewares } from "./collections/middlewares"
 import { adminProductCategoriesMiddlewares } from "./product-categories/middlewares"
 import { adminProductAttributesMiddlewares } from "./product-attributes/middlewares"
 import { adminProductChangesMiddlewares } from "./product-changes/middlewares"
 import { adminStockLocationsMiddlewares } from "./stock-locations/middlewares"
+import { adminReservationsMiddlewares } from "./reservations/middlewares"
+import { adminInventoryItemsMiddlewares } from "./inventory-items/middlewares"
 import { adminShippingOptionsMiddlewares } from "./shipping-options/middlewares"
 import { adminShippingProfilesMiddlewares } from "./shipping-profiles/middlewares"
+import { adminReviewsMiddlewares } from "./reviews/middlewares"
 
 // Admins can scope the platform-wide products/orders lists to one seller via
 // ?seller_id=... (used by the operator panel's per-store drill-down).
@@ -101,11 +107,17 @@ export const adminMiddlewares: MiddlewareRoute[] = [
     ],
   },
   ...adminProductsMiddlewares,
+  ...adminPromotionsMiddlewares,
+  ...adminCampaignsMiddlewares,
+  ...adminPriceListsMiddlewares,
   ...adminCollectionsMiddlewares,
   ...adminProductCategoriesMiddlewares,
   ...adminProductAttributesMiddlewares,
   ...adminProductChangesMiddlewares,
   ...adminStockLocationsMiddlewares,
+  ...adminReservationsMiddlewares,
+  ...adminInventoryItemsMiddlewares,
   ...adminShippingOptionsMiddlewares,
   ...adminShippingProfilesMiddlewares,
+  ...adminReviewsMiddlewares,
 ]

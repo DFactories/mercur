@@ -14,10 +14,15 @@ import {
   usePromotionRuleAttributes,
   usePromotionRules,
 } from "../../../../../../hooks/api";
-import { CreatePromotionSchemaType } from "../../../../promotion-create/components/create-promotion-form/form-schema";
+import { CreatePromotionSchemaType } from "../../../../create/create-promotion-form/form-schema";
 import { generateRuleAttributes } from "../edit-rules-form/utils";
 import { RuleValueFormField } from "../rule-value-form-field";
-import { requiredProductRule } from "./constants";
+import {
+  applyToQuantityRule,
+  buyRulesMinQuantityRule,
+  requiredCurrencyRule,
+  requiredProductRule,
+} from "./constants";
 
 type RulesFormFieldType = {
   promotion?: HttpTypes.AdminPromotion;
@@ -40,10 +45,13 @@ export const RulesFormField = ({
 }: RulesFormFieldType) => {
   const { t } = useTranslation();
   const formData = form.getValues();
-  const { attributes } = usePromotionRuleAttributes(ruleType, formData.type);
+  const { attributes } = usePromotionRuleAttributes(
+    ruleType,
+    formData.type,
+    formData.application_method?.target_type,
+  );
 
-  const filteredAttributes =
-    attributes?.filter(({ id }) => id === "country" || id === "product") || [];
+  const filteredAttributes = attributes || [];
 
   const { fields, append, remove, update, replace } = useFieldArray({
     control: form.control,
@@ -71,15 +79,26 @@ export const RulesFormField = ({
     : {};
 
   const { rules, isLoading } = usePromotionRules(
-    promotion?.id,
+    promotion?.id ?? null,
     ruleType,
     query,
     {
-      enabled: !!promotion?.id || (!!promotionType && !!applicationMethodType),
+      enabled: !!promotion?.id,
     },
   );
 
   const rulesLoadedRef = useRef(false);
+
+  // Switching promotion template (standard <-> buyget) resets the form and
+  // requires re-seeding: e.g. target-rules stays mounted across the switch, so
+  // its seed guard must be cleared for the buyget quantity row to be seeded.
+  const prevPromotionTypeRef = useRef(promotionType);
+  useEffect(() => {
+    if (prevPromotionTypeRef.current !== promotionType) {
+      prevPromotionTypeRef.current = promotionType;
+      rulesLoadedRef.current = false;
+    }
+  }, [promotionType]);
 
   useEffect(() => {
     if (isLoading) {
@@ -93,7 +112,16 @@ export const RulesFormField = ({
     if (ruleType === "rules" && !fields.length) {
       form.resetField("rules");
 
-      const formRules = generateRuleAttributes(rules);
+      const apiRules = rules || [];
+      const needsCurrency =
+        !promotion?.id &&
+        applicationMethodType === "fixed" &&
+        !apiRules.some((rule) => rule.attribute === "currency_code");
+      const seededRules = needsCurrency
+        ? [...apiRules, requiredCurrencyRule]
+        : apiRules;
+
+      const formRules = generateRuleAttributes(seededRules);
       replace(formRules);
       rulesLoadedRef.current = true;
     }
@@ -103,7 +131,7 @@ export const RulesFormField = ({
       const apiRules =
         promotion?.id || promotionType === "standard"
           ? rules || []
-          : [...(rules || []), requiredProductRule];
+          : [...(rules || []), requiredProductRule, buyRulesMinQuantityRule];
 
       const formRules = generateRuleAttributes(apiRules);
       replace(formRules);
@@ -115,7 +143,7 @@ export const RulesFormField = ({
       const apiRules =
         promotion?.id || promotionType === "standard"
           ? rules || []
-          : [...(rules || []), requiredProductRule];
+          : [...(rules || []), requiredProductRule, applyToQuantityRule];
 
       const formRules = generateRuleAttributes(apiRules);
       replace(formRules);
@@ -129,6 +157,33 @@ export const RulesFormField = ({
     form,
     replace,
     rules,
+    promotion?.id,
+    applicationMethodType,
+  ]);
+
+  useEffect(() => {
+    if (ruleType !== "rules" || !rulesLoadedRef.current || promotion?.id) {
+      return;
+    }
+
+    const currentRules =
+      (form.getValues(scope) as { attribute?: string }[]) || [];
+    const currencyIndex = currentRules.findIndex(
+      (rule) => rule.attribute === "currency_code",
+    );
+
+    if (applicationMethodType === "fixed" && currencyIndex === -1) {
+      append(generateRuleAttributes([requiredCurrencyRule])[0]);
+    } else if (applicationMethodType !== "fixed" && currencyIndex !== -1) {
+      remove(currencyIndex);
+    }
+  }, [
+    applicationMethodType,
+    ruleType,
+    scope,
+    form,
+    append,
+    remove,
     promotion?.id,
   ]);
 
@@ -169,11 +224,23 @@ export const RulesFormField = ({
                         (ao) => ao.id === e,
                       );
 
-                      update(index, {
+                      const fieldRuleOverrides = {
                         ...fieldRule,
-                        values: [],
                         disguised: currentAttributeOption?.disguised || false,
-                      });
+                      };
+
+                      if (currentAttributeOption?.operators?.length === 1) {
+                        fieldRuleOverrides.operator =
+                          currentAttributeOption.operators[0].value;
+                      }
+
+                      if (fieldRuleOverrides.operator === "eq") {
+                        fieldRuleOverrides.values = "";
+                      } else {
+                        fieldRuleOverrides.values = [];
+                      }
+
+                      update(index, fieldRuleOverrides);
                       onChange(e);
                     };
 
@@ -268,7 +335,11 @@ export const RulesFormField = ({
                                   ref={ref}
                                   className="bg-ui-bg-base"
                                 >
-                                  <Select.Value placeholder={t('promotions.form.selectOperator')} />
+                                  <Select.Value
+                                    placeholder={t(
+                                      "promotions.form.selectOperator",
+                                    )}
+                                  />
                                 </Select.Trigger>
 
                                 <Select.Content>
@@ -307,6 +378,9 @@ export const RulesFormField = ({
                     fieldRule={fieldRule}
                     attributes={attributes || []}
                     ruleType={ruleType}
+                    applicationMethodTargetType={
+                      formData.application_method?.target_type
+                    }
                   />
                 </div>
               </div>
