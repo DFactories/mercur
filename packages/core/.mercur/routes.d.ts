@@ -159,6 +159,8 @@ export type Routes = {
             $code: typeof import("@medusajs/medusa/api/admin/locales/[code]/route");
         };
         members: typeof import("../src/api/admin/members/route");
+        notificationReadState: typeof import("../src/api/admin/notification-read-state/route");
+        notificationSettings: typeof import("../src/api/admin/notification-settings/route");
         notifications: typeof import("@medusajs/medusa/api/admin/notifications/route") & {
             $id: typeof import("@medusajs/medusa/api/admin/notifications/[id]/route");
         };
@@ -211,6 +213,7 @@ export type Routes = {
                 shippingOptions: typeof import("@medusajs/medusa/api/admin/orders/[id]/shipping-options/route");
                 transfer: typeof import("@medusajs/medusa/api/admin/orders/[id]/transfer/route") & {
                     cancel: typeof import("@medusajs/medusa/api/admin/orders/[id]/transfer/cancel/route");
+                    guest: typeof import("@medusajs/medusa/api/admin/orders/[id]/transfer/guest/route");
                 };
             };
             export: typeof import("@medusajs/medusa/api/admin/orders/export/route");
@@ -404,6 +407,11 @@ export type Routes = {
                 };
             };
         };
+        reviews: typeof import("../src/api/admin/reviews/route") & {
+            $id: typeof import("../src/api/admin/reviews/[id]/route") & {
+                respond: typeof import("../src/api/admin/reviews/[id]/respond/route");
+            };
+        };
         salesChannels: typeof import("@medusajs/medusa/api/admin/sales-channels/route") & {
             $id: typeof import("@medusajs/medusa/api/admin/sales-channels/[id]/route") & {
                 products: typeof import("@medusajs/medusa/api/admin/sales-channels/[id]/products/route");
@@ -443,6 +451,9 @@ export type Routes = {
         };
         shippingProfiles: typeof import("@medusajs/medusa/api/admin/shipping-profiles/route") & {
             $id: typeof import("@medusajs/medusa/api/admin/shipping-profiles/[id]/route");
+        };
+        shippingTemplates: typeof import("../src/api/admin/shipping-templates/route") & {
+            $id: typeof import("../src/api/admin/shipping-templates/[id]/route");
         };
         stockLocations: typeof import("@medusajs/medusa/api/admin/stock-locations/route") & {
             $id: typeof import("@medusajs/medusa/api/admin/stock-locations/[id]/route") & {
@@ -509,16 +520,6 @@ export type Routes = {
                 subscribe: typeof import("@medusajs/medusa/api/admin/workflows-executions/[workflow_id]/subscribe/route");
             };
         };
-        notificationReadState: typeof import("../src/api/admin/notification-read-state/route");
-        notificationSettings: typeof import("../src/api/admin/notification-settings/route");
-        reviews: typeof import("../src/api/admin/reviews/route") & {
-            $id: typeof import("../src/api/admin/reviews/[id]/route") & {
-                respond: typeof import("../src/api/admin/reviews/[id]/respond/route");
-            };
-        };
-        shippingTemplates: typeof import("../src/api/admin/shipping-templates/route") & {
-            $id: typeof import("../src/api/admin/shipping-templates/[id]/route");
-        };
     };
     auth: {
         $actorType: {
@@ -563,6 +564,12 @@ export type Routes = {
         payout: typeof import("../src/api/hooks/payout/route");
     };
     store: {
+        auth: {
+            phone: {
+                requestOtp: typeof import("../src/api/store/auth/phone/request-otp/route");
+                verifyOtp: typeof import("../src/api/store/auth/phone/verify-otp/route");
+            };
+        };
         carts: typeof import("@medusajs/medusa/api/store/carts/route") & {
             $id: typeof import("@medusajs/medusa/api/store/carts/[id]/route") & {
                 complete: typeof import("../src/api/store/carts/[id]/complete/route");
@@ -639,6 +646,9 @@ export type Routes = {
             $id: typeof import("@medusajs/medusa/api/store/return-reasons/[id]/route");
         };
         returns: typeof import("@medusajs/medusa/api/store/returns/route");
+        reviews: typeof import("../src/api/store/reviews/route") & {
+            $id: typeof import("../src/api/store/reviews/[id]/route");
+        };
         sellers: typeof import("../src/api/store/sellers/route") & {
             $id: typeof import("../src/api/store/sellers/[id]/route");
         };
@@ -647,17 +657,14 @@ export type Routes = {
                 calculate: typeof import("@medusajs/medusa/api/store/shipping-options/[id]/calculate/route");
             };
         };
-        auth: {
-            phone: {
-                requestOtp: typeof import("../src/api/store/auth/phone/request-otp/route");
-                verifyOtp: typeof import("../src/api/store/auth/phone/verify-otp/route");
-            };
-        };
-        reviews: typeof import("../src/api/store/reviews/route") & {
-            $id: typeof import("../src/api/store/reviews/[id]/route");
-        };
     };
     vendor: {
+        auth: {
+            phone: {
+                requestOtp: typeof import("../src/api/vendor/auth/phone/request-otp/route");
+                verifyOtp: typeof import("../src/api/vendor/auth/phone/verify-otp/route");
+            };
+        };
         campaigns: typeof import("../src/api/vendor/campaigns/route") & {
             $id: typeof import("../src/api/vendor/campaigns/[id]/route") & {
                 promotions: typeof import("../src/api/vendor/campaigns/[id]/promotions/route");
@@ -754,6 +761,7 @@ export type Routes = {
             };
             me: typeof import("../src/api/vendor/members/me/route");
         };
+        notificationReadState: typeof import("../src/api/vendor/notification-read-state/route");
         offers: typeof import("../src/api/vendor/offers/route") & {
             $id: typeof import("../src/api/vendor/offers/[id]/route") & {
                 inventoryItems: {
@@ -901,6 +909,9 @@ export type Routes = {
                 };
             };
         };
+        reviews: typeof import("../src/api/vendor/reviews/route") & {
+            $id: typeof import("../src/api/vendor/reviews/[id]/route");
+        };
         salesChannels: typeof import("../src/api/vendor/sales-channels/route") & {
             $id: typeof import("../src/api/vendor/sales-channels/[id]/route") & {
                 products: typeof import("../src/api/vendor/sales-channels/[id]/products/route");
@@ -947,15 +958,5 @@ export type Routes = {
         };
         stores: typeof import("../src/api/vendor/stores/route");
         uploads: typeof import("../src/api/vendor/uploads/route");
-        auth: {
-            phone: {
-                requestOtp: typeof import("../src/api/vendor/auth/phone/request-otp/route");
-                verifyOtp: typeof import("../src/api/vendor/auth/phone/verify-otp/route");
-            };
-        };
-        notificationReadState: typeof import("../src/api/vendor/notification-read-state/route");
-        reviews: typeof import("../src/api/vendor/reviews/route") & {
-            $id: typeof import("../src/api/vendor/reviews/[id]/route");
-        };
     };
 };
