@@ -39,7 +39,7 @@ echo "=== BEFORE ==="
 echo "  postgres            : $(q 'SHOW server_version;')"
 echo "  size                : $(q "SELECT pg_size_pretty(pg_database_size(current_database()));")"
 echo "  migrations recorded : $(q 'SELECT count(*) FROM mikro_orm_migrations;')"
-for t in order order_line_item order_group product offer seller commission_line payout customer cart; do
+for t in order order_line_item order_group product offer seller commission_line payout customer cart review; do
   printf "  %-20s %s\n" "$t" "$(count_of "$t")"
 done
 BEFORE_ORDERS=$(count_of order)
@@ -47,6 +47,7 @@ BEFORE_ITEMS=$(count_of order_line_item)
 BEFORE_COMM=$(count_of commission_line)
 BEFORE_OFFERS=$(count_of offer)
 BEFORE_SELLERS=$(count_of seller)
+BEFORE_REVIEWS=$(count_of review)
 
 echo
 echo "=== STEP 1: release the squatted migration name ==="
@@ -71,10 +72,21 @@ check "order items preserved"   "$BEFORE_ITEMS"   "$(count_of order_line_item)"
 check "commission lines intact" "$BEFORE_COMM"    "$(count_of commission_line)"
 check "offers preserved"        "$BEFORE_OFFERS"  "$(count_of offer)"
 check "sellers preserved"       "$BEFORE_SELLERS" "$(count_of seller)"
+check "reviews preserved"       "$BEFORE_REVIEWS" "$(count_of review)"
 check "tax-line columns"        "4" "$(q "SELECT count(*) FROM information_schema.columns WHERE table_name IN ('order_line_item_tax_line','order_shipping_method_tax_line') AND column_name IN ('metadata','data');")"
 check "offer columns"           "2" "$(q "SELECT count(*) FROM information_schema.columns WHERE table_name='offer' AND column_name IN ('manage_inventory','allow_backorder');")"
 check "new module tables"       "2" "$(q "SELECT count(*) FROM pg_tables WHERE tablename IN ('review','promotion_cost');")"
 check "our own table intact"    "1" "$(q "SELECT count(*) FROM pg_tables WHERE tablename='shipping_option_type_delivery';")"
+# A database that carried the reviews REGISTRY BLOCK already has a `review`
+# table, so core's `create table if not exists` is skipped whole and the columns
+# it declares never appear. Migration20260823041742 adds them; assert it landed,
+# because `db:migrate` exits 0 either way and every read of the table fails later.
+check "review columns"          "3" "$(q "SELECT count(*) FROM information_schema.columns WHERE table_name='review' AND column_name IN ('status','display_id','deleted_at');")"
+# Handing reviews to core renames every review LINK table (module `reviews` ->
+# `review`), and db:migrate creates the new ones empty. The rows are copied by
+# dfactories-mp's one-time `backfill-review-links` script, which runs AFTER this.
+# Reported, not asserted: the count is only expected to match post-backfill.
+echo "  note  review links to back-fill      : legacy $(q "SELECT coalesce(sum(n),0) FROM (SELECT (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I', table_name), false, true, '')))[1]::text::int AS n FROM information_schema.tables WHERE table_schema = current_schema() AND table_name LIKE '%\_reviews\_review') s;") row(s) in the block-era tables"
 
 echo
 if [[ "$FAIL" == "0" ]]; then
