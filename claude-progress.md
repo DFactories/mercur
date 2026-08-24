@@ -409,11 +409,15 @@ bases for one line while both reported success. The consumer side landed in
 
 ### Still open before this ships
 
-**The production-clone rehearsal has not happened.** `mercur_231_rehearsal`
-locally is an empty schema (0 orders, 0 sellers, 0 reviews, 21 MB), so nothing
-has been migrated against real data and the maintenance window is unsized. The
-user recorded that rehearsal as mandatory. Consumer-side steps are in
-`../dfactories-mp/docs/deploy-2.3.1.md`.
+**The production-clone rehearsal is being skipped — decided 2026-08-25.** It had
+been recorded as mandatory. `mercur_231_rehearsal` locally is an empty schema
+(0 orders, 0 sellers, 0 reviews, 21 MB), so nothing has ever been migrated
+against real data: the maintenance window is unmeasured and the review link
+handover has never moved a non-zero number of rows. `scripts/rehearse-231-migration.sh`
+is still the cheapest way to retire that if a clone appears. The risk acceptance
+and the pre-deploy backup that replaces it are written up in
+`../dfactories-mp/docs/deploy-2.3.1.md`, which is also where the two one-time
+deploy steps live.
 
 ## Required Artifacts (status)
 
