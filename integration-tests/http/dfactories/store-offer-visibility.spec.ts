@@ -9,12 +9,12 @@ import {
     Modules,
 } from "@medusajs/framework/utils"
 import { MercurModules, SellerStatus } from "@mercurjs/types"
-import { createSellerUser } from "../../../helpers/create-seller-user"
-import { createVendorProduct } from "../../../helpers/create-product"
+import { createSellerUser } from "../../helpers/create-seller-user"
+import { createVendorProduct } from "../../helpers/create-product"
 import {
     generatePublishableKey,
     generateStoreHeaders,
-} from "../../../helpers/create-admin-user"
+} from "../../helpers/create-admin-user"
 
 const approveSeller = async (container: MedusaContainer, sellerId: string) => {
     const sellerModule: any = container.resolve(MercurModules.SELLER)

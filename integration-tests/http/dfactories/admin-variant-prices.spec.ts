@@ -6,7 +6,7 @@ import { createProductsWorkflow } from "@mercurjs/core/workflows"
 import {
   adminHeaders,
   createAdminUser,
-} from "../../../helpers/create-admin-user"
+} from "../../helpers/create-admin-user"
 
 jest.setTimeout(60000)
 

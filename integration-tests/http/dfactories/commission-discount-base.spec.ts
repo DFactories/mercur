@@ -5,7 +5,7 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import { MercurModules } from "@mercurjs/types"
-import { adminHeaders, createAdminUser } from "../../../helpers/create-admin-user"
+import { adminHeaders, createAdminUser } from "../../helpers/create-admin-user"
 
 import { refreshOrderCommissionLinesWorkflow } from "@mercurjs/core/workflows"
 
