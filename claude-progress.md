@@ -346,6 +346,65 @@ Ten-item batch (all built; `bun run build` 7/7 green). Released
   verified by stash). Updated 2 seller specs for the new email-optional / phone
   invite behavior.
 
+## Session 9 — Mercur 2.3.1 upgrade, closed out (2026-08-24)
+
+Branch `dfactories/2.3.1`, merged into `develop` and pushed. Published
+`@mercurjs/core@2.3.1-dfactories.1`; every other package stayed at
+`2.3.1-dfactories.0`.
+
+### What the upgrade carries
+
+- **Merge of upstream `v2.3.1`** (Medusa 2.17.2 → 2.18.0), plus the fork's own
+  fixes on top: RTL logical properties in 2.3.1's new UI, 299 Persian keys,
+  admin variant-update no longer accepting prices, and an "Advanced" nav section
+  for installation-added routes.
+- **`fix(commission)`** — commission is charged on `subtotal - discount ×
+  marketplaceShare`, floored at 0, where the share comes from the promotion's
+  `cost_bearer` (no `promotion_cost` record at all = `marketplace` = commission
+  on the post-discount amount). Before this, a seller running a promotion paid
+  commission on money the customer never handed over.
+- **`fix(store)`** — 2.3.1 dropped the visible-seller filter from
+  `/store/products`, which left the cheapest-offer lookup as the only thing
+  keeping a suspended or mid-closure producer's price off the catalogue. It now
+  scopes to visible sellers.
+- **`fix(review)`** — `Migration20260823041742` adds the columns a database that
+  ran the reviews REGISTRY BLOCK never gets. Core's create is guarded by
+  `if not exists`, so such a database skips it whole and `db:migrate` reports
+  success against a table with no `status`.
+- **Migration-name guard** — `packages/core/src/modules/migration-names.spec.ts`
+  fails the build on a duplicate name, ours or an installed `@medusajs/*`
+  module's. It exists because `shipping-option-type-delivery` squatted
+  `Migration20260625000000`, the name Medusa 2.18's order module uses, and every
+  cart completion then failed with `column t5.metadata does not exist`.
+
+### Verified this session
+
+`bun run build` (12/12), `bun run lint` (0 errors), `bun run test:unit` (15
+core + 63 vendor + 1 admin), `bun run scripts/generate-i18n-schema.ts --check`,
+and the publish gate `integration-tests/http/dfactories/` — 5 suites, 40 tests,
+against local Postgres + Redis.
+
+### Fixed while closing out
+
+- The four regression specs written for this release lived in the domain folders,
+  so the publish gate (which runs only `http/dfactories/`) never ran any of them.
+  Moved.
+- `store-reviews.spec.ts` asserted nothing: the route scopes the list to the
+  caller's own reviews and the seeded review was never linked to the customer,
+  so every assertion passed against an empty array. It now proves the field
+  selection the storefront sends resolves `seller`, and pins `pending` as the
+  status a new review is created with.
+- The rehearsal script now reports review row counts, the review columns, and how
+  many rows sit in the block-era review link tables.
+
+### Still open before this ships
+
+**The production-clone rehearsal has not happened.** `mercur_231_rehearsal`
+locally is an empty schema (0 orders, 0 sellers, 0 reviews, 21 MB), so nothing
+has been migrated against real data and the maintenance window is unsized. The
+user recorded that rehearsal as mandatory. Consumer-side steps are in
+`../dfactories-mp/docs/deploy-2.3.1.md`.
+
 ## Required Artifacts (status)
 
 - `claude-progress.md` -- this file (updated 2026-06-14, Session 8).
