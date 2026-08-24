@@ -397,6 +397,16 @@ against local Postgres + Redis.
 - The rehearsal script now reports review row counts, the review columns, and how
   many rows sit in the block-era review link tables.
 
+### Also fixed while closing out (2026-08-24, later)
+
+`resolvePromotionCostShares` is now a plain exported function alongside the
+workflow step, released as `@mercurjs/core@2.3.1-dfactories.2`. The agent
+referral commission in `dfactories-mp` is deducted from the same vendor net as
+the platform commission and was still charging a plain post-discount base, so any
+`store` or `shared` promotion would have had the two layers billing different
+bases for one line while both reported success. The consumer side landed in
+`dfactories-mp@a0c65da`.
+
 ### Still open before this ships
 
 **The production-clone rehearsal has not happened.** `mercur_231_rehearsal`
