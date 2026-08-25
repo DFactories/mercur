@@ -11358,6 +11358,9 @@
             }
           },
           "additionalProperties": false
+        },
+        "open": {
+          "type": "string"
         }
       },
       "additionalProperties": false

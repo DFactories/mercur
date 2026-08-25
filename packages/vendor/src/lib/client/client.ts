@@ -3,6 +3,7 @@ import { Routes } from '@mercurjs/core/_generated'
 import config from 'virtual:mercur/config'
 
 import { assetUrl } from '../../utils/asset-url'
+import { localizeApiMessage } from '../../i18n/api-error-translator'
 
 export const backendUrl = config.backendUrl ?? 'http://localhost:9000'
 
@@ -72,7 +73,11 @@ export const fetchQuery = async (
       return
     }
 
-    const error = new Error(errorData.message || 'Server error')
+    // Same language boundary the typed SDK goes through — this helper predates
+    // it and was the one path still surfacing raw English to the panel.
+    const error = new Error(
+      localizeApiMessage(errorData.message, response.status)
+    )
       ; (error as Error & { status: number }).status = response.status
     throw error
   }

@@ -3778,6 +3778,9 @@
             },
             "empty": {
               "type": "string"
+            },
+            "partialErrorToast": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -13515,6 +13518,39 @@
         },
         "timeout": {
           "type": "string"
+        },
+        "network": {
+          "type": "string"
+        },
+        "unknown": {
+          "type": "string"
+        },
+        "offerNotFound": {
+          "type": "string"
+        },
+        "variantNoPriceSet": {
+          "type": "string"
+        },
+        "priceNotOwned": {
+          "type": "string"
+        },
+        "offerNeedsInventory": {
+          "type": "string"
+        },
+        "invalidField": {
+          "type": "string"
+        },
+        "mustBePositive": {
+          "type": "string"
+        },
+        "fieldRequired": {
+          "type": "string"
+        },
+        "duplicate": {
+          "type": "string"
+        },
+        "entityNotFound": {
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -13658,6 +13694,24 @@
       "type": "object",
       "properties": {
         "toman": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geography": {
+      "type": "object",
+      "properties": {
+        "selectProvince": {
+          "type": "string"
+        },
+        "selectCity": {
+          "type": "string"
+        },
+        "province": {
+          "type": "string"
+        },
+        "city": {
           "type": "string"
         }
       },

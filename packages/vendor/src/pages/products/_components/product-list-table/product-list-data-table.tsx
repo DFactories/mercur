@@ -16,6 +16,7 @@ import { useProductTableColumns } from "@hooks/table/columns/use-product-table-c
 import { useProductTableFilters } from "@hooks/table/filters/use-product-table-filters";
 import { useProductTableQuery } from "@hooks/table/query/use-product-table-query";
 import { useDataTable } from "@hooks/use-data-table";
+import { loaderInitialData } from "@hooks/table/use-loader-initial-data";
 
 export const PAGE_SIZE = 10;
 
@@ -30,7 +31,10 @@ export const ProductListDataTable = () => {
     | Awaited<ReturnType<typeof productListLoader>>
     | undefined;
 
-  const initialData = searchParams.offset ? undefined : loaderData;
+  // Gating on `offset` alone was not enough: a filter applied on page one left
+  // `offset` absent, so the unfiltered prefetch seeded the filtered query key
+  // and staleTime suppressed the fetch. See `loaderInitialData`.
+  const initialData = loaderInitialData(raw, loaderData);
 
   const { products, count, isLoading, isError, error } = useProducts(
     searchParams,

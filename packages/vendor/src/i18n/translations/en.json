@@ -1257,7 +1257,8 @@
       "header": "Manage prices",
       "description": "Add, change, or remove prices on this offer's ladder.",
       "successToast": "Prices were successfully updated.",
-      "empty": "No prices configured"
+      "empty": "No prices configured",
+      "partialErrorToast": "Saved: {{saved}}. The rest failed — {{message}}"
     },
     "inventory": {
       "header": "Manage inventory items",
@@ -4502,7 +4503,18 @@
     "tooManyRequests": "Too many requests. Please try again later.",
     "serverError": "Internal server error.",
     "serviceUnavailable": "Service unavailable.",
-    "timeout": "Request timed out."
+    "timeout": "Request timed out.",
+    "network": "Could not reach the server. Check your connection and try again.",
+    "unknown": "Something went wrong. Please try again.",
+    "offerNotFound": "This offer no longer exists. Refresh the page and try again.",
+    "variantNoPriceSet": "This variant cannot be priced yet. Contact support.",
+    "priceNotOwned": "This price belongs to another offer and cannot be changed here.",
+    "offerNeedsInventory": "An offer needs at least one inventory item.",
+    "invalidField": "The submitted data is invalid: {{detail}}",
+    "mustBePositive": "The amount must be greater than zero.",
+    "fieldRequired": "A required field is missing.",
+    "duplicate": "This value is already in use. Choose another one.",
+    "entityNotFound": "Not found: {{detail}}"
   },
   "authHero": {
     "login": {
@@ -4570,5 +4582,11 @@
   },
   "currencies": {
     "toman": "toman"
+  },
+  "geography": {
+    "selectProvince": "Select province",
+    "selectCity": "Select city",
+    "province": "Province",
+    "city": "City"
   }
 }

@@ -21,6 +21,7 @@ import { useCurrentSeller } from "../../../../hooks/api/sellers"
 import { sdk } from "../../../../lib/client"
 import { queryClient } from "../../../../lib/query-client"
 import { OFFER_PRODUCT_DETAIL_FIELDS } from "../../common/constants"
+import { translateApiError } from "../../../../i18n/api-error-translator"
 
 type EditPriceRow = {
   offer_id: string
@@ -37,8 +38,35 @@ type PriceProduct = HttpTypes.AdminProduct & {
   > | null
 }
 
-const numericOrZero = (v: number | "" | undefined | null): number =>
-  v === "" || v === null || v === undefined ? 0 : Number(v) || 0
+/**
+ * A blank cell is "no price", not "free". Coercing it to `0` is how unpriced
+ * offers reached the storefront and printed «۰ تومان» on every card; the
+ * backend now rejects a non-positive amount outright, which turned the same
+ * mistake into a half-saved grid — see `collectPriceRows`.
+ */
+const parsePrice = (v: number | "" | undefined | null): number | null => {
+  if (v === "" || v === null || v === undefined) {
+    return null
+  }
+  const parsed = Number(v)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+/** Only cells the producer actually filled in become price rows. */
+const collectPriceRows = (
+  row: EditPriceRow,
+  currencies: string[],
+): { amount: number; currency_code: string }[] => {
+  const prices: { amount: number; currency_code: string }[] = []
+  for (const code of currencies) {
+    const amount = parsePrice(row.prices?.[code])
+    if (amount === null) {
+      continue
+    }
+    prices.push({ amount, currency_code: code })
+  }
+  return prices
+}
 
 const buildRows = (product: PriceProduct, currencies: string[]): EditPriceRow[] =>
   (product.variants ?? []).flatMap((variant) =>
@@ -132,24 +160,74 @@ const EditPriceGrid = ({
   const columns = useColumns({ currencies, pricePreferences })
 
   const handleSubmit = form.handleSubmit(async (values) => {
+    // Validate the WHOLE grid before a single request goes out. Each row is its
+    // own request (there is no batch offer-update route), so a row the backend
+    // was always going to reject used to be discovered only after its siblings
+    // had already been written — the vendor saw an error and a changed price at
+    // the same time, with no way to tell which rows had landed.
+    //
+    // Only cells the producer TOUCHED are judged. A cell they cleared is a
+    // mistake worth stopping on (an offer with no price cannot be sold, and the
+    // blank used to be sent as `0`); a row that arrived empty and was left alone
+    // is simply not part of this edit.
+    const dirtyRows = form.formState.dirtyFields.rows ?? []
+    const isDirty = (index: number, code: string) =>
+      Boolean(dirtyRows[index]?.prices?.[code])
+
+    let invalid = false
+    values.rows.forEach((row, index) => {
+      for (const code of currencies) {
+        if (!isDirty(index, code)) {
+          continue
+        }
+        const amount = parsePrice(row.prices?.[code])
+        if (amount === null || amount <= 0) {
+          form.setError(`rows.${index}.prices.${code}`, {
+            type: "manual",
+            message: t("offers.validation.priceRequired"),
+          })
+          invalid = true
+        }
+      }
+    })
+    if (invalid) {
+      return
+    }
+
+    const saved: string[] = []
     try {
-      await Promise.all(
-        values.rows.map((row) => {
-          const prices = currencies.map((code) => ({
-            amount: numericOrZero(row.prices?.[code]),
-            currency_code: code,
-          }))
-          return sdk.vendor.offers.$id.mutate({ $id: row.offer_id, prices })
-        }),
+      for (const [index, row] of values.rows.entries()) {
+        // Untouched rows are not re-sent: re-posting an unchanged ladder is a
+        // write that can fail, and a failed write on a row nobody edited is the
+        // partial-save this whole path exists to avoid.
+        if (!currencies.some((code) => isDirty(index, code))) {
+          continue
+        }
+        const prices = collectPriceRows(row, currencies)
+        if (!prices.length) {
+          continue
+        }
+        await sdk.vendor.offers.$id.mutate({ $id: row.offer_id, prices })
+        saved.push(row.variant_title)
+      }
+      toast.success(t("offers.pricing.successToast"))
+      handleSuccess()
+    } catch (error) {
+      // Say exactly how far it got. Silence here is what made the half-write
+      // indistinguishable from a no-op.
+      toast.error(
+        saved.length
+          ? t("offers.pricing.partialErrorToast", {
+              message: translateApiError(error),
+              saved: saved.join("، "),
+            })
+          : translateApiError(error),
       )
+    } finally {
       await queryClient.invalidateQueries({ queryKey: offerQueryKeys.lists() })
       await queryClient.invalidateQueries({
         queryKey: productsQueryKeys.detail(productId),
       })
-      toast.success(t("offers.pricing.successToast"))
-      handleSuccess()
-    } catch (error) {
-      toast.error((error as Error).message)
     }
   })
 

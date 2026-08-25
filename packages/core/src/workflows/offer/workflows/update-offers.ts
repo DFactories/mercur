@@ -63,8 +63,6 @@ export const updateOffersWorkflow: ReturnWorkflow<
       })),
     )
 
-    const offers = updateOffersStep(rowUpdates)
-
     const offersWithPriceUpdates = transform({ input }, ({ input }) =>
       input.offers
         .filter((o) => Array.isArray(o.prices))
@@ -198,6 +196,13 @@ export const updateOffersWorkflow: ReturnWorkflow<
         }
       },
     )
+
+    // Written only after `pricingDiff` has proved every offer resolves and every
+    // price row is ownable. It used to run first, so a request that was always
+    // going to fail — a deleted offer, a variant with no PriceSet, a price row
+    // belonging to another offer — still committed the sku/shipping/metadata
+    // half of the update before throwing.
+    const offers = updateOffersStep(rowUpdates)
 
     const priceSetsPayload = transform(
       { pricingDiff },

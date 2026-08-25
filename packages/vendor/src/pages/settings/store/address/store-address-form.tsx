@@ -7,6 +7,11 @@ import { FormExtensionZone, useExtendableForm } from "@mercurjs/dashboard-shared
 
 import { Form } from "@components/common/form";
 import { CountrySelect } from "@components/inputs/country-select";
+import {
+  GeoCitySelect,
+  GeoProvinceSelect,
+  useGeoSelection,
+} from "@components/inputs/geo-select";
 import { RouteDrawer, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
 import { HttpTypes } from "@mercurjs/types";
@@ -51,6 +56,10 @@ export const StoreAddressForm = ({ seller }: StoreAddressFormProps) => {
       country_code: address?.country_code ?? "",
     },
   });
+
+  const { provinces, selectedProvince, cities } = useGeoSelection(
+    form.watch("province")
+  );
 
   const { mutateAsync, isPending } = useUpdateSellerAddress(seller.id);
 
@@ -128,32 +137,6 @@ export const StoreAddressForm = ({ seller }: StoreAddressFormProps) => {
           />
           <Form.Field
             control={form.control}
-            name="postal_code"
-            render={({ field }) => (
-              <Form.Item>
-                <Form.Label optional>{t("fields.postalCode")}</Form.Label>
-                <Form.Control>
-                  <Input size="small" {...field} />
-                </Form.Control>
-                <Form.ErrorMessage />
-              </Form.Item>
-            )}
-          />
-          <Form.Field
-            control={form.control}
-            name="city"
-            render={({ field }) => (
-              <Form.Item>
-                <Form.Label optional>{t("fields.city")}</Form.Label>
-                <Form.Control>
-                  <Input size="small" {...field} />
-                </Form.Control>
-                <Form.ErrorMessage />
-              </Form.Item>
-            )}
-          />
-          <Form.Field
-            control={form.control}
             name="country_code"
             render={({ field }) => (
               <Form.Item>
@@ -165,12 +148,65 @@ export const StoreAddressForm = ({ seller }: StoreAddressFormProps) => {
               </Form.Item>
             )}
           />
+          {/* Province before city, and city gated on it: a city name is not
+              unique across provinces, so the pair only resolves in that order —
+              the same order the onboarding wizard asks for them in. */}
           <Form.Field
             control={form.control}
             name="province"
             render={({ field }) => (
               <Form.Item>
-                <Form.Label optional>{t("fields.state")}</Form.Label>
+                <Form.Label optional>{t("geography.province")}</Form.Label>
+                <Form.Control>
+                  <GeoProvinceSelect
+                    provinces={provinces}
+                    value={field.value}
+                    onChange={(value) => {
+                      form.setValue("province", value, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      // The old city belongs to the old province; keeping it
+                      // would submit a pair that resolves to nothing.
+                      form.setValue("city", "", { shouldDirty: true });
+                    }}
+                    data-testid="store-address-province"
+                  />
+                </Form.Control>
+                <Form.ErrorMessage />
+              </Form.Item>
+            )}
+          />
+          <Form.Field
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <Form.Item>
+                <Form.Label optional>{t("geography.city")}</Form.Label>
+                <Form.Control>
+                  <GeoCitySelect
+                    cities={cities}
+                    value={field.value}
+                    disabled={!selectedProvince}
+                    onChange={(value) =>
+                      form.setValue("city", value, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    data-testid="store-address-city"
+                  />
+                </Form.Control>
+                <Form.ErrorMessage />
+              </Form.Item>
+            )}
+          />
+          <Form.Field
+            control={form.control}
+            name="postal_code"
+            render={({ field }) => (
+              <Form.Item>
+                <Form.Label optional>{t("fields.postalCode")}</Form.Label>
                 <Form.Control>
                   <Input size="small" {...field} />
                 </Form.Control>

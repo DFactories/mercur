@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Heading, Input, Select } from "@medusajs/ui";
+import { Button, Heading, Input } from "@medusajs/ui";
 import i18n from "i18next";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,11 @@ import * as z from "zod";
 
 import { Form } from "@components/common/form";
 import { CountrySelect } from "@components/inputs/country-select/country-select";
-import { useGeoCities, useGeoProvinces } from "@hooks/api";
+import {
+  GeoCitySelect,
+  GeoProvinceSelect,
+  useGeoSelection,
+} from "@components/inputs/geo-select";
 
 const AddressStepSchema = z.object({
   name: z.string().min(1, i18n.t("onboarding.wizard.validation.nameRequired")),
@@ -28,13 +32,7 @@ type AddressStepProps = {
 };
 
 export const AddressStep = ({ onSubmit, onSkip, isPending }: AddressStepProps) => {
-  const { t, i18n: i18next } = useTranslation();
-  const isFa = i18next.language?.startsWith("fa");
-
-  // DFACTORIES: Iran-only marketplace — the country is fixed to Iran and the
-  // province/city pair comes from the admin-managed geography module.
-  const { data: provincesData } = useGeoProvinces();
-  const provinces = provincesData?.provinces ?? [];
+  const { t } = useTranslation();
 
   const form = useForm<AddressStepValues>({
     resolver: zodResolver(AddressStepSchema),
@@ -49,16 +47,12 @@ export const AddressStep = ({ onSubmit, onSkip, isPending }: AddressStepProps) =
     },
   });
 
-  const provinceName = form.watch("province");
-  const selectedProvince = provinces.find((p) => p.name === provinceName);
-
-  const { data: citiesData } = useGeoCities(selectedProvince?.id);
-  const cities = [...(citiesData?.cities ?? [])].sort(
-    (a, b) => Number(b.is_capital) - Number(a.is_capital),
+  // DFACTORIES: Iran-only marketplace — the country is fixed to Iran and the
+  // province/city pair comes from the admin-managed geography module. Shared
+  // with the store-settings address form so the two cannot drift.
+  const { provinces, selectedProvince, cities } = useGeoSelection(
+    form.watch("province"),
   );
-
-  const displayName = (item: { name: string; name_en: string | null }) =>
-    isFa ? item.name : (item.name_en ?? item.name);
 
   const handleSubmit = form.handleSubmit(async (data) => {
     await onSubmit(data);
@@ -132,35 +126,21 @@ export const AddressStep = ({ onSubmit, onSkip, isPending }: AddressStepProps) =
             <Form.Field
               control={form.control}
               name="province"
-              render={({ field: { onChange: _onChange, ref: _ref, ...field } }) => (
+              render={({ field }) => (
                 <Form.Item>
                   <Form.Label optional>{t("onboarding.wizard.address.state")}</Form.Label>
                   <Form.Control>
-                    <Select
-                      {...field}
-                      value={field.value || undefined}
-                      onValueChange={(value) => {
+                    <GeoProvinceSelect
+                      provinces={provinces}
+                      value={field.value}
+                      onChange={(value) => {
                         form.setValue("province", value, {
                           shouldValidate: true,
                         });
                         form.setValue("city", "");
                       }}
-                    >
-                      <Select.Trigger className="w-full">
-                        <Select.Value
-                          placeholder={t(
-                            "onboarding.wizard.address.selectProvince",
-                          )}
-                        />
-                      </Select.Trigger>
-                      <Select.Content>
-                        {provinces.map((province) => (
-                          <Select.Item key={province.id} value={province.name}>
-                            {displayName(province)}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select>
+                      data-testid="onboarding-address-province"
+                    />
                   </Form.Control>
                   <Form.ErrorMessage />
                 </Form.Item>
@@ -169,31 +149,19 @@ export const AddressStep = ({ onSubmit, onSkip, isPending }: AddressStepProps) =
             <Form.Field
               control={form.control}
               name="city"
-              render={({ field: { onChange: _onChange, ref: _ref, ...field } }) => (
+              render={({ field }) => (
                 <Form.Item>
                   <Form.Label optional>{t("onboarding.wizard.address.city")}</Form.Label>
                   <Form.Control>
-                    <Select
-                      {...field}
-                      value={field.value || undefined}
+                    <GeoCitySelect
+                      cities={cities}
+                      value={field.value}
                       disabled={!selectedProvince}
-                      onValueChange={(value) =>
+                      onChange={(value) =>
                         form.setValue("city", value, { shouldValidate: true })
                       }
-                    >
-                      <Select.Trigger className="w-full">
-                        <Select.Value
-                          placeholder={t("onboarding.wizard.address.selectCity")}
-                        />
-                      </Select.Trigger>
-                      <Select.Content>
-                        {cities.map((city) => (
-                          <Select.Item key={city.id} value={city.name}>
-                            {displayName(city)}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select>
+                      data-testid="onboarding-address-city"
+                    />
                   </Form.Control>
                   <Form.ErrorMessage />
                 </Form.Item>

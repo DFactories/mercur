@@ -9,6 +9,7 @@ import { formatDistance } from "date-fns";
 import { TFunction } from "i18next";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import {
   notificationQueryKeys,
   useMarkNotificationsRead,
@@ -20,9 +21,19 @@ import { FilePreview } from "../../common/file-preview";
 import { InfiniteList } from "../../common/infinite-list";
 import { InferClientInput } from "@mercurjs/client";
 
+/** The operator feed. `seller_feed` belongs to the vendor panel. */
+const FEED_CHANNEL = "feed";
+
 interface NotificationData {
   title: string;
   description?: string;
+  /**
+   * Where the row is about. The feed dispatcher writes it for every
+   * operational notice that has somewhere to go — an approval queue, a ticket,
+   * a store — and it went unrendered, so the operator read "a producer
+   * registered" and then had to go find the list themselves.
+   */
+  url?: string;
   file?: {
     filename?: string;
     url?: string;
@@ -125,6 +136,13 @@ export const Notifications = () => {
                   ...(params as InferClientInput<
                     typeof sdk.admin.notifications.query
                   >),
+                  // `GET /admin/notifications` applies no default channel
+                  // filter, and neither did this call — so the operator's bell
+                  // also listed `seller_feed` rows addressed to individual
+                  // vendors, plus email rows that render as nothing but still
+                  // consume a slot in the paged list. The admin feed is the
+                  // `feed` channel; nothing else belongs here.
+                  channel: FEED_CHANNEL,
                 })
               }
               queryOptions={{ enabled: open }}
@@ -156,6 +174,7 @@ const Notification = ({
   notification: HttpTypes.AdminNotification;
   unread?: boolean;
 }) => {
+  const { t } = useTranslation();
   const data = notification.data as unknown as NotificationData | undefined;
 
   // We need at least the title to render a notification in the feed
@@ -230,6 +249,17 @@ const Notification = ({
               </Text>
             )}
           </div>
+          {!!data.url && (
+            <Link
+              to={data.url}
+              className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover w-fit"
+              data-testid={`notification-${notification.id}-link`}
+            >
+              <Text size="small" leading="compact" weight="plus">
+                {t("notifications.open")}
+              </Text>
+            </Link>
+          )}
           {!!data?.file?.url && (
             <FilePreview
               filename={data.file.filename ?? ""}
@@ -274,7 +304,9 @@ const NotificationsEmptyState = ({ t }: { t: TFunction }) => {
 const useUnreadNotifications = (lastReadAt: string | null | undefined) => {
   const [hasUnread, setHasUnread] = useState(false);
   const { notifications } = useNotifications(
-    { limit: 1, offset: 0, fields: "created_at" },
+    // Same scope as the list, or the unread dot lights up for a vendor's
+    // notification the operator can neither see nor act on.
+    { limit: 1, offset: 0, fields: "created_at", channel: FEED_CHANNEL },
     { refetchInterval: 60_000 },
   );
   const lastNotification = notifications?.[0];

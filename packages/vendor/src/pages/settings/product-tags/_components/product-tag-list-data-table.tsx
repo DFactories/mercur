@@ -9,6 +9,7 @@ import { useProductTagTableColumns } from "@hooks/table/columns";
 import { useProductTagTableFilters } from "@hooks/table/filters";
 import { useProductTagTableQuery } from "@hooks/table/query";
 import { useDataTable } from "@hooks/use-data-table";
+import { loaderInitialData } from "@hooks/table/use-loader-initial-data";
 import { productTagListLoader } from "../../loader";
 
 const PAGE_SIZE = 20;
@@ -19,9 +20,13 @@ export const ProductTagListDataTable = () => {
     pageSize: PAGE_SIZE,
   });
 
-  const initialData = useLoaderData() as Awaited<
+  const loaderData = useLoaderData() as Awaited<
     ReturnType<typeof productTagListLoader>
   >;
+
+  // Was passed unconditionally, so the unfiltered prefetch seeded every filtered
+  // and every paged key. See `loaderInitialData`.
+  const initialData = loaderInitialData(raw, loaderData);
 
   const { product_tags, count, isPending, isError, error } = useProductTags(
     searchParams,
