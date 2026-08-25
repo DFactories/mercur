@@ -433,7 +433,9 @@ the end-to-end proof for the migration-name fix, since checkout is exactly where
 
 - Nobody owns the review moderation queue yet; reviews default to `pending`.
 - TECH_DEBT #47 (the server's intermittent ghcr.io TLS path) is unfixed.
-- The empty block-era `*_reviews_review` tables can be dropped in a quiet moment.
+- Dropping the empty block-era `*_reviews_review` tables is queued for the next
+  `dfactories-mp` deploy — the script exists but is not in the image production
+  currently runs, and it was not worth a release of its own.
 
 ### Superseded — was open before this shipped
 
