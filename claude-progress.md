@@ -407,7 +407,32 @@ the platform commission and was still charging a plain post-discount base, so an
 bases for one line while both reported success. The consumer side landed in
 `dfactories-mp@a0c65da`.
 
-### Still open before this ships
+### SHIPPED — 2026-08-25
+
+Production migrated and all three repos are on `main`. Two things this release
+had guarded against in theory turned out to be real on the production database:
+`Migration20260625000000` on Medusa's `order` module only ran because the squatted
+name was released by hand first (`tax_line_columns` read 4 afterwards), and the
+block-era `review` table DID exist, so core's `create table if not exists` was
+skipped whole and `Migration20260823041742` is what supplied `status`.
+
+The review link handover was a no-op: `review` had 0 rows — production had never
+had a single review — so the back-fill copied nothing. The mechanism still matters
+anywhere that has data.
+
+The automated deploy failed first, on `docker compose pull`, at
+appleboy/ssh-action's undeclared 10-minute default. `set -e` aborted before the
+migrator so nothing was touched; finished by hand on the server, and both deploy
+workflows now set `command_timeout: 30m`.
+
+### Still open
+
+- A real cart completion has not been watched since the migration.
+- Nobody owns the review moderation queue yet; reviews default to `pending`.
+- TECH_DEBT #47 (the server's intermittent ghcr.io TLS path) is unfixed.
+- The empty block-era `*_reviews_review` tables can be dropped in a quiet moment.
+
+### Superseded — was open before this shipped
 
 **The production-clone rehearsal is being skipped — decided 2026-08-25.** It had
 been recorded as mandatory. `mercur_231_rehearsal` locally is an empty schema
