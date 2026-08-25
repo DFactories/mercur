@@ -425,9 +425,12 @@ appleboy/ssh-action's undeclared 10-minute default. `set -e` aborted before the
 migrator so nothing was touched; finished by hand on the server, and both deploy
 workflows now set `command_timeout: 30m`.
 
+A real cart completion was put through after the deploy and succeeded — which is
+the end-to-end proof for the migration-name fix, since checkout is exactly where
+`column t5.metadata does not exist` surfaced.
+
 ### Still open
 
-- A real cart completion has not been watched since the migration.
 - Nobody owns the review moderation queue yet; reviews default to `pending`.
 - TECH_DEBT #47 (the server's intermittent ghcr.io TLS path) is unfixed.
 - The empty block-era `*_reviews_review` tables can be dropped in a quiet moment.
