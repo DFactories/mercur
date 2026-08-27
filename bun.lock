@@ -398,7 +398,7 @@
     },
     "packages/core": {
       "name": "@mercurjs/core",
-      "version": "2.3.1-dfactories.3",
+      "version": "2.3.1-dfactories.4",
       "dependencies": {
         "@orama/orama": "^3.1.18",
         "pkg-dir": "4",
