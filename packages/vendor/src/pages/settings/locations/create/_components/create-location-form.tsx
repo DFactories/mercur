@@ -6,6 +6,11 @@ import * as zod from "zod"
 import { Form } from "@components/common/form"
 import { CountrySelect } from "@components/inputs/country-select"
 import {
+  GeoCitySelect,
+  GeoProvinceSelect,
+  useGeoSelection,
+} from "@components/inputs/geo-select"
+import {
   RouteFocusModal,
   useRouteModal,
 } from "@components/modals"
@@ -46,6 +51,14 @@ export const CreateLocationForm = () => {
     },
     resolver: zodResolver(CreateLocationSchema),
   })
+
+  // DFACTORIES: province and city come from the admin-managed geography
+  // catalog, matching the store address and the onboarding wizard. A location
+  // is where shipping is priced FROM, and freight here is quoted city to city,
+  // so a free-text spelling leaves it unmatchable rather than merely untidy.
+  const { provinces, selectedProvince, cities } = useGeoSelection(
+    form.watch("address.province")
+  )
 
   const { mutateAsync, isPending } = useCreateStockLocation()
 
@@ -153,21 +166,6 @@ export const CreateLocationForm = () => {
                 />
                 <Form.Field
                   control={form.control}
-                  name="address.city"
-                  render={({ field }) => {
-                    return (
-                      <Form.Item>
-                        <Form.Label optional>{t("fields.city")}</Form.Label>
-                        <Form.Control>
-                          <Input size="small" {...field} />
-                        </Form.Control>
-                        <Form.ErrorMessage />
-                      </Form.Item>
-                    )
-                  }}
-                />
-                <Form.Field
-                  control={form.control}
                   name="address.country_code"
                   render={({ field }) => {
                     return (
@@ -181,15 +179,60 @@ export const CreateLocationForm = () => {
                     )
                   }}
                 />
+                {/* Province before city, and city gated on it: a city name is
+                    not unique across provinces, so the pair only resolves in
+                    that order — the order the store address asks for too. */}
                 <Form.Field
                   control={form.control}
                   name="address.province"
                   render={({ field }) => {
                     return (
                       <Form.Item>
-                        <Form.Label optional>{t("fields.state")}</Form.Label>
+                        <Form.Label optional>
+                          {t("geography.province")}
+                        </Form.Label>
                         <Form.Control>
-                          <Input size="small" {...field} />
+                          <GeoProvinceSelect
+                            provinces={provinces}
+                            value={field.value}
+                            onChange={(value) => {
+                              form.setValue("address.province", value, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              })
+                              // The old city belongs to the old province.
+                              form.setValue("address.city", "", {
+                                shouldDirty: true,
+                              })
+                            }}
+                            data-testid="location-address-province"
+                          />
+                        </Form.Control>
+                        <Form.ErrorMessage />
+                      </Form.Item>
+                    )
+                  }}
+                />
+                <Form.Field
+                  control={form.control}
+                  name="address.city"
+                  render={({ field }) => {
+                    return (
+                      <Form.Item>
+                        <Form.Label optional>{t("geography.city")}</Form.Label>
+                        <Form.Control>
+                          <GeoCitySelect
+                            cities={cities}
+                            value={field.value}
+                            disabled={!selectedProvince}
+                            onChange={(value) =>
+                              form.setValue("address.city", value, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              })
+                            }
+                            data-testid="location-address-city"
+                          />
                         </Form.Control>
                         <Form.ErrorMessage />
                       </Form.Item>

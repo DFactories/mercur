@@ -7,6 +7,11 @@ import * as zod from "zod"
 
 import { Form } from "@components/common/form"
 import { CountrySelect } from "@components/inputs/country-select"
+import {
+  GeoCitySelect,
+  GeoProvinceSelect,
+  useGeoSelection,
+} from "@components/inputs/geo-select"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { useUpdateStockLocation } from "@hooks/api/stock-locations"
@@ -49,6 +54,15 @@ export const EditLocationForm = ({ location }: EditLocationFormProps) => {
     },
     resolver: zodResolver(EditLocationSchema),
   })
+
+  // DFACTORIES: the location's province and city come from the admin-managed
+  // geography catalog, not free text — the same catalog the store address and
+  // the onboarding wizard read. A location is what shipping is priced FROM, and
+  // freight here is quoted city to city, so a typo or an alternate spelling
+  // leaves the location unmatchable rather than merely untidy.
+  const { provinces, selectedProvince, cities } = useGeoSelection(
+    form.watch("address.province")
+  )
 
   const { mutateAsync, isPending } = useUpdateStockLocation(location.id)
 
@@ -142,21 +156,6 @@ export const EditLocationForm = ({ location }: EditLocationFormProps) => {
             />
             <Form.Field
               control={form.control}
-              name="address.city"
-              render={({ field }) => {
-                return (
-                  <Form.Item>
-                    <Form.Label optional>{t("fields.city")}</Form.Label>
-                    <Form.Control>
-                      <Input size="small" {...field} />
-                    </Form.Control>
-                    <Form.ErrorMessage />
-                  </Form.Item>
-                )
-              }}
-            />
-            <Form.Field
-              control={form.control}
               name="address.country_code"
               render={({ field }) => {
                 return (
@@ -170,15 +169,59 @@ export const EditLocationForm = ({ location }: EditLocationFormProps) => {
                 )
               }}
             />
+            {/* Province before city, and city gated on it: a city name is not
+                unique across provinces, so the pair only resolves in that
+                order — the same order the store address asks for them in. */}
             <Form.Field
               control={form.control}
               name="address.province"
               render={({ field }) => {
                 return (
                   <Form.Item>
-                    <Form.Label optional>{t("fields.state")}</Form.Label>
+                    <Form.Label optional>{t("geography.province")}</Form.Label>
                     <Form.Control>
-                      <Input size="small" {...field} />
+                      <GeoProvinceSelect
+                        provinces={provinces}
+                        value={field.value}
+                        onChange={(value) => {
+                          form.setValue("address.province", value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                          // The old city belongs to the old province; keeping
+                          // it would save a pair that resolves to nothing.
+                          form.setValue("address.city", "", {
+                            shouldDirty: true,
+                          })
+                        }}
+                        data-testid="location-address-province"
+                      />
+                    </Form.Control>
+                    <Form.ErrorMessage />
+                  </Form.Item>
+                )
+              }}
+            />
+            <Form.Field
+              control={form.control}
+              name="address.city"
+              render={({ field }) => {
+                return (
+                  <Form.Item>
+                    <Form.Label optional>{t("geography.city")}</Form.Label>
+                    <Form.Control>
+                      <GeoCitySelect
+                        cities={cities}
+                        value={field.value}
+                        disabled={!selectedProvince}
+                        onChange={(value) =>
+                          form.setValue("address.city", value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                        data-testid="location-address-city"
+                      />
                     </Form.Control>
                     <Form.ErrorMessage />
                   </Form.Item>
