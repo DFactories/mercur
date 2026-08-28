@@ -61,6 +61,41 @@ export class SmsIrClient {
   }
 
   /**
+   * POST to `/send/verify`, retrying once when the request never reached sms.ir.
+   *
+   * A DNS, TCP or TLS failure rejects `fetch` before any response exists, so
+   * nothing was queued and a second attempt cannot duplicate a message. These
+   * are routine on the networks this runs on — the reported incident was
+   * `ECONNRESET` mid-TLS-handshake against api.sms.ir — and they clear on the
+   * next attempt. Failures that DID produce a response (rejected template,
+   * invalid key, no credit) are deterministic and deliberately not retried.
+   */
+  private async postSendVerify(body: string): Promise<Response> {
+    const url = `${this.baseUrl}/send/verify`
+    const init: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-API-KEY": this.apiKey as string,
+      },
+      body,
+    }
+
+    try {
+      return await fetch(url, init)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[smsir] could not reach ${url} (${
+          error instanceof Error ? error.message : String(error)
+        }) — retrying once`
+      )
+      return await fetch(url, init)
+    }
+  }
+
+  /**
    * Template-based fast send — sms.ir `POST /send/verify`. Used for OTP codes
    * and for transactional notifications (both are template-driven on sms.ir).
    *
@@ -82,15 +117,9 @@ export class SmsIrClient {
       return { status: "skipped" }
     }
 
-    const response = await fetch(`${this.baseUrl}/send/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-API-KEY": this.apiKey as string,
-      },
-      body: JSON.stringify({ mobile, templateId, parameters }),
-    })
+    const response = await this.postSendVerify(
+      JSON.stringify({ mobile, templateId, parameters })
+    )
 
     let body: SmsIrResponse = {}
     try {

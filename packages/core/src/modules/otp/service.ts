@@ -11,6 +11,8 @@ export type RequestOtpInput = {
 }
 
 export type RequestOtpResult = {
+  /** Id of the stored code, so a caller whose delivery fails can discard it via {@link OtpModuleService.discardOtp}. */
+  id: string
   /** Plaintext code — returned ONLY to the caller (auth route) to hand to the SMS transport. Never exposed over HTTP. */
   code: string
   expires_at: Date
@@ -74,7 +76,7 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
     const code = generateNumericCode(OTP_CODE_LENGTH)
     const expires_at = new Date(Date.now() + OTP_TTL_SECONDS * 1000)
 
-    await this.createOtpCodes({
+    const record = await this.createOtpCodes({
       identifier,
       actor_type,
       code_hash: hashCode(identifier, code),
@@ -82,7 +84,21 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
       attempts: 0,
     })
 
-    return { code, expires_at }
+    return { id: record.id, code, expires_at }
+  }
+
+  /**
+   * Drop a code whose delivery failed, so the resend cooldown is not spent on
+   * an SMS the user never received. Without this a transport error (sms.ir
+   * unreachable, TLS reset) leaves the record behind and the user's immediate
+   * retry — the correct reaction — is refused with "Please wait before
+   * requesting another code" until the cooldown lapses.
+   *
+   * Deleting rather than consuming: an undelivered code was never a valid
+   * credential, so it should leave no trace for `verifyOtp` to find.
+   */
+  async discardOtp(id: string): Promise<void> {
+    await this.deleteOtpCodes(id)
   }
 
   async verifyOtp(input: VerifyOtpInput): Promise<boolean> {

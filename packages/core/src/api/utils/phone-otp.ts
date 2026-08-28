@@ -358,6 +358,34 @@ async function ensureCustomerForAuthIdentity(
   })
 }
 
+/**
+ * Hand a freshly stored code to sms.ir, discarding it if delivery fails.
+ *
+ * The store and the transport are deliberately separate (see OtpModuleService),
+ * which leaves one gap the caller has to close: a code is persisted before it is
+ * sent, and persisting it starts the resend cooldown. If the send then fails the
+ * user has no code *and* cannot ask for another — their retry is refused with
+ * "Please wait before requesting another code" for a full cooldown. Discarding
+ * the undelivered code keeps the failure to a single honest error the user can
+ * act on immediately.
+ */
+async function deliverOtp(
+  otp: OtpModuleService,
+  otpId: string,
+  phone: string,
+  code: string
+): Promise<void> {
+  const client = createSmsIrClient()
+  try {
+    await client.sendVerify(phone, OTP_TEMPLATE_ID, [
+      { name: OTP_PARAM_NAME, value: code },
+    ])
+  } catch (error) {
+    await otp.discardOtp(otpId)
+    throw error
+  }
+}
+
 /** POST handler: generate an OTP and deliver it via sms.ir. Always 200 (never leaks whether the number exists). */
 export function createRequestOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
@@ -395,15 +423,12 @@ export function createRequestOtpHandler(actorType: ActorType) {
     }
 
     const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
-    const { code } = await otp.requestOtp({
+    const { id, code } = await otp.requestOtp({
       identifier: phone,
       actor_type: actorType,
     })
 
-    const client = createSmsIrClient()
-    await client.sendVerify(phone, OTP_TEMPLATE_ID, [
-      { name: OTP_PARAM_NAME, value: code },
-    ])
+    await deliverOtp(otp, id, phone, code)
 
     res.status(200).json({ success: true })
   }
@@ -562,15 +587,12 @@ export function createSellerPhoneRequestOtpHandler() {
     }
 
     const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
-    const { code } = await otp.requestOtp({
+    const { id, code } = await otp.requestOtp({
       identifier: phone,
       actor_type: SELLER_PHONE_ACTOR,
     })
 
-    const client = createSmsIrClient()
-    await client.sendVerify(phone, OTP_TEMPLATE_ID, [
-      { name: OTP_PARAM_NAME, value: code },
-    ])
+    await deliverOtp(otp, id, phone, code)
 
     res.status(200).json({ success: true })
   }
