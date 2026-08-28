@@ -1,5 +1,6 @@
 import {
   ContainerRegistrationKeys,
+  isDefined,
   MedusaError,
 } from "@medusajs/framework/utils"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
@@ -32,6 +33,13 @@ export const isUnpublishedProductStatus = (status?: string | null) =>
 export type PrepareProductEditStepInput = {
   product_id: string
   canceled_by?: string
+  /**
+   * The actor making the edit. When set, only THEIR pending request blocks an
+   * edit to a published product — the same scoping as
+   * `validateNoPendingProductChangeStep` (upstream #1443): on a shared master
+   * product one seller's open request must not lock out another's.
+   */
+  created_by?: string | null
 }
 
 export type PrepareProductEditStepOutput = {
@@ -48,11 +56,13 @@ type PrevChangeScalar = {
   canceled_at: Date | null
 }
 
+type PendingChange = PrevChangeScalar & { created_by?: string | null }
+
 /**
  * Decides how a vendor edit to one product is recorded, before it is staged:
  *
- * - **published** — queued for approval, and refused while an earlier request
- *   is still open, exactly as before.
+ * - **published** — queued for approval, and refused while the same actor's
+ *   earlier request is still open.
  * - **unpublished** — applied directly. Any request still pending from before
  *   (the queue used to catch these too) is canceled first: left open, an
  *   operator approving it later would write its stale values over this edit.
@@ -82,15 +92,19 @@ export const prepareProductEditStep = createStep(
 
     const { data: pending } = (await query.graph({
       entity: "product_change",
-      fields: ["id", "status", "canceled_by", "canceled_at"],
+      fields: ["id", "status", "canceled_by", "canceled_at", "created_by"],
       filters: {
         product_id: input.product_id,
         status: ProductChangeStatus.PENDING,
       },
-    })) as { data: PrevChangeScalar[] }
+    })) as { data: PendingChange[] }
 
     if (!isUnpublishedProductStatus(product.status as string)) {
-      if (pending.length) {
+      const blocking = isDefined(input.created_by)
+        ? pending.filter((change) => change.created_by === input.created_by)
+        : pending
+
+      if (blocking.length) {
         throw pendingProductChangeError()
       }
 

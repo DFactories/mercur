@@ -1,5 +1,6 @@
 import {
   ContainerRegistrationKeys,
+  isDefined,
   MedusaError,
 } from "@medusajs/framework/utils"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
@@ -28,12 +29,17 @@ export const pendingProductChangeError = () =>
 
 type ValidateNoPendingProductChangeStepInput = {
   product_ids: string[]
+  /**
+   * When set, only changes created by this actor conflict. Omitting it keeps
+   * the product-wide behaviour for external callers.
+   */
+  created_by?: string | null
 }
 
 export const validateNoPendingProductChangeStep = createStep(
   validateNoPendingProductChangeStepId,
   async (
-    { product_ids }: ValidateNoPendingProductChangeStepInput,
+    { product_ids, created_by }: ValidateNoPendingProductChangeStepInput,
     { container },
   ) => {
     if (!product_ids.length) {
@@ -51,6 +57,7 @@ export const validateNoPendingProductChangeStep = createStep(
       filters: {
         product_id: product_ids,
         status: ProductChangeStatus.PENDING,
+        ...(isDefined(created_by) ? { created_by } : {}),
       },
       pagination: { take: 1 },
     })

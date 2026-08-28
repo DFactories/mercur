@@ -59,6 +59,7 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
       input: transform({ input }, ({ input }) => ({
         product_id: input.product_id,
         canceled_by: input.created_by,
+        created_by: input.created_by,
       })),
     })
 
