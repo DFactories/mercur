@@ -1,4 +1,8 @@
 import {
+  ensureSellerIdParamMiddleware,
+  ensureSellerMemberParamMiddleware,
+} from "../../utils/ensure-seller-scope-middleware"
+import {
   validateAndTransformBody,
   validateAndTransformQuery,
 } from "@medusajs/framework"
@@ -89,6 +93,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["GET"],
     matcher: "/vendor/sellers/:id",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformQuery(
         VendorGetSellerParams,
         QueryConfig.retrieveVendorSellerQueryConfig
@@ -105,6 +110,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["POST"],
     matcher: "/vendor/sellers/:id",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformBody(VendorUpdateSeller),
       validateAndTransformQuery(
         VendorGetSellerParams,
@@ -122,6 +128,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["POST"],
     matcher: "/vendor/sellers/:id/address",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformBody(VendorUpsertSellerAddress),
       validateAndTransformQuery(
         VendorGetSellerParams,
@@ -139,6 +146,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["POST"],
     matcher: "/vendor/sellers/:id/payment-details",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformBody(VendorUpsertSellerPaymentDetails),
       validateAndTransformQuery(
         VendorGetSellerParams,
@@ -160,6 +168,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["POST"],
     matcher: "/vendor/sellers/:id/professional-details",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformBody(VendorUpsertSellerProfessionalDetails),
       validateAndTransformQuery(
         VendorGetSellerParams,
@@ -177,6 +186,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["DELETE"],
     matcher: "/vendor/sellers/:id/professional-details",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformQuery(
         VendorGetSellerParams,
         QueryConfig.retrieveVendorSellerQueryConfig
@@ -193,6 +203,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["GET"],
     matcher: "/vendor/sellers/:id/members/me",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformQuery(
         VendorGetSellerParams,
         QueryConfig.retrieveVendorMemberQueryConfig
@@ -209,6 +220,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["GET"],
     matcher: "/vendor/sellers/:id/members/invites",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformQuery(
         VendorGetSellersParams,
         QueryConfig.listVendorMemberInvitesQueryConfig
@@ -225,6 +237,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["GET"],
     matcher: "/vendor/sellers/:id/members",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformQuery(
         VendorGetSellersParams,
         QueryConfig.listVendorMembersQueryConfig
@@ -245,6 +258,7 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["POST"],
     matcher: "/vendor/sellers/:id/members",
     middlewares: [
+      ensureSellerIdParamMiddleware,
       validateAndTransformBody(VendorInviteMember),
     ],
     policies: [
@@ -258,6 +272,8 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
     method: ["POST"],
     matcher: "/vendor/sellers/:id/members/:member_id",
     middlewares: [
+      ensureSellerIdParamMiddleware,
+      ensureSellerMemberParamMiddleware,
       validateAndTransformBody(VendorUpdateMemberRole),
     ],
     policies: [
@@ -270,7 +286,10 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] =
   {
     method: ["DELETE"],
     matcher: "/vendor/sellers/:id/members/:member_id",
-    middlewares: [],
+    middlewares: [
+      ensureSellerIdParamMiddleware,
+      ensureSellerMemberParamMiddleware,
+    ],
     policies: [
       {
         resource: Entities.seller_member,
