@@ -66,7 +66,7 @@
   "devDependencies": {
     "@mercurjs/types": "2.3.1-dfactories.0",
     "@mercurjs/core": "2.3.1-dfactories.5",
-    "@mercurjs/dashboard-sdk": "2.3.1-dfactories.0",
+    "@mercurjs/dashboard-sdk": "2.3.1-dfactories.1",
     "tsup": "^8.0.2",
     "typescript": "5.9.3",
     "@types/lodash.debounce": "^4.0.8",

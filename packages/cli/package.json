@@ -41,7 +41,7 @@
     "@antfu/ni": "^30.3.0",
     "@medusajs/admin-bundler": "2.18.0",
     "@medusajs/framework": "2.18.0",
-    "@mercurjs/dashboard-sdk": "2.3.1-dfactories.0",
+    "@mercurjs/dashboard-sdk": "2.3.1-dfactories.1",
     "@vitejs/plugin-react": "^6.0.3",
     "commander": "^15.0.0",
     "cosmiconfig": "^9.0.0",

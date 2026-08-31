@@ -1,4 +1,5 @@
 import fs from "fs"
+import { createRequire } from "module"
 import path from "path"
 import type { ParserOptions } from "@babel/parser"
 import { traverse } from "./babel"
@@ -55,12 +56,38 @@ export function resolveExports(moduleExports: any) {
     return moduleExports
 }
 
-export async function getFileExports(path: string): Promise<any> {
+/**
+ * Load a TypeScript (or JS) config file and return its exports.
+ *
+ * `createRequire`, NOT a bare `require`. This package is bundled by tsup to ESM
+ * as well as CJS, and in the ESM output esbuild rewrites a bare `require(x)`
+ * into a `__require` shim whose only behaviour outside CJS is to throw
+ * `Dynamic require of "x" is not supported`. Every ESM consumer — which is
+ * every Vite config, since `./vite` resolves through the `import` condition —
+ * therefore hit that throw instead of loading anything, and the caller in
+ * `plugin.ts` swallowed it into the "Could not load the Medusa config … base
+ * '/' and no plugin extensions" warning. `createRequire` is an ordinary import
+ * that survives both output formats, and `plugin.ts` already reaches for it a
+ * few lines away for exactly this reason.
+ *
+ * Resolved FROM the config's own path, so its relative imports and its
+ * `node_modules` lookups are answered from its own directory rather than from
+ * wherever this package happens to be installed.
+ *
+ * `safeRegister` installs the esbuild TypeScript loader onto the CJS extension
+ * table, which is process-global — so `createRequire` picks it up and a `.ts`
+ * config loads. It is unregistered in a `finally`: a config that throws while
+ * evaluating used to leave the loader hooked for the rest of the Vite process.
+ */
+export async function getFileExports(filePath: string): Promise<any> {
     const { unregister } = await safeRegister()
-    const module = require(path)
-    unregister()
 
-    return resolveExports(module)
+    try {
+        const requireFrom = createRequire(filePath)
+        return resolveExports(requireFrom(filePath))
+    } finally {
+        unregister()
+    }
 }
 
 export const safeRegister = async () => {
