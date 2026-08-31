@@ -49,12 +49,15 @@ const unauthenticatedRoutes = [
   /^\/vendor\/sellers$/,
   /^\/vendor\/sellers\/select$/,
   /^\/vendor\/feature-flags$/,
-  /^\/vendor\/stores$/,
   /^\/vendor\/members\/invites\/accept$/,
   /^\/vendor\/auth\/phone\/request-otp$/,
   /^\/vendor\/auth\/phone\/verify-otp$/,
   ...scanUnauthenticatedRoutes(process.cwd()),
 ]
+
+// Marketplace-level routes: authenticated, but reachable before the member
+// belongs to a seller (onboarding).
+const sellerlessRoutes = [...unauthenticatedRoutes, /^\/vendor\/stores$/]
 
 export const vendorMiddlewares: MiddlewareRoute[] = [
   {
@@ -86,7 +89,7 @@ export const vendorMiddlewares: MiddlewareRoute[] = [
         })
       ),
       unlessBaseUrl(
-        unauthenticatedRoutes,
+        sellerlessRoutes,
         ensureSellerMiddleware
       ),
     ],
