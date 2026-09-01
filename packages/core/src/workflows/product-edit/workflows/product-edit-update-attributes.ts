@@ -1,9 +1,11 @@
 import { AdditionalData } from "@medusajs/framework/types"
 import {
+  createHook,
   createWorkflow,
+  type Hook,
+  type ReturnWorkflow,
   transform,
   WorkflowResponse,
-  type ReturnWorkflow,
 } from "@medusajs/framework/workflows-sdk"
 import {
   CreateProductChangeActionDTO,
@@ -24,13 +26,24 @@ export type ProductEditUpdateAttributesWorkflowInput = {
   update?: ProductAttributeBatchUpdate[]
 } & AdditionalData
 
+export type ProductEditUpdateAttributesWorkflowHooks = [
+  Hook<
+    "productChangeCreated",
+    {
+      product_change: ProductChangeDTO
+      additional_data: Record<string, unknown> | undefined
+    },
+    unknown
+  >,
+]
+
 export const productEditUpdateAttributesWorkflowId =
   "product-edit-update-attributes"
 
 export const productEditUpdateAttributesWorkflow: ReturnWorkflow<
   ProductEditUpdateAttributesWorkflowInput,
   ProductChangeDTO,
-  []
+  ProductEditUpdateAttributesWorkflowHooks
 > = createWorkflow(
   productEditUpdateAttributesWorkflowId,
   function (input: ProductEditUpdateAttributesWorkflowInput) {
@@ -86,6 +99,13 @@ export const productEditUpdateAttributesWorkflow: ReturnWorkflow<
       ),
     })
 
-    return new WorkflowResponse(change)
+    const productChangeCreated = createHook("productChangeCreated", {
+      product_change: change,
+      additional_data: input.additional_data,
+    })
+
+    return new WorkflowResponse(change, {
+      hooks: [productChangeCreated],
+    })
   },
 )
