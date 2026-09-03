@@ -10,6 +10,7 @@ import {
 import { acquireLockStep, addShippingMethodToCartStep, AddShippingMethodToCartWorkflowInput, emitEventStep, listShippingOptionsForCartWithPricingWorkflow, refreshCartItemsWorkflow, releaseLockStep, removeShippingMethodFromCartStep, useQueryGraphStep, useRemoteQueryStep, validateAndReturnShippingMethodsDataStep, validateCartShippingOptionsPriceStep, validateCartShippingOptionsStep, validateCartStep } from "@medusajs/medusa/core-flows"
 import { AdditionalData } from "@medusajs/types"
 import { cartFieldsForRefreshSteps } from "../utils"
+import { validateCartShippingProfileParityStep } from "../steps"
 
 export const addSellerShippingMethodToCartWorkflow = createWorkflow(
     {
@@ -32,8 +33,12 @@ export const addSellerShippingMethodToCartWorkflow = createWorkflow(
             throw_if_key_not_found: true,
         })
 
+        // AN ARRAY, not a Set. `filters` is handed to the query graph, which
+        // builds an `IN (…)` only for an array — a Set reaches it as an empty
+        // object, so `allShippingOptions` came back with nothing and the
+        // seller-scoped removal below silently had no sellers to scope by.
         const allShippingOptionsIds = transform({ input, cart }, (data) => {
-            return new Set([...data.input.options.map((option) => option.id), ...data.cart.shipping_methods.map((sm) => sm.shipping_option_id)])
+            return Array.from(new Set([...data.input.options.map((option) => option.id), ...data.cart.shipping_methods.map((sm) => sm.shipping_option_id)]))
         })
 
         validateCartStep({ cart })
@@ -50,7 +55,7 @@ export const addSellerShippingMethodToCartWorkflow = createWorkflow(
         const [allShippingOptions, shippingOptions] = parallelize(
             useQueryGraphStep({
                 entity: "shipping_option",
-                fields: ['id', 'seller.id'],
+                fields: ['id', 'name', 'shipping_profile_id', 'seller.id'],
                 filters: { id: allShippingOptionsIds },
             }).config({
                 name: "shipping-options-with-sellers-query",
@@ -153,6 +158,75 @@ export const addSellerShippingMethodToCartWorkflow = createWorkflow(
                     return shippingOption && sellerIdsBeingAdded.has(shippingOption.seller?.id)
                 })
                 .map(sm => sm.id)
+        })
+
+        // WOULD MEDUSA DELETE WHAT WE ARE ABOUT TO WRITE? Asked before anything
+        // is removed or created, because the answer is otherwise invisible: the
+        // refresh below culls a method whose shipping profile no cart item
+        // requires, but only once the cart holds more than one — i.e. exactly
+        // when a second producer's carriage arrives, and it takes the first
+        // producer's with it. See `../utils/shipping-profile-parity`.
+        const resultingMethodCount = transform(
+            { cart, input, shippingMethodIdsToRemove },
+            ({ cart, input, shippingMethodIdsToRemove }) => {
+                const removed = new Set(shippingMethodIdsToRemove)
+                const surviving = (cart.shipping_methods ?? []).filter(
+                    (sm) => !removed.has(sm.id)
+                ).length
+
+                return surviving + (input.options ?? []).length
+            }
+        )
+
+        const optionsBeingAdded = transform(
+            { allShippingOptions, input },
+            ({ allShippingOptions, input }) => {
+                const byId = new Map(
+                    (allShippingOptions.data ?? []).map((so) => [so.id, so])
+                )
+
+                return (input.options ?? []).map((option) => ({
+                    id: option.id,
+                    name: byId.get(option.id)?.name ?? "",
+                    shipping_profile_id:
+                        byId.get(option.id)?.shipping_profile_id ?? null,
+                }))
+            }
+        )
+
+        // ASKED WITH MEDUSA'S OWN QUERY API, not read off the cart above.
+        // `refreshCartShippingMethodsWorkflow` reads these two fields through
+        // `useQueryGraphStep`; the cart here comes from `useRemoteQueryStep`,
+        // which does not resolve the product→shipping_profile link the same way
+        // and hands back items with no profile at all. Predicting the cull from
+        // a DIFFERENT reading of the same data is how a guard refuses carts
+        // Medusa is perfectly happy with — measured, on a two-seller fixture
+        // whose products were correctly linked.
+        const cartForParity = useQueryGraphStep({
+            entity: "cart",
+            fields: [
+                "items.requires_shipping",
+                "items.variant.product.shipping_profile.id",
+            ],
+            filters: { id: input.cart_id },
+            options: { isList: false },
+        }).config({ name: "cart-shipping-profile-parity-query" })
+
+        const parityItems = transform({ cartForParity }, ({ cartForParity }) => {
+            const data = cartForParity.data as
+                | { items?: unknown[] }
+                | { items?: unknown[] }[]
+                | undefined
+            const cart = Array.isArray(data) ? data[0] : data
+            return (cart?.items ?? []) as {
+                requires_shipping?: boolean | null
+            }[]
+        })
+
+        validateCartShippingProfileParityStep({
+            items: parityItems,
+            options: optionsBeingAdded,
+            resultingMethodCount,
         })
 
         const [, createdShippingMethods] = parallelize(
