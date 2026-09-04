@@ -3,14 +3,62 @@
  * - `email` / `sms`: routed by the send-notification pipeline.
  * - `feed`: admin in-panel notification feed.
  * - `seller_feed`: vendor in-panel notification feed.
+ * - `customer_feed`: buyer-facing feed in the storefront account panel.
+ * - `agent_feed`: sales-agent feed in the storefront account panel.
  *
- * `feed` / `seller_feed` are NOT routed by the pipeline — a host subscriber
+ * None of the `*_feed` channels are routed by the pipeline — a host subscriber
  * delivers them while honoring the per-event notification-settings toggle.
+ *
+ * `customer_feed` and `agent_feed` are separate channels rather than one
+ * buyer-side feed because an operator must be able to silence agent chatter
+ * without silencing the notices a buyer needs: the same person can be both, and
+ * a single channel would make the two toggles the same switch.
  */
-export type NotificationChannel = "email" | "sms" | "feed" | "seller_feed"
+export type NotificationChannel =
+  | "email"
+  | "sms"
+  | "feed"
+  | "seller_feed"
+  | "customer_feed"
+  | "agent_feed"
+
+/** Every in-panel feed channel, in one place, so a new one cannot be half-added. */
+export const NOTIFICATION_FEED_CHANNELS = [
+  "feed",
+  "seller_feed",
+  "customer_feed",
+  "agent_feed",
+] as const satisfies readonly NotificationChannel[]
 
 /** Who an event notifies — drives grouping in the admin settings page. */
 export type NotificationAudience = "customer" | "vendor" | "admin"
+
+/**
+ * What an event is ABOUT. The feed is grouped and filtered on this, so a
+ * reviewer drowning in routine notices can still find the queue that is waiting
+ * on them. It is a property of the event, not of the reader, which is why it
+ * lives on the catalog rather than in each panel's UI: a panel-side list would
+ * be a second source of truth that silently omits every event added later.
+ */
+export type NotificationCategory =
+  | "approval"
+  | "support"
+  | "messaging"
+  | "finance"
+  | "commerce"
+  | "account"
+  | "agent"
+  | "system"
+
+/**
+ * Whether somebody is WAITING on the reader.
+ *
+ * `action_required` means the notice names work only the recipient can clear
+ * (a submission to review, a ticket to answer). `info` means it is a record of
+ * something that already happened. The panels default their feed to
+ * action-required and play the notification sound only for it.
+ */
+export type NotificationPriority = "action_required" | "info"
 
 /**
  * A template variable an event exposes. Surfaced in the admin settings page so
@@ -75,6 +123,10 @@ export interface NotificationEventConfigDTO {
   audience: NotificationAudience
   label: string
   description: string | null
+  /** What the event is about — the feed groups and filters on it. */
+  category: NotificationCategory
+  /** Whether the event needs the recipient to do something. */
+  priority: NotificationPriority
   /** System events (e.g. OTP) are shown read-only and never routed through the pipeline. */
   system: boolean
   available_channels: NotificationChannel[]

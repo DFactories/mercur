@@ -64,8 +64,8 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@mercurjs/types": "2.3.1-dfactories.1",
-    "@mercurjs/core": "2.3.1-dfactories.7",
+    "@mercurjs/types": "2.3.1-dfactories.2",
+    "@mercurjs/core": "2.3.1-dfactories.8",
     "@mercurjs/dashboard-sdk": "2.3.1-dfactories.1",
     "tsup": "^8.0.2",
     "typescript": "5.9.3",

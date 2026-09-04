@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { orderNotificationMoney } from "./catalog"
+import {
+  getNotificationEvent,
+  listNotificationEvents,
+  notificationEventCategory,
+  notificationEventPriority,
+  orderNotificationMoney,
+} from "./catalog"
 
 /**
  * What an order-confirmation message says about money.
@@ -67,5 +73,47 @@ describe("orderNotificationMoney", () => {
       total: "500",
       currency: "",
     })
+  })
+})
+
+/**
+ * Category and priority: the two fields the feed is sorted, filtered and
+ * badged on.
+ *
+ * Both default rather than being required, because a `registerNotificationEvent`
+ * call that forgets them must still boot — a marketplace does not go down over
+ * a missing label. What must NOT happen is an un-declared event quietly landing
+ * in the operator's "needs action" tab, so the defaults are the harmless
+ * corner: an uncategorised event is `system` / `info`, visible but never urgent.
+ */
+describe("notification event category & priority", () => {
+  it("defaults an event that declares neither to the harmless corner", () => {
+    expect(notificationEventCategory({ category: undefined })).toBe("system")
+    expect(notificationEventPriority({ priority: undefined })).toBe("info")
+  })
+
+  it("keeps what the event declared", () => {
+    expect(notificationEventCategory({ category: "approval" })).toBe("approval")
+    expect(notificationEventPriority({ priority: "action_required" })).toBe(
+      "action_required"
+    )
+  })
+
+  it("marks a suspended store as needing action and a placed order as not", () => {
+    // The pair that shows the rule: a suspension is a store gone dark until
+    // somebody acts; an order confirmation is a receipt.
+    const suspended = getNotificationEvent("seller.suspended")
+    const placed = getNotificationEvent("order.placed")
+
+    expect(notificationEventPriority(suspended!)).toBe("action_required")
+    expect(notificationEventPriority(placed!)).toBe("info")
+    expect(notificationEventCategory(placed!)).toBe("commerce")
+  })
+
+  it("gives every built-in event a category, so the default is never load-bearing", () => {
+    // The defaults exist for host-registered events during development. A
+    // shipped event that relies on them is an oversight, and this catches it.
+    const uncategorised = listNotificationEvents().filter((e) => !e.category)
+    expect(uncategorised.map((e) => e.key)).toEqual([])
   })
 })

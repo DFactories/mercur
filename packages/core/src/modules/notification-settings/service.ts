@@ -1,10 +1,15 @@
 import { MedusaService } from "@medusajs/framework/utils"
 import {
+  NOTIFICATION_FEED_CHANNELS,
   NotificationChannel,
   NotificationEventConfigDTO,
 } from "@mercurjs/types"
 
-import { listNotificationEvents } from "../../notification/catalog"
+import {
+  listNotificationEvents,
+  notificationEventCategory,
+  notificationEventPriority,
+} from "../../notification/catalog"
 import { NotificationChannelConfig, NotificationReadState } from "./models"
 
 /** Channels that may only be enabled once an approved template id is provided. */
@@ -41,7 +46,10 @@ function templateRequired(channel: NotificationChannel): boolean {
   return TEMPLATE_REQUIRED_CHANNELS.includes(channel)
 }
 
-const FEED_CHANNELS: NotificationChannel[] = ["feed", "seller_feed"]
+// Every in-panel feed channel. Read from the shared constant rather than
+// re-listed here: a channel added to the union but forgotten in this file would
+// silently default OFF and never honour `defaultFeedEnabled`.
+const FEED_CHANNELS: NotificationChannel[] = [...NOTIFICATION_FEED_CHANNELS]
 
 /**
  * Default ON-state for a channel with no config row. Feed channels follow the
@@ -144,6 +152,8 @@ class NotificationSettingsModuleService extends MedusaService({
       audience: event.audience,
       label: event.label,
       description: event.description ?? null,
+      category: notificationEventCategory(event),
+      priority: notificationEventPriority(event),
       system: !!event.system,
       available_channels: event.availableChannels,
       variables: event.variables ?? [],

@@ -2,7 +2,9 @@ import { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import {
   NotificationAudience,
+  NotificationCategory,
   NotificationChannel,
+  NotificationPriority,
   NotificationRecipient,
   NotificationVariableDef,
 } from "@mercurjs/types"
@@ -42,13 +44,45 @@ export interface NotificationEventDef {
    */
   variables?: NotificationVariableDef[]
   /**
-   * Default ON-state for the in-panel feed channels (`feed` / `seller_feed`)
-   * when no explicit config row exists. Lets the host curate which operational
-   * families surface in the panel by default (admin can still toggle, which
-   * writes a row that overrides this). Defaults to `false`. SMS/email always
-   * default off regardless.
+   * Default ON-state for the in-panel feed channels (`feed`, `seller_feed`,
+   * `customer_feed`, `agent_feed`) when no explicit config row exists. Lets the
+   * host curate which operational families surface in the panel by default
+   * (admin can still toggle, which writes a row that overrides this). Defaults
+   * to `false`. SMS/email always default off regardless.
    */
   defaultFeedEnabled?: boolean
+  /**
+   * What this event is about. Drives the feed's grouping, its filters, and the
+   * per-section unread badges. Defaults to `"system"` so an event registered
+   * without one still renders — but the host's completeness test fails on it,
+   * which is where an un-categorized event is meant to be caught.
+   */
+  category?: NotificationCategory
+  /**
+   * Whether the recipient has something to DO about it. Defaults to `"info"`:
+   * a new event is assumed not to be urgent until somebody says it is, so the
+   * "needs action" tab cannot fill up with routine notices by accident.
+   */
+  priority?: NotificationPriority
+}
+
+/** The category an event falls back to when it declares none. */
+export const DEFAULT_NOTIFICATION_CATEGORY: NotificationCategory = "system"
+/** The priority an event falls back to when it declares none. */
+export const DEFAULT_NOTIFICATION_PRIORITY: NotificationPriority = "info"
+
+/** An event's effective category — its own, or the conservative default. */
+export function notificationEventCategory(
+  def: Pick<NotificationEventDef, "category">
+): NotificationCategory {
+  return def.category ?? DEFAULT_NOTIFICATION_CATEGORY
+}
+
+/** An event's effective priority — its own, or the conservative default. */
+export function notificationEventPriority(
+  def: Pick<NotificationEventDef, "priority">
+): NotificationPriority {
+  return def.priority ?? DEFAULT_NOTIFICATION_PRIORITY
 }
 
 const registry = new Map<string, NotificationEventDef>()
@@ -265,11 +299,18 @@ function registerDefaultNotificationEvents(): void {
   registerNotificationEvent({
     key: "order.placed",
     audience: "customer",
+    category: "commerce",
+    priority: "info",
     label: "Order placed",
-    description: "Sent to the customer when their order is placed.",
-    availableChannels: ["email", "sms"],
+    description:
+      "Sent to the customer when their order is placed, and shown in their account feed.",
+    availableChannels: ["email", "sms", "customer_feed"],
     resolve: resolveOrderCustomer,
     emailTemplate: "order-placed",
+    // On by default: a buyer's own order is the least surprising thing their
+    // feed can contain, and it is what makes the feed non-empty on day one
+    // rather than a panel section that never shows anything.
+    defaultFeedEnabled: true,
     variables: [
       { key: "first_name", label: "First name", source: "recipient", example: "Sara" },
       { key: "display_id", label: "Order number", source: "recipient", example: "1042" },
@@ -285,6 +326,8 @@ function registerDefaultNotificationEvents(): void {
   registerNotificationEvent({
     key: "seller.approved",
     audience: "vendor",
+    category: "account",
+    priority: "info",
     label: "Seller approved",
     description: "Sent to a seller's team when their store is approved.",
     availableChannels: ["email", "sms", "seller_feed"],
@@ -300,6 +343,9 @@ function registerDefaultNotificationEvents(): void {
   registerNotificationEvent({
     key: "seller.suspended",
     audience: "vendor",
+    category: "account",
+    // The store is offline until somebody does something about it.
+    priority: "action_required",
     label: "Seller suspended",
     description: "Sent to a seller's team when their store is suspended.",
     availableChannels: ["email", "sms", "seller_feed"],
@@ -315,6 +361,8 @@ function registerDefaultNotificationEvents(): void {
   registerNotificationEvent({
     key: "member_invite.created",
     audience: "vendor",
+    category: "account",
+    priority: "action_required",
     label: "Team member invited",
     description:
       "Sent to an invited phone (OTP-native invite) to join a store's team.",
@@ -331,6 +379,8 @@ function registerDefaultNotificationEvents(): void {
   registerNotificationEvent({
     key: "auth.otp",
     audience: "customer",
+    category: "system",
+    priority: "info",
     label: "Login code (OTP)",
     description:
       "One-time login code. Always delivered by SMS through the auth flow; not configurable.",

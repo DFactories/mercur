@@ -4476,8 +4476,10 @@
     "channel": {
       "email": "Email",
       "sms": "SMS",
-      "feed": "Feed",
-      "seller_feed": "Seller feed"
+      "feed": "Admin feed",
+      "seller_feed": "Seller feed",
+      "customer_feed": "Customer feed",
+      "agent_feed": "Agent feed"
     },
     "variables": {
       "title": "Template variables (use these names in your sms.ir template)",

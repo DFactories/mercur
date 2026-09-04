@@ -280,7 +280,7 @@
     },
     "packages/admin": {
       "name": "@mercurjs/admin",
-      "version": "2.3.1-dfactories.1",
+      "version": "2.3.1-dfactories.2",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^8.0.0",
@@ -398,7 +398,7 @@
     },
     "packages/core": {
       "name": "@mercurjs/core",
-      "version": "2.3.1-dfactories.7",
+      "version": "2.3.1-dfactories.8",
       "dependencies": {
         "@orama/orama": "^3.1.18",
         "pkg-dir": "4",
@@ -614,7 +614,7 @@
     },
     "packages/types": {
       "name": "@mercurjs/types",
-      "version": "2.3.1-dfactories.1",
+      "version": "2.3.1-dfactories.2",
       "dependencies": {
         "@medusajs/types": "2.18.0",
       },

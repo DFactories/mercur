@@ -5,7 +5,14 @@ export const AdminUpdateNotificationSettings = z.object({
     .array(
       z.object({
         event_key: z.string(),
-        channel: z.enum(["email", "sms", "feed", "seller_feed"]),
+        channel: z.enum([
+          "email",
+          "sms",
+          "feed",
+          "seller_feed",
+          "customer_feed",
+          "agent_feed",
+        ]),
         enabled: z.boolean().optional(),
         template_id: z.string().nullable().optional(),
         params_map: z.record(z.string(), z.unknown()).nullable().optional(),

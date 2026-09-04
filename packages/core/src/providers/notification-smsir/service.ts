@@ -44,20 +44,31 @@ class SmsIrNotificationProviderService extends AbstractNotificationProviderServi
     const data = (notification.data ?? {}) as {
       template_id?: number | string
       parameters?: SmsIrParam[]
-    }
-
-    const templateId = Number(data.template_id)
-    if (!templateId || Number.isNaN(templateId)) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "notification-smsir requires a numeric sms.ir template id in notification.data.template_id"
-      )
+      /** Free-text body. Set only by the admin's manual sender. */
+      text?: string
     }
 
     if (!notification.to) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
         "notification-smsir requires a recipient phone number in notification.to"
+      )
+    }
+
+    // Free-text send. Checked BEFORE the template branch and gated on the
+    // absence of a template id, so an event that carries both cannot silently
+    // bypass its approved template: the template is what an operator audits.
+    const text = typeof data.text === "string" ? data.text.trim() : ""
+    if (text && !data.template_id) {
+      const bulk = await this.client_.sendBulk([notification.to], text)
+      return { id: bulk.messageId ? String(bulk.messageId) : undefined }
+    }
+
+    const templateId = Number(data.template_id)
+    if (!templateId || Number.isNaN(templateId)) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "notification-smsir requires a numeric sms.ir template id in notification.data.template_id (or a `text` body for a free-text send)"
       )
     }
 

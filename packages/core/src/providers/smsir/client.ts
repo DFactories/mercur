@@ -8,7 +8,10 @@
  *      notification module or its per-event settings.
  *   2. The transactional notification path (providers/notification-smsir) —
  *      also uses {@link SmsIrClient.sendVerify} because sms.ir delivers every
- *      message through a pre-approved template referenced by `templateId`.
+ *      automated message through a pre-approved template referenced by
+ *      `templateId`.
+ *   3. Operator-composed one-off messages — {@link SmsIrClient.sendBulk}, the
+ *      only free-text path. No automated event may reach it.
  *
  * Only the API key is read from the environment (SMSIR_API_KEY). Template ids
  * live in the database, never in env.
@@ -37,7 +40,8 @@ export type SmsIrSendResult = {
 type SmsIrResponse = {
   status?: number
   message?: string
-  data?: { messageId?: number; cost?: number }
+  /** `messageId` on /send/verify; `packId` on /send/bulk. */
+  data?: { messageId?: number; packId?: string; cost?: number }
 }
 
 const DEFAULT_BASE_URL = "https://api.sms.ir/v1"
@@ -61,7 +65,7 @@ export class SmsIrClient {
   }
 
   /**
-   * POST to `/send/verify`, retrying once when the request never reached sms.ir.
+   * POST to sms.ir, retrying once when the request never reached them.
    *
    * A DNS, TCP or TLS failure rejects `fetch` before any response exists, so
    * nothing was queued and a second attempt cannot duplicate a message. These
@@ -70,8 +74,8 @@ export class SmsIrClient {
    * next attempt. Failures that DID produce a response (rejected template,
    * invalid key, no credit) are deterministic and deliberately not retried.
    */
-  private async postSendVerify(body: string): Promise<Response> {
-    const url = `${this.baseUrl}/send/verify`
+  private async post(path: string, body: string): Promise<Response> {
+    const url = `${this.baseUrl}${path}`
     const init: RequestInit = {
       method: "POST",
       headers: {
@@ -117,10 +121,71 @@ export class SmsIrClient {
       return { status: "skipped" }
     }
 
-    const response = await this.postSendVerify(
+    const response = await this.post(
+      "/send/verify",
       JSON.stringify({ mobile, templateId, parameters })
     )
 
+    return await this.readResult(response, "send/verify")
+  }
+
+  /**
+   * Free-text send — sms.ir `POST /send/bulk`.
+   *
+   * Deliberately NOT reachable from the event pipeline: every automated message
+   * stays template-driven, because a template is what sms.ir has approved and
+   * what an operator can audit. This exists for the one case a template cannot
+   * serve — an operator composing a one-off message to chosen recipients from
+   * the admin panel — and it is the only path that can put arbitrary text on
+   * somebody's phone, which is why it needs its own line number
+   * (SMSIR_LINE_NUMBER) rather than borrowing the OTP line.
+   *
+   * `messageText` is sent verbatim: sms.ir counts characters, and a Persian
+   * message is billed per 70 characters rather than per 160, so the caller is
+   * the one that must decide a message is worth sending.
+   */
+  async sendBulk(
+    mobiles: string[],
+    messageText: string,
+    lineNumber?: number
+  ): Promise<SmsIrSendResult> {
+    const recipients = mobiles.filter((m) => !!m && m.trim().length > 0)
+    if (!recipients.length) {
+      return { status: "skipped" }
+    }
+
+    const line = Number(lineNumber ?? process.env.SMSIR_LINE_NUMBER)
+    if (!line || Number.isNaN(line)) {
+      throw new Error(
+        "[smsir] send/bulk needs a sender line number (set SMSIR_LINE_NUMBER)"
+      )
+    }
+
+    if (!this.isConfigured) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[smsir] SMSIR_API_KEY not set — skipping bulk SMS to ${recipients.length} recipient(s): ${messageText}`
+      )
+      return { status: "skipped" }
+    }
+
+    const response = await this.post(
+      "/send/bulk",
+      JSON.stringify({
+        lineNumber: line,
+        messageText,
+        mobiles: recipients,
+      })
+    )
+
+    return await this.readResult(response, "send/bulk")
+  }
+
+  /** Parse a sms.ir response, failing loudly on anything but `status === 1`. */
+  private async readResult(
+    response: Response,
+    label: string
+  ): Promise<SmsIrSendResult> {
     let body: SmsIrResponse = {}
     try {
       body = (await response.json()) as SmsIrResponse
@@ -130,7 +195,7 @@ export class SmsIrClient {
 
     if (!response.ok || body.status !== 1) {
       throw new Error(
-        `[smsir] send/verify failed (http ${response.status}, status ${
+        `[smsir] ${label} failed (http ${response.status}, status ${
           body.status ?? "n/a"
         }): ${body.message ?? "unknown error"}`
       )

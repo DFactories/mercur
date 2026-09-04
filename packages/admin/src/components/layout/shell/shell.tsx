@@ -12,6 +12,7 @@ import {
   useNavigation,
 } from "react-router-dom"
 
+import components from "virtual:mercur/components"
 import { KeybindProvider } from "../../../providers/keybind-provider"
 import { useGlobalShortcuts } from "../../../providers/keybind-provider/hooks"
 import { useSidebar } from "../../../providers/sidebar-provider"
@@ -192,6 +193,13 @@ const ToggleSidebar = () => {
 }
 
 const Topbar = () => {
+  // Same slot the vendor shell already offers. Without it the admin topbar was
+  // the one place a host could not reach: the bell was hard-wired here, so any
+  // change to the operator's feed — categories, per-row read state, a sound
+  // toggle — had to be a fork release. A host that provides the slot owns the
+  // whole topbar and renders its own bell; one that does not keeps this one.
+  const TopbarActions = components.TopbarActions
+
   return (
     <div className="grid w-full grid-cols-2 border-b p-3">
       <div className="flex items-center gap-x-1.5">
@@ -199,7 +207,7 @@ const Topbar = () => {
         <Breadcrumbs />
       </div>
       <div className="flex items-center justify-end gap-x-3">
-        <Notifications />
+        {TopbarActions ? <TopbarActions /> : <Notifications />}
       </div>
     </div>
   )

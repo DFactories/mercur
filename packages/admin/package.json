@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/admin",
-  "version": "2.3.1-dfactories.1",
+  "version": "2.3.1-dfactories.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/mercurjs/mercur",
@@ -90,9 +90,9 @@
     "tsup": "^8.0.2",
     "typescript": "5.9.3",
     "@medusajs/types": "2.18.0",
-    "@mercurjs/core": "2.3.1-dfactories.7",
+    "@mercurjs/core": "2.3.1-dfactories.8",
     "@mercurjs/dashboard-sdk": "2.3.1-dfactories.1",
-    "@mercurjs/types": "2.3.1-dfactories.1",
+    "@mercurjs/types": "2.3.1-dfactories.2",
     "vitest": "4.1.10"
   }
 }
