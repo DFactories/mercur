@@ -11,6 +11,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { HttpTypes } from "@mercurjs/types"
 
 import {
+  buildShippingProfileGoodsWarning,
   getTypeDeliveryDays,
   refetchShippingOption,
   validateSellerShippingOption,
@@ -109,7 +110,18 @@ export const POST = async (
     req.queryConfig.fields
   )
 
-  res.status(200).json({ shipping_option: shippingOption })
+  // The stored value, not the request body: an edit that leaves the profile
+  // alone still lands on a mismatched one, and the vendor is just as unaware.
+  const warning = await buildShippingProfileGoodsWarning(
+    req.scope,
+    sellerId,
+    (shippingOption as { shipping_profile_id?: string | null } | undefined)
+      ?.shipping_profile_id
+  )
+
+  res
+    .status(200)
+    .json({ shipping_option: shippingOption, ...(warning ? { warning } : {}) })
 }
 
 export const DELETE = async (

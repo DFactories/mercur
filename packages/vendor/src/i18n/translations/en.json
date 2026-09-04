@@ -2310,7 +2310,11 @@
         "profile": "Shipping profile",
         "type": "Shipping option type",
         "fulfillmentOption": "Fulfillment option",
-        "typeHint": "The standard shipping method. Its delivery time (shown in parentheses) is set by the marketplace and starts the order return window."
+        "typeHint": "The standard shipping method. Its delivery time (shown in parentheses) is set by the marketplace and starts the order return window.",
+        "profileGoods": {
+          "header": "None of your products are on this shipping profile",
+          "description": "{{productCount}} of your products use this shipping profile, so this shipping option carries nothing. A buyer whose basket holds more than one producer will get an error when choosing this carriage. Either move this option to a profile your goods use, or move the goods onto this profile."
+        }
       }
     },
     "serviceZones": {

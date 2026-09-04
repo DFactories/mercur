@@ -78,6 +78,22 @@ export const cartRequiredShippingProfileIds = (
   return ids
 }
 
+/**
+ * The rule itself, in one place: an option's profile must be a profile the
+ * goods it carries actually sit on.
+ *
+ * `goodsProfileIds` is whichever goods the caller is asking about — the cart's
+ * items on the buyer side, the seller's own offered products in the vendor
+ * panel. Both ask the same question of the same rule; only the goods differ.
+ *
+ * A profile-less option is never a mismatch: Medusa's `profileId &&` guard
+ * skips it too, so calling it one would invent a failure Medusa never has.
+ */
+export const isShippingProfileWithoutGoods = (
+  profileId: string | null | undefined,
+  goodsProfileIds: Set<string>
+): boolean => !!profileId && !goodsProfileIds.has(profileId)
+
 export type UnkeepableShippingOption = {
   id: string
   name: string
@@ -107,16 +123,14 @@ export const findUnkeepableShippingOptions = (args: {
 
   for (const option of args.options ?? []) {
     const profileId = option?.shipping_profile_id
-    // A profile-less option is left alone: Medusa's `profileId &&` guard skips
-    // it too, so refusing it here would invent a failure Medusa never has.
-    if (!profileId || required.has(profileId)) {
+    if (!isShippingProfileWithoutGoods(profileId, required)) {
       continue
     }
 
     unkeepable.push({
       id: option?.id ?? "",
       name: option?.name ?? "",
-      shipping_profile_id: profileId,
+      shipping_profile_id: profileId as string,
     })
   }
 

@@ -6937,6 +6937,18 @@
                 },
                 "typeHint": {
                   "type": "string"
+                },
+                "profileGoods": {
+                  "type": "object",
+                  "properties": {
+                    "header": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
                 }
               },
               "additionalProperties": false

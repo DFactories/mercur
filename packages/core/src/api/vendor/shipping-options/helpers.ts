@@ -8,6 +8,10 @@ import {
   MedusaError,
   promiseAll,
 } from "@medusajs/framework/utils"
+import { HttpTypes } from "@mercurjs/types"
+
+import { getSellerShippingProfileGoodsCounts } from "../../utils"
+import { isShippingProfileWithoutGoods } from "../../../workflows/cart/utils/shipping-profile-parity"
 
 export const validateSellerShippingOption = async (
   scope: MedusaContainer,
@@ -118,5 +122,44 @@ export const refetchBatchRules = async (
       object: "shipping_option_rule",
       deleted: true,
     },
+  }
+}
+
+/**
+ * The vendor-side half of the shipping-profile parity rule.
+ *
+ * The buyer-side guard (`validateCartShippingProfileParityStep`) asks the same
+ * question of a cart and answers with a 400, because by then the only thing
+ * left to protect is the checkout. Here the question is asked of the seller's
+ * own catalogue while the option is still being written, and the answer is a
+ * warning rather than a refusal: creating the option before moving goods onto
+ * its profile is a legitimate order of work, and refusing it would close that
+ * door for no gain — the option is harmless until a buyer's basket holds two
+ * producers.
+ */
+export const buildShippingProfileGoodsWarning = async (
+  scope: MedusaContainer,
+  sellerId: string,
+  shippingProfileId: string | null | undefined
+): Promise<HttpTypes.VendorShippingOptionProfileWarning | undefined> => {
+  if (!shippingProfileId) {
+    return undefined
+  }
+
+  const counts = await getSellerShippingProfileGoodsCounts(scope, sellerId)
+
+  if (!isShippingProfileWithoutGoods(shippingProfileId, new Set(counts.keys()))) {
+    return undefined
+  }
+
+  return {
+    code: "shipping_profile_carries_no_goods",
+    shipping_profile_id: shippingProfileId,
+    seller_product_count: 0,
+    message:
+      `None of your products are on shipping profile ${shippingProfileId}, so ` +
+      `this shipping option carries nothing. A buyer whose basket holds more ` +
+      `than one seller's carriage will not be able to choose it. Move the ` +
+      `option to a profile your goods use, or move the goods onto this profile.`,
   }
 }

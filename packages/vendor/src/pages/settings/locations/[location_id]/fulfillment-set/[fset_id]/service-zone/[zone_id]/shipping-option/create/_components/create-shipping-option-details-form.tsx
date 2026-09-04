@@ -9,6 +9,7 @@ import { Combobox } from "@components/inputs/combobox"
 import { shippingProfileQueryKeys } from "@hooks/api/shipping-profiles"
 import { useComboboxData } from "@hooks/use-combobox-data"
 import { fetchQuery } from "@lib/client"
+import { ShippingProfileGoodsHint } from "@pages/settings/locations/_common/components"
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
@@ -195,6 +196,7 @@ export const CreateShippingOptionDetailsForm = ({
                     />
                   </Form.Control>
                   <Form.ErrorMessage />
+                  <ShippingProfileGoodsHint shippingProfileId={field.value} />
                 </Form.Item>
               )
             }}

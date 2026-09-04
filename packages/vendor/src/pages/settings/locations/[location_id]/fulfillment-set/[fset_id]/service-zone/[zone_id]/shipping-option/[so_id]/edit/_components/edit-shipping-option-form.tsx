@@ -16,6 +16,7 @@ import {
   getShippingProfileName,
   isOptionEnabledInStore,
 } from "@lib/shipping-options"
+import { ShippingProfileGoodsHint } from "@pages/settings/locations/_common/components"
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
@@ -198,6 +199,9 @@ export const EditShippingOptionForm = ({
                           />
                         </Form.Control>
                         <Form.ErrorMessage />
+                        <ShippingProfileGoodsHint
+                          shippingProfileId={field.value}
+                        />
                       </Form.Item>
                     )
                   }}

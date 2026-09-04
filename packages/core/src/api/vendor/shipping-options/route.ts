@@ -6,7 +6,11 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { HttpTypes } from "@mercurjs/types"
 
 import { createSellerShippingOptionsWorkflow } from "../../../workflows/shipping-option"
-import { getTypeDeliveryDays, refetchShippingOption } from "./helpers"
+import {
+  buildShippingProfileGoodsWarning,
+  getTypeDeliveryDays,
+  refetchShippingOption,
+} from "./helpers"
 import { VendorCreateShippingOptionType } from "./validators"
 
 export const GET = async (
@@ -63,5 +67,13 @@ export const POST = async (
     req.queryConfig.fields
   )
 
-  res.status(201).json({ shipping_option: shippingOption })
+  const warning = await buildShippingProfileGoodsWarning(
+    req.scope,
+    sellerId,
+    shippingOptionInput.shipping_profile_id
+  )
+
+  res
+    .status(201)
+    .json({ shipping_option: shippingOption, ...(warning ? { warning } : {}) })
 }

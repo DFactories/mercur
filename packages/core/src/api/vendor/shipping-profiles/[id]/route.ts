@@ -8,6 +8,7 @@ import {
 } from "@medusajs/framework/http"
 import { HttpTypes } from "@mercurjs/types"
 
+import { getSellerShippingProfileGoodsCount } from "../../../utils"
 import {
   refetchShippingProfile,
   validateSellerOrGlobalShippingProfile,
@@ -30,7 +31,17 @@ export const GET = async (
     req.queryConfig.fields
   )
 
-  res.status(200).json({ shipping_profile: shippingProfile })
+  // Seller-scoped, so it cannot be a stored column: the same global profile
+  // carries a different number of goods for every vendor that reads it.
+  const seller_product_count = await getSellerShippingProfileGoodsCount(
+    req.scope,
+    sellerId,
+    req.params.id
+  )
+
+  res.status(200).json({
+    shipping_profile: { ...shippingProfile, seller_product_count },
+  })
 }
 
 export const POST = async (
