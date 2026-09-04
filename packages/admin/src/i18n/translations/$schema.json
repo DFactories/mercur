@@ -13440,6 +13440,12 @@
             },
             "seller_feed": {
               "type": "string"
+            },
+            "customer_feed": {
+              "type": "string"
+            },
+            "agent_feed": {
+              "type": "string"
             }
           },
           "additionalProperties": false
