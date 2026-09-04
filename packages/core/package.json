@@ -1,6 +1,6 @@
 {
   "name": "@mercurjs/core",
-  "version": "2.3.1-dfactories.9",
+  "version": "2.3.1-dfactories.10",
   "repository": {
     "type": "git",
     "url": "https://github.com/mercurjs/mercur",
@@ -27,7 +27,10 @@
       "types": "./.medusa/server/src/modules/*/index.d.ts",
       "default": "./.medusa/server/src/modules/*/index.js"
     },
-    "./providers/*": "./.medusa/server/src/providers/*/index.js",
+    "./providers/*": {
+      "types": "./.medusa/server/src/providers/*/index.d.ts",
+      "default": "./.medusa/server/src/providers/*/index.js"
+    },
     "./with-mercur": {
       "types": "./.medusa/server/src/with-mercur.d.ts",
       "default": "./.medusa/server/src/with-mercur.js"
