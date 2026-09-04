@@ -113,16 +113,71 @@ describe("SmsIrClient.sendBulk", () => {
     })
   })
 
-  it("refuses to send without a sender line", async () => {
+  /** `GET /v1/line` as sms.ir answers it: a flat array of line numbers. */
+  const lines = (data: number[]) =>
+    ({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 1, data }),
+    }) as unknown as Response
+
+  it("uses the account's only line when nobody chose one", async () => {
+    // The common case, and the one that used to fail: an account with a single
+    // line has no decision to make, and demanding SMSIR_LINE_NUMBER for it
+    // turned a working account into a broken feature.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(lines([30002108000668]))
+      .mockResolvedValueOnce(ok())
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(
+      client().sendBulk(["09121234567"], "سلام")
+    ).resolves.toMatchObject({ status: "sent" })
+
+    const [, init] = fetchMock.mock.calls[1]
+    expect(JSON.parse((init as RequestInit).body as string).lineNumber).toBe(
+      30002108000668
+    )
+  })
+
+  it("refuses to guess when the account has more than one line", async () => {
+    // Borrowing the OTP line for operator traffic is how a service line gets
+    // suspended. With a real choice to make, sending from the wrong number is
+    // worse than not sending — and the message names the candidates.
+    const fetchMock = vi.fn().mockResolvedValue(lines([30007, 30008]))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(client().sendBulk(["09121234567"], "سلام")).rejects.toThrow(
+      /this account has 2 \(30007, 30008\)/
+    )
+    // The listing happened; the send did not.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("says to buy a line when the account has none", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(lines([])))
+
+    await expect(client().sendBulk(["09121234567"], "سلام")).rejects.toThrow(
+      /this account has none/
+    )
+  })
+
+  it("prefers the operator's choice over everything else", async () => {
+    // Explicit beats env beats discovery: the operator picked this line for
+    // this send, in front of the recipient count.
+    process.env.SMSIR_LINE_NUMBER = "30007"
     const fetchMock = vi.fn().mockResolvedValue(ok())
     vi.stubGlobal("fetch", fetchMock)
 
-    // Borrowing the OTP line for marketing traffic is how a service line gets
-    // suspended, so the absence of a configured line is an error, not a default.
-    await expect(client().sendBulk(["09121234567"], "سلام")).rejects.toThrow(
-      /SMSIR_LINE_NUMBER/
+    await client().sendBulk(["09121234567"], "سلام", 300028287181)
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse((init as RequestInit).body as string).lineNumber).toBe(
+      300028287181
     )
-    expect(fetchMock).not.toHaveBeenCalled()
+    // No discovery call: the answer was already known.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it("does not call sms.ir when every recipient was filtered out", async () => {
@@ -166,5 +221,66 @@ describe("SmsIrClient.sendBulk", () => {
     await expect(
       client().sendBulk(["09121234567"], "سلام")
     ).rejects.toThrow(/send\/bulk failed .*insufficient credit/)
+  })
+})
+
+/**
+ * Reading the account's lines.
+ *
+ * This is what turned "buy a dedicated line" into "you already have two": the
+ * panel can only offer a real choice if it knows what the account owns, and
+ * nobody should have to read a number off an sms.ir invoice.
+ */
+describe("SmsIrClient.getLines", () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const client = () =>
+    new SmsIrClient({ apiKey: "test-key", baseUrl: "https://api.sms.ir/v1" })
+
+  it("asks sms.ir with a GET and the api key", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 1, data: [30002108000668, 300028287181] }),
+    } as unknown as Response)
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(client().getLines()).resolves.toEqual([
+      30002108000668, 300028287181,
+    ])
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe("https://api.sms.ir/v1/line")
+    expect((init as RequestInit).method).toBe("GET")
+    expect((init as RequestInit).headers).toMatchObject({
+      "X-API-KEY": "test-key",
+    })
+  })
+
+  it("reports no lines rather than throwing when sms.ir says no", async () => {
+    // "This account owns nothing" is a state the panel renders, not an error it
+    // reports — the operator needs to be told to buy a line, not shown a stack.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({ status: 10, message: "invalid api key" }),
+      } as unknown as Response)
+    )
+
+    await expect(client().getLines()).resolves.toEqual([])
+  })
+
+  it("does not call sms.ir at all without a key", async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(
+      new SmsIrClient({ apiKey: "" }).getLines()
+    ).resolves.toEqual([])
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

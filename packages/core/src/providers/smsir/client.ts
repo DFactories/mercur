@@ -99,6 +99,67 @@ export class SmsIrClient {
     }
   }
 
+  /** GET from sms.ir, with the same one-shot retry as {@link post}. */
+  private async get(path: string): Promise<Response> {
+    const url = `${this.baseUrl}${path}`
+    const init: RequestInit = {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "X-API-KEY": this.apiKey as string,
+      },
+    }
+
+    try {
+      return await fetch(url, init)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[smsir] could not reach ${url} (${
+          error instanceof Error ? error.message : String(error)
+        }) — retrying once`
+      )
+      return await fetch(url, init)
+    }
+  }
+
+  /**
+   * The sender lines this account owns — sms.ir `GET /v1/line`.
+   *
+   * A free-text send has to name one, and the number is not something an
+   * operator can invent: it is issued by sms.ir when a line is bought. Reading
+   * the real list means the panel can offer a choice of what actually exists
+   * instead of asking somebody to paste a number from an invoice, and it
+   * answers the prior question — "do we even have a line?" — without a support
+   * ticket.
+   *
+   * Returns an empty list rather than throwing when the account has none or the
+   * key is unset: "no lines" is a legitimate state the caller has to render,
+   * not a failure.
+   */
+  async getLines(): Promise<number[]> {
+    if (!this.isConfigured) {
+      return []
+    }
+
+    const response = await this.get("/line")
+
+    let body: { status?: number; data?: unknown } = {}
+    try {
+      body = (await response.json()) as typeof body
+    } catch {
+      body = {}
+    }
+
+    if (!response.ok || body.status !== 1 || !Array.isArray(body.data)) {
+      return []
+    }
+
+    return body.data
+      .map((line) => Number(line))
+      .filter((line) => Number.isFinite(line) && line > 0)
+  }
+
   /**
    * Template-based fast send — sms.ir `POST /send/verify`. Used for OTP codes
    * and for transactional notifications (both are template-driven on sms.ir).
@@ -137,8 +198,8 @@ export class SmsIrClient {
    * what an operator can audit. This exists for the one case a template cannot
    * serve — an operator composing a one-off message to chosen recipients from
    * the admin panel — and it is the only path that can put arbitrary text on
-   * somebody's phone, which is why it needs its own line number
-   * (SMSIR_LINE_NUMBER) rather than borrowing the OTP line.
+   * somebody's phone, which is why it goes out on a dedicated sender line
+   * chosen by the operator rather than borrowing the OTP line.
    *
    * `messageText` is sent verbatim: sms.ir counts characters, and a Persian
    * message is billed per 70 characters rather than per 160, so the caller is
@@ -154,13 +215,6 @@ export class SmsIrClient {
       return { status: "skipped" }
     }
 
-    const line = Number(lineNumber ?? process.env.SMSIR_LINE_NUMBER)
-    if (!line || Number.isNaN(line)) {
-      throw new Error(
-        "[smsir] send/bulk needs a sender line number (set SMSIR_LINE_NUMBER)"
-      )
-    }
-
     if (!this.isConfigured) {
       // eslint-disable-next-line no-console
       console.warn(
@@ -168,6 +222,8 @@ export class SmsIrClient {
       )
       return { status: "skipped" }
     }
+
+    const line = await this.resolveLine(lineNumber)
 
     const response = await this.post(
       "/send/bulk",
@@ -179,6 +235,39 @@ export class SmsIrClient {
     )
 
     return await this.readResult(response, "send/bulk")
+  }
+
+  /**
+   * Which line a free-text message goes out on.
+   *
+   * Ordered so that the explicit choice always wins: the operator picked it in
+   * the panel for this send. `SMSIR_LINE_NUMBER` stays supported for anyone
+   * still setting it, but is no longer required — an account with exactly one
+   * line has no decision to make, and forcing an env var for it turned a
+   * working account into a failing one for no reason.
+   *
+   * Ambiguity is the one case that must stop: with two lines and no choice,
+   * guessing sends from a number the recipient may not recognise, and the error
+   * names the candidates so the fix is a click.
+   */
+  private async resolveLine(lineNumber?: number): Promise<number> {
+    const explicit = Number(lineNumber ?? process.env.SMSIR_LINE_NUMBER)
+    if (explicit && !Number.isNaN(explicit)) {
+      return explicit
+    }
+
+    const lines = await this.getLines()
+    if (lines.length === 1) {
+      return lines[0]
+    }
+
+    throw new Error(
+      lines.length
+        ? `[smsir] send/bulk needs a sender line: this account has ${lines.length} (${lines.join(
+            ", "
+          )}) — choose one in the panel`
+        : "[smsir] send/bulk needs a sender line and this account has none — buy a dedicated line (خط اختصاصی) from sms.ir"
+    )
   }
 
   /** Parse a sms.ir response, failing loudly on anything but `status === 1`. */

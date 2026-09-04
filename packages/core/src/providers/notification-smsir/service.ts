@@ -46,6 +46,12 @@ class SmsIrNotificationProviderService extends AbstractNotificationProviderServi
       parameters?: SmsIrParam[]
       /** Free-text body. Set only by the admin's manual sender. */
       text?: string
+      /**
+       * Sender line for a free-text send, chosen by the operator in the panel.
+       * Absent means "let the client work it out" — which succeeds only when
+       * the account has exactly one line.
+       */
+      line_number?: number | string
     }
 
     if (!notification.to) {
@@ -60,7 +66,12 @@ class SmsIrNotificationProviderService extends AbstractNotificationProviderServi
     // bypass its approved template: the template is what an operator audits.
     const text = typeof data.text === "string" ? data.text.trim() : ""
     if (text && !data.template_id) {
-      const bulk = await this.client_.sendBulk([notification.to], text)
+      const line = Number(data.line_number)
+      const bulk = await this.client_.sendBulk(
+        [notification.to],
+        text,
+        Number.isFinite(line) && line > 0 ? line : undefined
+      )
       return { id: bulk.messageId ? String(bulk.messageId) : undefined }
     }
 
