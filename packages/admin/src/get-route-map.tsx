@@ -61,6 +61,18 @@ export function getRouteMap({
     {
       element: <ProtectedRoute />,
       errorElement: <ErrorBoundary />,
+      /**
+       * React Router asks for this the moment a data router hydrates into a
+       * `lazy` route — which is every route here. Without it the console
+       * carries `No HydrateFallback element provided to render during initial
+       * hydration` on every load, and a real warning is worth nothing once
+       * people are used to scrolling past a fake one.
+       *
+       * Deliberately empty. The layout around it paints immediately and the
+       * lazy chunk lands within a frame or two; a spinner in that gap would
+       * flash on every navigation and read as slower, not faster.
+       */
+      hydrateFallbackElement: <div />,
       children: [
         {
           element: <MainLayout />,
@@ -1167,6 +1179,18 @@ export function getRouteMap({
     {
       element: <ProtectedRoute />,
       errorElement: <ErrorBoundary />,
+      /**
+       * React Router asks for this the moment a data router hydrates into a
+       * `lazy` route — which is every route here. Without it the console
+       * carries `No HydrateFallback element provided to render during initial
+       * hydration` on every load, and a real warning is worth nothing once
+       * people are used to scrolling past a fake one.
+       *
+       * Deliberately empty. The layout around it paints immediately and the
+       * lazy chunk lands within a frame or two; a spinner in that gap would
+       * flash on every navigation and read as slower, not faster.
+       */
+      hydrateFallbackElement: <div />,
       children: [
         {
           path: "/settings",
@@ -2197,6 +2221,18 @@ export function getRouteMap({
     },
     {
       element: <PublicLayout />,
+      /**
+       * React Router asks for this the moment a data router hydrates into a
+       * `lazy` route — which is every route here. Without it the console
+       * carries `No HydrateFallback element provided to render during initial
+       * hydration` on every load, and a real warning is worth nothing once
+       * people are used to scrolling past a fake one.
+       *
+       * Deliberately empty. The layout around it paints immediately and the
+       * lazy chunk lands within a frame or two; a spinner in that gap would
+       * flash on every navigation and read as slower, not faster.
+       */
+      hydrateFallbackElement: <div />,
       children: [
         {
           errorElement: <ErrorBoundary />,
