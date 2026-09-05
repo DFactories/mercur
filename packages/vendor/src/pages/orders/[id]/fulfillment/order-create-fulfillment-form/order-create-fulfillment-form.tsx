@@ -14,11 +14,13 @@ import {
   useRouteModal,
 } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
+import { fetchQuery } from "@lib/client"
 import { useCreateOrderFulfillment } from "@hooks/api/orders"
 import { useStockLocations } from "@hooks/api/stock-locations"
 import { getFulfillableQuantity } from "@lib/order-item"
 import { CreateFulfillmentSchema } from "./constants"
 import { OrderCreateFulfillmentItem } from "./order-create-fulfillment-item"
+import { ShipmentEvidenceField } from "./shipment-evidence-field"
 import { useShippingOptions } from "@hooks/api"
 import {
   isReturnOption,
@@ -39,6 +41,8 @@ export function OrderCreateFulfillmentForm({
 
   const { mutateAsync: createOrderFulfillment, isPending: isMutating } =
     useCreateOrderFulfillment(order.id)
+
+  const [evidenceKey, setEvidenceKey] = useState<string | null>(null)
 
   const [fulfillableItems, setFulfillableItems] = useState(() =>
     (order.items || []).filter(
@@ -182,6 +186,20 @@ export function OrderCreateFulfillmentForm({
       await createOrderFulfillment(payload)
 
       toast.success(t("orders.fulfillment.toast.created"))
+      if (evidenceKey) {
+        // Recorded after the fulfillment, and never allowed to fail it: the
+        // goods have shipped either way, and losing a dispatch over a video is
+        // the wrong trade.
+        try {
+          await fetchQuery(`/vendor/orders/${order.id}/shipment-evidence`, {
+            method: "POST",
+            body: { key: evidenceKey },
+          })
+        } catch {
+          toast.warning(t("orders.fulfillment.shipmentEvidence.notRecorded"))
+        }
+      }
+
       handleSuccess(`/orders/${order.id}`)
     } catch (e: any) {
       const message: string = e?.message ?? ""
@@ -518,6 +536,12 @@ export function OrderCreateFulfillmentForm({
               </div>
             </div>
           </div>
+            <div className="w-full px-6 py-4">
+              <ShipmentEvidenceField
+                orderId={order.id}
+                onKeyChange={setEvidenceKey}
+              />
+            </div>
         </RouteFocusModal.Body>
         <RouteFocusModal.Footer>
           <div className="flex items-center justify-end gap-x-2">

@@ -1980,7 +1980,17 @@
       },
       "trackingLabel": "Tracking",
       "shippingFromLabel": "Shipping from",
-      "itemsLabel": "Items"
+      "itemsLabel": "Items",
+      "shipmentEvidence": {
+        "label": "Shipment video (optional)",
+        "hint": "Film the sealed pallet, the carton count and the waybill. If a buyer later claims a short or damaged delivery, this is what settles it.",
+        "choose": "Choose a video",
+        "replace": "Replace the video",
+        "tooLarge": "The file is larger than 150 MB. Record a shorter clip.",
+        "failed": "The upload did not go through. The order can still be shipped.",
+        "notRecorded": "The order shipped, but the video was not recorded against it.",
+        "missingWarning": "No video attached. Without one, a claim of a short or damaged delivery is weighed against you."
+      }
     },
     "refund": {
       "title": "Create Refund",

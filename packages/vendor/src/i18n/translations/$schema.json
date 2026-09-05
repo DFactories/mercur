@@ -5947,6 +5947,36 @@
             },
             "itemsLabel": {
               "type": "string"
+            },
+            "shipmentEvidence": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "hint": {
+                  "type": "string"
+                },
+                "choose": {
+                  "type": "string"
+                },
+                "replace": {
+                  "type": "string"
+                },
+                "tooLarge": {
+                  "type": "string"
+                },
+                "failed": {
+                  "type": "string"
+                },
+                "notRecorded": {
+                  "type": "string"
+                },
+                "missingWarning": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false

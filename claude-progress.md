@@ -465,3 +465,50 @@ A change is done only when:
 - a relevant integration test was run (for behavior changes)
 - evidence is recorded in this file
 - the repo remains restartable from `bun install && bun run dev`
+
+---
+
+## Session 9 (2026-09-05) — shipment evidence on the fulfillment form
+
+**What.** The vendor fulfillment modal now offers an optional video of the
+dispatch, uploaded straight to object storage and recorded against the order.
+
+Two of the seven return reasons this marketplace ships — «کسری» and «آسیب حین
+حمل» — are claims about what was in the box when it left the factory, and
+nothing settles them after the fact. Whichever way an operator rules, one side
+is told their account was not believed. A clip of the sealed pallet, the carton
+count and the waybill turns that into a question with an answer.
+
+**It warns, it never blocks.** Refusing to let a factory dispatch an order
+because an upload failed trades a real sale for a hypothetical dispute. The
+consequence lives in the marketplace's returns policy instead — a missing clip
+weighs against the producer on exactly those two reasons — which is the only
+version of this that makes anyone actually film anything.
+
+**Files**
+- `packages/vendor/src/pages/orders/[id]/fulfillment/order-create-fulfillment-form/shipment-evidence-field.tsx` (new)
+- `.../order-create-fulfillment-form.tsx` — renders the field; records the key
+  AFTER `createOrderFulfillment` succeeds, inside its own `try`, so a failed
+  recording can never fail a dispatch
+- `packages/vendor/src/i18n/translations/{en,fa}.json` + `$schema.json`
+- `.../__tests__/shipment-evidence-field.spec.ts` (new)
+
+**Backend.** The two routes it calls (`POST .../shipment-evidence/upload-url`
+and `POST .../shipment-evidence`) live in the consuming project
+(`dfactories-mp`), not in core — they own a private bucket and a
+`shipment_evidence` module. They are reached through `fetchQuery` rather than
+`sdk`, because the fork's generated route map cannot know about a consumer's
+custom routes; the single bare `fetch` left in the field is the presigned PUT to
+object storage, which is not an API call at all and whose signature credentials
+would break. A test asserts both of those facts.
+
+**Evidence**
+- `bun run lint` — clean.
+- `bun run build` — 12/12 tasks successful.
+- `bun run --filter='@mercurjs/vendor' test` — 14 files, 108 tests passing,
+  including the new spec and the translation-schema validator (which caught the
+  missing `$schema.json` entry first time round).
+
+**Not done / next.** Not published. This needs the usual bump →
+push `dfactories/**` → CI publish → bump the exact pin in `dfactories-mp` cycle
+before the panel shows it anywhere but a local dev build.
