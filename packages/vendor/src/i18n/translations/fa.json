@@ -812,7 +812,7 @@
       "deleteWarning": "آیا مطمئن هستید که می‌خواهید این متغیر را حذف کنید؟",
       "tableItemAvailable": "{{availableCount}} موجود",
       "tableItem_one": "{{availableCount}} موجود در {{locationCount}} مکان",
-      "tableItem_other": "{{availableCount}} موجود در {{locationCount}} مکان‌",
+      "tableItem_other": "{{availableCount}} موجود در {{locationCount}} مکان",
       "inventory": {
         "notManaged": "مدیریت نمی‌شود",
         "navigateToItem": "برو به آیتم موجودی",

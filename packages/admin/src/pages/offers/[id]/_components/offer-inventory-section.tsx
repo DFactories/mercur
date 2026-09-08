@@ -65,7 +65,7 @@ const InventoryActions = ({ item }: { item: InventoryRow }) => {
 }
 
 export const OfferInventorySection = ({ offer }: Props) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const inventoryItems: InventoryRow[] = useMemo(() => {
     const links: OfferInventoryItemLink[] = offer.inventory_item_link ?? []
@@ -83,6 +83,11 @@ export const OfferInventorySection = ({ offer }: Props) => {
       })
       .filter((x): x is InventoryRow => x !== null)
   }, [offer.inventory_item_link])
+
+  const number = useMemo(
+    () => new Intl.NumberFormat(i18n.language),
+    [i18n.language],
+  )
 
   const columns = useMemo(
     () => [
@@ -128,9 +133,11 @@ export const OfferInventorySection = ({ offer }: Props) => {
         cell: ({ row }) => {
           const { quantity, locations } = computeAvailable(row.original)
           if (locations === 0) return <PlaceholderCell />
-          const text = `${quantity} available at ${locations} ${
-            locations === 1 ? "location" : "locations"
-          }`
+          const text = t("products.variant.tableItem", {
+            availableCount: number.format(quantity),
+            locationCount: number.format(locations),
+            count: locations,
+          })
           return (
             <div className="flex size-full items-center overflow-hidden">
               <Text
@@ -150,7 +157,7 @@ export const OfferInventorySection = ({ offer }: Props) => {
         cell: ({ row }) => <InventoryActions item={row.original} />,
       }),
     ],
-    [t],
+    [t, number],
   )
 
   const { table } = useDataTable({

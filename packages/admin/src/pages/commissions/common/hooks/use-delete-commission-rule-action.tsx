@@ -16,10 +16,7 @@ export const useDeleteCommissionRuleAction = (rule: {
   return async () => {
     const confirmed = await prompt({
       title: t("commissions.delete.title"),
-      description: t("commissions.delete.description", {
-        name: rule.name,
-        defaultValue: `You are about to delete commission rule ${rule.name}. This action cannot be undone.`,
-      }),
+      description: t("commissions.delete.description", { name: rule.name }),
       confirmText: t("actions.delete"),
       cancelText: t("actions.cancel"),
     });

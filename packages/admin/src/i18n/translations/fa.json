@@ -836,7 +836,7 @@
       "pricesPagination": "1 - {{current}} از {{total}} قیمت‌",
       "tableItemAvailable": "{{availableCount}} موجود",
       "tableItem_one": "{{availableCount}} موجود در {{locationCount}} مکان",
-      "tableItem_other": "{{availableCount}} موجود در {{locationCount}} مکان‌",
+      "tableItem_other": "{{availableCount}} موجود در {{locationCount}} مکان",
       "inventory": {
         "notManaged": "مدیریت نمی‌شود",
         "manageItems": "مدیریت اقلام موجودی",
