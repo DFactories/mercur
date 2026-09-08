@@ -44,6 +44,32 @@ function generateNumericCode(length: number): string {
 }
 
 /**
+ * The two clocks a client has to be able to show, in seconds.
+ *
+ * BOTH, because showing only the cooldown is a bug that reached production:
+ * the storefront displayed a 60-second «ارسال مجدد» counter, a shopper read it
+ * as the code's lifetime, and the code was still accepted at 90 seconds —
+ * reported as «کد otp منقضی نمی‌شود». Nothing was broken; the two numbers were
+ * simply different and only one was on screen.
+ *
+ * Exposed by the request route so a client never has to hardcode them. Both are
+ * env-configurable, so a duplicated constant in a storefront would be wrong the
+ * first time an operator changed one — and it would be wrong in the dangerous
+ * direction, promising more time than the code has.
+ */
+export type OtpTiming = {
+  /** How long the code stays valid. */
+  expires_in: number
+  /** How long before another code may be requested. */
+  resend_in: number
+}
+
+export const otpTiming = (): OtpTiming => ({
+  expires_in: OTP_TTL_SECONDS,
+  resend_in: OTP_RESEND_COOLDOWN_SECONDS,
+})
+
+/**
  * Stores and verifies one-time passcodes for phone authentication.
  *
  * Deliberately decoupled from SMS delivery: `requestOtp` returns the plaintext
@@ -52,6 +78,16 @@ function generateNumericCode(length: number): string {
  * notification settings.
  */
 class OtpModuleService extends MedusaService({ OtpCode }) {
+  /**
+   * {@link otpTiming}, reachable through the resolved module.
+   *
+   * The fork's own routes call the exported function; a consuming project that
+   * only holds the module (it cannot deep-import into this package) needs this.
+   */
+  timing(): OtpTiming {
+    return otpTiming()
+  }
+
   async requestOtp(input: RequestOtpInput): Promise<RequestOtpResult> {
     const { identifier, actor_type } = input
 

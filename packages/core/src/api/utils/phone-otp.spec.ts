@@ -67,3 +67,49 @@ describe("createRequestOtpHandler", () => {
     expect(otp.discardOtp).toHaveBeenCalledWith("otp_1")
   })
 })
+
+/**
+ * The two clocks reach the client.
+ *
+ * A client that hardcodes the code's lifetime is wrong the first time an
+ * operator changes `OTP_TTL_SECONDS` — and wrong in the direction that promises
+ * more time than the code has. The storefront showing ONLY the 60s resend
+ * cooldown is what produced «کد otp منقضی نمی‌شود»: the code lives 120s, so it
+ * was still valid a full minute after the visible counter hit zero.
+ */
+describe("the request response carries both clocks", () => {
+  const otp = {
+    requestOtp: vi.fn(),
+    discardOtp: vi.fn(),
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    otp.requestOtp.mockResolvedValue({ id: "otp_1", code: "12345" })
+    sendVerify.mockResolvedValue(undefined)
+  })
+
+  it("reports the code's validity AND the resend cooldown", async () => {
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    }
+    const req = {
+      body: { phone: "09120000000" },
+      scope: { resolve: () => otp },
+    }
+
+    await createRequestOtpHandler("customer")(req as never, res as never)
+
+    const payload = res.json.mock.calls[0][0]
+    expect(payload.success).toBe(true)
+    // Defaults; both are env-configurable, which is exactly why they are sent
+    // rather than left for a client to guess.
+    expect(payload.expires_in).toBe(120)
+    expect(payload.resend_in).toBe(60)
+    // The code's life must never be reported as SHORTER than the cooldown, or a
+    // user is told to wait for a resend they cannot yet ask for while holding a
+    // code they are told is dead.
+    expect(payload.expires_in).toBeGreaterThanOrEqual(payload.resend_in)
+  })
+})

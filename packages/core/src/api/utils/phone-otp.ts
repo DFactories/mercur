@@ -17,7 +17,7 @@ import {
 import { MercurModules } from "@mercurjs/types"
 import { z } from "zod"
 
-import OtpModuleService from "../../modules/otp/service"
+import OtpModuleService, { otpTiming } from "../../modules/otp/service"
 import { createSmsIrClient } from "../../providers/smsir/client"
 
 /**
@@ -430,7 +430,9 @@ export function createRequestOtpHandler(actorType: ActorType) {
 
     await deliverOtp(otp, id, phone, code)
 
-    res.status(200).json({ success: true })
+    // The two clocks, so a client never hardcodes them — see `otpTiming`.
+    // Leaks nothing about the number: they are the same constants for everyone.
+    res.status(200).json({ success: true, ...otpTiming() })
   }
 }
 
@@ -594,7 +596,9 @@ export function createSellerPhoneRequestOtpHandler() {
 
     await deliverOtp(otp, id, phone, code)
 
-    res.status(200).json({ success: true })
+    // The two clocks, so a client never hardcodes them — see `otpTiming`.
+    // Leaks nothing about the number: they are the same constants for everyone.
+    res.status(200).json({ success: true, ...otpTiming() })
   }
 }
 
