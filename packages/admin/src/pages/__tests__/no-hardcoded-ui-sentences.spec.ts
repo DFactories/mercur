@@ -120,3 +120,87 @@ describe("panel copy", () => {
     ).toEqual([])
   })
 })
+
+/**
+ * A translated sentence is not localised while its numbers are still Latin.
+ *
+ * The same inventory count is rendered by two components — `offer-variants-section`
+ * (the «متغیرها» table) and `offer-inventory-section` — and both were fixed in the
+ * same pass, but only one of them was given the Intl formatter. The result read
+ * «100000 موجود در 1 مکان» on a Persian page: the words translated, the digits
+ * not, in a script that runs the other way. The test above cannot see this,
+ * because by its measure the string is perfectly translated.
+ *
+ * Scoped deliberately to the interpolations that carry counts. A blanket rule
+ * over every `t()` argument would flag ids, currency codes and the `count`
+ * plural selector — which i18next reads as a number and must NOT be a string.
+ */
+describe("panel numbers", () => {
+  const COUNT_ARGUMENTS = /^(availableCount|locationCount|itemCount|variantCount)$/
+
+  /** The object literal argument of every `t("…", { … })` call in a file. */
+  const interpolationObjects = (source: string): { body: string; offset: number }[] => {
+    const objects: { body: string; offset: number }[] = []
+    const call = /\bt\(\s*["'`][^"'`]+["'`]\s*,\s*\{/g
+    let match: RegExpExecArray | null
+
+    while ((match = call.exec(source))) {
+      const open = match.index + match[0].length - 1
+      let depth = 0
+      let cursor = open
+      for (; cursor < source.length; cursor++) {
+        if (source[cursor] === "{") depth++
+        else if (source[cursor] === "}") {
+          depth--
+          if (depth === 0) break
+        }
+      }
+      objects.push({ body: source.slice(open, cursor + 1), offset: open })
+    }
+
+    return objects
+  }
+
+  const countInterpolations = (): Finding[] => {
+    const findings: Finding[] = []
+
+    for (const file of tsxFiles(pagesDir)) {
+      const source = fs.readFileSync(file, "utf8")
+
+      for (const object of interpolationObjects(source)) {
+        for (const property of object.body.matchAll(/(\w+):\s*([^,\n}]+)/g)) {
+          const [, key, raw] = property
+          if (!COUNT_ARGUMENTS.test(key)) {
+            continue
+          }
+          const value = raw.trim()
+          // `number.format(...)` / `formatNumber(...)` are the localised forms;
+          // a string literal is already whatever the caller intended.
+          if (/\.format\(|^format\w*\(|^["'`]/.test(value)) {
+            continue
+          }
+          findings.push({
+            file: path.relative(pagesDir, file),
+            line: source.slice(0, object.offset + (property.index ?? 0)).split("\n").length,
+            text: `${key}: ${value}`,
+          })
+        }
+      }
+    }
+
+    return findings
+  }
+
+  test("a count interpolated into a sentence goes through the locale formatter", () => {
+    const findings = countInterpolations()
+
+    expect(
+      findings,
+      findings.length
+        ? `Wrap these in the Intl formatter, or Persian pages print Latin digits:\n${findings
+            .map((f) => `  ${f.file}:${f.line}  ${f.text}`)
+            .join("\n")}`
+        : undefined
+    ).toEqual([])
+  })
+})

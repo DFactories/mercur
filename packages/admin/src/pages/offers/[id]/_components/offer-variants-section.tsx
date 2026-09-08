@@ -104,7 +104,15 @@ const useColumns = ({
   thumbnail?: string | null
   onDelete: (offerId: string, sku: string) => void
 }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+
+  // Same formatter as `offer-inventory-section`: the counts below sit inside a
+  // Persian sentence, and Intl is what makes «۱۰۰٬۰۰۰» out of 100000 rather
+  // than leaving Latin digits stranded mid-clause.
+  const number = useMemo(
+    () => new Intl.NumberFormat(i18n.language),
+    [i18n.language],
+  )
 
   return useMemo(
     () => [
@@ -187,8 +195,8 @@ const useColumns = ({
             )
           }
           const text = t("products.variant.tableItem", {
-            availableCount: available,
-            locationCount,
+            availableCount: number.format(available),
+            locationCount: number.format(locationCount),
             count: locationCount,
           })
           return (
@@ -227,7 +235,7 @@ const useColumns = ({
         ),
       }),
     ],
-    [t, optionTitles, thumbnail, onDelete],
+    [t, number, optionTitles, thumbnail, onDelete],
   )
 }
 
