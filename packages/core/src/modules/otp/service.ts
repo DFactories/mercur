@@ -27,7 +27,20 @@ export type VerifyOtpInput = {
 const OTP_TTL_SECONDS = Number(process.env.OTP_TTL_SECONDS ?? 120)
 const OTP_CODE_LENGTH = Number(process.env.OTP_CODE_LENGTH ?? 5)
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS ?? 5)
-const OTP_RESEND_COOLDOWN_SECONDS = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS ?? 60)
+/**
+ * How long before another code may be requested.
+ *
+ * Equal to the TTL by default, and that is the whole point: two different
+ * numbers on one screen is what produced «کد otp منقضی نمی‌شود» — a 60-second
+ * counter read as the code's lifetime, next to a code that still worked at 90.
+ * Made equal, "you may ask for a new code" and "this code is dead" become the
+ * same moment, so ONE counter tells the truth about both and the second one can
+ * go. Still env-configurable: an operator who separates them again gets two
+ * honest clocks back, because every client reads `resend_in` off the response.
+ */
+const OTP_RESEND_COOLDOWN_SECONDS = Number(
+  process.env.OTP_RESEND_COOLDOWN_SECONDS ?? OTP_TTL_SECONDS
+)
 const OTP_SECRET =
   process.env.OTP_SECRET ?? process.env.JWT_SECRET ?? "mercur-otp-secret"
 
@@ -46,11 +59,16 @@ function generateNumericCode(length: number): string {
 /**
  * The two clocks a client has to be able to show, in seconds.
  *
- * BOTH, because showing only the cooldown is a bug that reached production:
- * the storefront displayed a 60-second «ارسال مجدد» counter, a shopper read it
- * as the code's lifetime, and the code was still accepted at 90 seconds —
- * reported as «کد otp منقضی نمی‌شود». Nothing was broken; the two numbers were
- * simply different and only one was on screen.
+ * BOTH, because showing only the cooldown is a bug that reached production: the
+ * storefront displayed a 60-second «ارسال مجدد» counter, a shopper read it as
+ * the code's lifetime, and the code was still accepted at 90 seconds — reported
+ * as «کد otp منقضی نمی‌شود». Nothing was broken; the two numbers were simply
+ * different and only one was on screen.
+ *
+ * The default now makes them EQUAL, which is the better answer to that report
+ * than showing two counters: one number, and it is true of both. They stay two
+ * fields because they remain two independent settings — a client must render
+ * whatever the server actually says, not assume they still match.
  *
  * Exposed by the request route so a client never has to hardcode them. Both are
  * env-configurable, so a duplicated constant in a storefront would be wrong the

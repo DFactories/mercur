@@ -22,7 +22,20 @@ type PhoneAuthFormProps = {
   beforeRequest?: () => boolean
 }
 
-const RESEND_SECONDS = 60
+/**
+ * Fallback only — the real number comes down with the request response.
+ *
+ * It used to be a hardcoded 60 while the server's code lived 120 seconds, so
+ * the login page invited a producer to ask for a new code a full minute before
+ * the one in their hand had expired, and the counter they were reading was not
+ * the one they thought. `otpTiming()` exists precisely so no client has to
+ * guess: both values are env-configurable server-side, and a constant here goes
+ * wrong the first time an operator changes one.
+ */
+const RESEND_SECONDS_FALLBACK = 120
+
+/** The request route answers with both clocks (`otpTiming`). */
+type OtpTimingResponse = { resend_in?: number; expires_in?: number }
 
 /** Iranian mobile: 09 + 9 digits = 11 digits. */
 const IRAN_MOBILE_RE = /^09\d{9}$/
@@ -98,8 +111,11 @@ export const PhoneAuthForm = ({
     ) ?? null
 
   const sendCode = async () => {
-    await requestOtp({ phone: normalizePhone(phone), mode })
-    setResendIn(RESEND_SECONDS)
+    const timing = (await requestOtp({
+      phone: normalizePhone(phone),
+      mode,
+    })) as OtpTimingResponse | undefined
+    setResendIn(timing?.resend_in ?? RESEND_SECONDS_FALLBACK)
   }
 
   const handleRequest = async () => {

@@ -6,7 +6,15 @@ import { useTranslation } from "react-i18next";
 import { useRequestSellerPhoneOtp, useVerifySellerPhoneOtp } from "@hooks/api";
 import { isFetchError } from "@lib/is-fetch-error";
 
-const RESEND_SECONDS = 60;
+/**
+ * Fallback only — the request response carries the real cooldown (`resend_in`).
+ * Hardcoding 60 against a server that lives 120 is what made the login page
+ * offer a resend while the code in hand was still valid.
+ */
+const RESEND_SECONDS_FALLBACK = 120;
+
+/** The request route answers with both clocks (`otpTiming`). */
+type OtpTimingResponse = { resend_in?: number; expires_in?: number };
 
 type StorePhoneVerificationProps = {
   phone: string | null;
@@ -73,7 +81,10 @@ export const StorePhoneVerification = ({
       }
       setCode("");
       setOpen(true);
-      setResendIn(RESEND_SECONDS);
+      setResendIn(
+        (data as OtpTimingResponse | undefined)?.resend_in ??
+          RESEND_SECONDS_FALLBACK,
+      );
       toast.success(t("store.phoneVerification.toast.sent"));
     } catch (e) {
       toast.error(toError(e));

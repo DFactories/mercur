@@ -105,8 +105,14 @@ describe("the request response carries both clocks", () => {
     expect(payload.success).toBe(true)
     // Defaults; both are env-configurable, which is exactly why they are sent
     // rather than left for a client to guess.
+    //
+    // EQUAL by default. Two different numbers on one screen is what produced
+    // «کد otp منقضی نمی‌شود»: a 60-second resend counter read as the code's
+    // lifetime, beside a code that still worked at 90. Equal, the single
+    // counter every login shows is true of both — "ask again" and "this code is
+    // dead" are the same instant.
     expect(payload.expires_in).toBe(120)
-    expect(payload.resend_in).toBe(60)
+    expect(payload.resend_in).toBe(120)
     // The code's life must never be reported as SHORTER than the cooldown, or a
     // user is told to wait for a resend they cannot yet ask for while holding a
     // code they are told is dead.
