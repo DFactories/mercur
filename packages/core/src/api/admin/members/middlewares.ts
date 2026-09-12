@@ -1,8 +1,11 @@
 import { MiddlewareRoute } from "@medusajs/framework/http"
-import { validateAndTransformQuery } from "@medusajs/framework"
+import {
+  validateAndTransformBody,
+  validateAndTransformQuery,
+} from "@medusajs/framework"
 
 import { adminMemberListQueryConfig } from "./query-config"
-import { AdminGetMembersParams } from "./validators"
+import { AdminGetMembersParams, AdminUpdateMemberPhone } from "./validators"
 
 export const adminMembersMiddlewares: MiddlewareRoute[] = [
   {
@@ -14,5 +17,10 @@ export const adminMembersMiddlewares: MiddlewareRoute[] = [
         adminMemberListQueryConfig.list
       ),
     ],
+  },
+  {
+    method: ["POST"],
+    matcher: "/admin/members/:id/phone",
+    middlewares: [validateAndTransformBody(AdminUpdateMemberPhone)],
   },
 ]

@@ -10,7 +10,7 @@ import { HttpTypes } from "@mercurjs/types"
 
 import { VendorUpdateSellerType } from "../validators"
 import { updateSellersWorkflow } from "../../../../workflows/seller"
-import { normalizeIranPhone } from "../../../utils/phone-otp"
+import { withPhoneVerificationReset } from "../../../utils/sellers"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -44,25 +44,13 @@ export const POST = async (
 
   const { additional_data, ...rest } = req.validatedBody
 
-  const update: Omit<VendorUpdateSellerType, "additional_data"> & {
-    phone_verified_at?: Date | null
-  } = { ...rest }
-
   // Changing the store phone invalidates any prior OTP verification — the new
   // number must be re-verified (or auto-verified if it's the owner's own phone).
-  if (typeof update.phone === "string") {
-    const {
-      data: [current],
-    } = await query.graph({
-      entity: "seller",
-      fields: ["phone"],
-      filters: { id: req.params.id },
-    })
-    const currentPhone = (current?.phone as string | null) ?? ""
-    if (normalizeIranPhone(currentPhone) !== normalizeIranPhone(update.phone)) {
-      update.phone_verified_at = null
-    }
-  }
+  const update = await withPhoneVerificationReset(
+    req.scope,
+    req.params.id,
+    rest
+  )
 
   await updateSellersWorkflow(req.scope).run({
     input: {

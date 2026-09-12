@@ -68,7 +68,13 @@ const Root = () => {
               <Form.Item>
                 <Form.Label optional>{t("fields.phone")}</Form.Label>
                 <Form.Control>
-                  <Input type="tel" {...field} />
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    placeholder="09xxxxxxxxx"
+                    {...field}
+                  />
                 </Form.Control>
                 <Form.ErrorMessage />
               </Form.Item>

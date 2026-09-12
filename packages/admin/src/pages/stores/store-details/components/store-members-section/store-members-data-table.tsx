@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { ArrowPath, Link as LinkIcon, Trash, User } from "@medusajs/icons";
+import { ArrowPath, Link as LinkIcon, PencilSquare, Trash, User } from "@medusajs/icons";
 import { Badge, toast } from "@medusajs/ui";
 import { keepPreviousData } from "@tanstack/react-query";
 import { createColumnHelper } from "@tanstack/react-table";
@@ -385,9 +385,27 @@ const MemberActions = ({
     }
   };
 
+  // The member id, not the seller_member link id: the sign-in number belongs to
+  // the person, who may belong to several stores.
+  const memberId = member.member?.id;
+  const phone = member.member?.phone ?? "";
+
   return (
     <ActionMenu
       groups={[
+        ...(memberId
+          ? [
+              {
+                actions: [
+                  {
+                    icon: <PencilSquare />,
+                    label: t("stores.members.phone.action"),
+                    to: `members/${memberId}/phone?phone=${encodeURIComponent(phone)}`,
+                  },
+                ],
+              },
+            ]
+          : []),
         {
           actions: [
             {

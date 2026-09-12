@@ -7,6 +7,8 @@ import { AdditionalData } from "@medusajs/framework/types"
 import { SellerRole } from "@mercurjs/types"
 import { z } from "zod"
 
+import { iranMobileField, optionalIranMobileField } from "../../utils/phone"
+
 export type VendorGetSellersParamsType = z.infer<typeof VendorGetSellersParams>
 export const VendorGetSellersParams = createFindParams({
   offset: 0,
@@ -21,9 +23,12 @@ export const CreateSellerAccount = z.object({
   name: z.string(),
   handle: z.string().optional(),
   email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
+  // The store phone is OTP-verified later and the member phone IS the login
+  // credential: a number that cannot receive an SMS makes an account nobody can
+  // open, so neither is accepted as free text.
+  phone: optionalIranMobileField(),
   member_email: z.string().email().optional(),
-  member_phone: z.string().nullable().optional(),
+  member_phone: optionalIranMobileField(),
   first_name: z.string().nullable().optional(),
   last_name: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
@@ -72,7 +77,7 @@ export const UpdateSeller = z.object({
   name: z.string().optional(),
   handle: z.string().optional(),
   email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
+  phone: optionalIranMobileField(),
   description: z.string().nullable().optional(),
   logo: z.string().url().nullable().optional(),
   banner: z.string().url().nullable().optional(),
@@ -86,7 +91,9 @@ export const VendorUpdateSeller = WithAdditionalData(UpdateSeller)
 
 export type VendorInviteMemberType = z.infer<typeof VendorInviteMember>
 export const VendorInviteMember = z.object({
-  phone: z.string().min(1),
+  // An invite is a promise that this number can sign in. A landline here
+  // invites someone who can never accept.
+  phone: iranMobileField(),
   email: z.string().email().optional(),
   role_id: z.nativeEnum(SellerRole),
 })

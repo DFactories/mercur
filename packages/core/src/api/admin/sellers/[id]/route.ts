@@ -10,6 +10,7 @@ import { HttpTypes } from "@mercurjs/types"
 
 import { AdminUpdateSellerType } from "../validators"
 import { updateSellersWorkflow } from "../../../../workflows/seller"
+import { withPhoneVerificationReset } from "../../../utils/sellers"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -41,7 +42,15 @@ export const POST = async (
 ) => {
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
-  const { additional_data, ...update } = req.validatedBody
+  const { additional_data, ...rest } = req.validatedBody
+
+  // An operator editing the store phone is still a phone change: the new number
+  // has verified nothing yet, so the badge does not carry over.
+  const update = await withPhoneVerificationReset(
+    req.scope,
+    req.params.id,
+    rest
+  )
 
   await updateSellersWorkflow(req.scope).run({
     input: {

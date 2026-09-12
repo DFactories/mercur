@@ -26,6 +26,7 @@ import { useMe, useCreateInvite, useInvites } from "@hooks/api";
 import { useUserInviteTableQuery } from "@hooks/table/query";
 import { useDataTable } from "@hooks/use-data-table";
 import { isFetchError } from "@lib/is-fetch-error";
+import { iranMobileSchema } from "@mercurjs/dashboard-shared";
 import { MemberInviteDTO, SellerRole } from "@mercurjs/types";
 
 const ROLE_OPTIONS = [
@@ -49,25 +50,8 @@ const ROLE_LABEL_MAP: Record<string, string> = Object.fromEntries(
   ROLE_OPTIONS.map((r) => [r.value, r.labelKey]),
 );
 
-/** Iranian mobile: 09 + 9 digits = 11 digits. Mirrors the backend check. */
-const IRAN_MOBILE_RE = /^09\d{9}$/;
-
-const normalizePhone = (input: string): string => {
-  let p = input.replace(/[\s-]/g, "");
-  if (p.startsWith("+98")) p = "0" + p.slice(3);
-  else if (p.startsWith("0098")) p = "0" + p.slice(4);
-  else if (p.startsWith("98") && p.length === 12) p = "0" + p.slice(2);
-  return p;
-};
-
 const InviteUserSchema = zod.object({
-  phone: zod
-    .string()
-    .trim()
-    .transform(normalizePhone)
-    .refine((v) => IRAN_MOBILE_RE.test(v), {
-      message: i18n.t("users.inviteForm.validation.phoneInvalid"),
-    }),
+  phone: iranMobileSchema(i18n.t("users.inviteForm.validation.phoneInvalid")),
   role_id: zod
     .string()
     .min(1, { message: i18n.t("users.inviteForm.validation.roleRequired") }),

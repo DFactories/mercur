@@ -1,5 +1,5 @@
 import { Children, ReactNode } from "react";
-import { Badge, Container, Text } from "@medusajs/ui";
+import { Badge, Container, StatusBadge, Text } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 
 import { DisplayExtensionZone, DisplayField } from "@mercurjs/dashboard-shared";
@@ -89,9 +89,18 @@ export const StoreGeneralSection = ({
               <Text size="small" leading="compact" weight="plus">
                 {t("fields.phone")}
               </Text>
-              <Text size="small" leading="compact">
-                {seller.phone || "-"}
-              </Text>
+              <div className="flex items-center gap-x-2">
+                <Text size="small" leading="compact" dir="ltr">
+                  {seller.phone || "-"}
+                </Text>
+                {seller.phone ? (
+                  <StatusBadge color={seller.phone_verified_at ? "green" : "orange"}>
+                    {seller.phone_verified_at
+                      ? t("stores.phoneVerification.verified")
+                      : t("stores.phoneVerification.unverified")}
+                  </StatusBadge>
+                ) : null}
+              </div>
             </div>
           </DisplayField>
           <DisplayField model="seller" zone="general" id="website_url" data={seller}>

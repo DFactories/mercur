@@ -1,6 +1,11 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 
 import { Alert, Button, Input, Text } from "@medusajs/ui"
+import {
+  IRAN_MOBILE_RE,
+  normalizeIranPhone as normalizePhone,
+  toLatinDigits,
+} from "@mercurjs/dashboard-shared"
 import { useTranslation } from "react-i18next"
 
 import { useRequestOtp, useVerifyOtp } from "@hooks/api"
@@ -36,22 +41,6 @@ const RESEND_SECONDS_FALLBACK = 120
 
 /** The request route answers with both clocks (`otpTiming`). */
 type OtpTimingResponse = { resend_in?: number; expires_in?: number }
-
-/** Iranian mobile: 09 + 9 digits = 11 digits. */
-const IRAN_MOBILE_RE = /^09\d{9}$/
-
-/** Mirror the backend normalization so client validation matches. */
-const normalizePhone = (input: string): string => {
-  let p = input.replace(/[\s-]/g, "")
-  if (p.startsWith("+98")) {
-    p = "0" + p.slice(3)
-  } else if (p.startsWith("0098")) {
-    p = "0" + p.slice(4)
-  } else if (p.startsWith("98") && p.length === 12) {
-    p = "0" + p.slice(2)
-  }
-  return p
-}
 
 /**
  * Two-step phone (OTP) authentication used by both login and register.
@@ -160,7 +149,10 @@ export const PhoneAuthForm = ({
       return
     }
     try {
-      await verifyOtp({ phone: normalizePhone(phone), code: code.trim() })
+      await verifyOtp({
+        phone: normalizePhone(phone),
+        code: toLatinDigits(code.trim()),
+      })
       setIsCompleting(true)
       onVerified(normalizePhone(phone))
     } catch (e) {

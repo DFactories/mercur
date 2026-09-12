@@ -15,6 +15,7 @@ import { useCallback } from "react";
 
 import {
   FormExtensionZone,
+  iranMobileSchema,
   useExtendableForm,
 } from "@mercurjs/dashboard-shared";
 
@@ -51,10 +52,12 @@ const EditStoreSchema = zod.object({
     .email({ message: i18n.t("store.validation.emailInvalid") })
     .optional()
     .or(zod.literal("")),
-  phone: zod
-    .string()
-    .trim()
-    .min(1, { message: i18n.t("store.validation.phoneRequired") }),
+  // Changing this number drops the store's SMS verification and asks for it
+  // again, so it has to be a number that can actually receive the code.
+  phone: iranMobileSchema(
+    i18n.t("store.validation.phoneInvalid"),
+    i18n.t("store.validation.phoneRequired"),
+  ),
   description: zod.string().optional().or(zod.literal("")),
   website_url: zod.string().optional().or(zod.literal("")),
   media: zod.array(MediaSchema).optional(),
@@ -325,7 +328,13 @@ export const EditStoreForm = ({ seller }: EditStoreFormProps) => {
                 <Form.Item>
                   <Form.Label>{t("fields.phone")}</Form.Label>
                   <Form.Control>
-                    <Input type="tel" {...field} />
+                    <Input
+                      type="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      placeholder="09xxxxxxxxx"
+                      {...field}
+                    />
                   </Form.Control>
                   <Form.ErrorMessage />
                 </Form.Item>

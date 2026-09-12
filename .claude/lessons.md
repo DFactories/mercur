@@ -75,3 +75,60 @@ page killed the virtual module and left the panel blank until a manual reload.
 Deep entries are the fix — `@mercurjs/vendor/inputs` reaches the same component
 with no shell behind it (`grep virtual:mercur/routes dist/inputs.js` finds
 nothing). Gated host-side in both panels.
+
+### `.optional().transform()` turns an absent key into a written one
+
+A validator field written as
+
+```ts
+z.union([z.string(), z.null()]).optional().transform((v) => (v == null ? null : norm(v)))
+```
+
+does **not** leave an absent key absent. Zod runs the transform with `undefined`,
+so `parse({ name: "Store" })` returns `{ name: "Store", phone: null }` — and
+these bodies are PATCH-shaped, spread straight into `updateSellersWorkflow`. The
+first version of the phone guard shipped exactly that: every seller update that
+did not mention the phone (a closure window, a status change, an `is_premium`
+toggle) would have erased the store's number, and `withPhoneVerificationReset`
+— which keys off `update.phone === undefined` — would have dropped the SMS
+verification with it.
+
+The transform has to hand `undefined` back unchanged, and the refine has to allow
+it. Caught only because `optionalIranMobileField` was probed directly; nothing in
+the regression suite asserted a field it never touches, which is precisely why
+that class of bug is silent. Both a unit test (`phone.spec.ts`, "leaves an absent
+field absent") and an HTTP one ("does not touch the phone when the update never
+mentions it") now stand on it.
+
+### A phone number is a credential here, and it has exactly two guards
+
+Every account on this marketplace is opened by an SMS code, so a number that
+cannot receive one is not a typo — it is an account nobody can ever sign in to.
+A landline at registration took the sign-up and then locked the producer out.
+
+The guard is `packages/core/src/api/utils/phone.ts` on the backend and
+`@mercurjs/dashboard-shared`'s `lib/phone.ts` in the panels. Nothing else may
+re-implement either: four hand-rolled copies of the normalizer existed before
+this, and all four ignored Persian digits — the ۰۹… a Persian keyboard produces
+was called invalid by the very form asking for it. `src/__tests__/phone-guard.spec.ts`
+in both panels fails on a new `^09\d{9}$`, a new `normalizePhone`, or a `phone:`
+zod field that is not the shared schema (address and staff-profile phones are
+allowlisted there — a landline is a real number for a delivery contact).
+
+And the phone field is only half of an operator's ability to fix an account: the
+store and customer edit drawers demanded an email, which a phone-registered
+account does not have, so neither could be saved at all. Keep both optional.
+
+Three different phone numbers live in this system and only two of them are
+credentials:
+
+| field            | what it is                        | changing it must also…            |
+| ---------------- | --------------------------------- | --------------------------------- |
+| `member.phone`   | the vendor panel's sign-in number | move the phone-OTP identity       |
+| `customer.phone` | the storefront's sign-in number   | move the phone-OTP identity       |
+| `seller.phone`   | the store's public contact        | clear `phone_verified_at`         |
+
+`utils/phone-login-identity.ts` does the first two (`POST /admin/members/:id/phone`,
+`POST /admin/customers/:id/phone`) and `withPhoneVerificationReset` the third.
+Writing the profile field alone is the bug that looks like a fix: the panel shows
+the new number while the old one still opens the account.

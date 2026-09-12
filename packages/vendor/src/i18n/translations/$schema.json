@@ -9940,6 +9940,9 @@
             "phoneRequired": {
               "type": "string"
             },
+            "phoneInvalid": {
+              "type": "string"
+            },
             "handleInvalid": {
               "type": "string"
             }
@@ -12113,6 +12116,9 @@
                   "type": "string"
                 },
                 "phoneRequired": {
+                  "type": "string"
+                },
+                "phoneInvalid": {
                   "type": "string"
                 },
                 "handleInvalid": {

@@ -63,6 +63,7 @@ export type Routes = {
                     $addressId: typeof import("@medusajs/medusa/api/admin/customers/[id]/addresses/[address_id]/route");
                 };
                 customerGroups: typeof import("@medusajs/medusa/api/admin/customers/[id]/customer-groups/route");
+                phone: typeof import("../src/api/admin/customers/[id]/phone/route");
             };
         };
         draftOrders: typeof import("@medusajs/medusa/api/admin/draft-orders/route") & {
@@ -158,7 +159,11 @@ export type Routes = {
         locales: typeof import("@medusajs/medusa/api/admin/locales/route") & {
             $code: typeof import("@medusajs/medusa/api/admin/locales/[code]/route");
         };
-        members: typeof import("../src/api/admin/members/route");
+        members: typeof import("../src/api/admin/members/route") & {
+            $id: {
+                phone: typeof import("../src/api/admin/members/[id]/phone/route");
+            };
+        };
         notifications: typeof import("@medusajs/medusa/api/admin/notifications/route") & {
             $id: typeof import("@medusajs/medusa/api/admin/notifications/[id]/route");
         };

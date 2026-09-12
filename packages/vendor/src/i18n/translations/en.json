@@ -3310,7 +3310,8 @@
       "emailRequired": "Please enter an email",
       "emailInvalid": "Please enter a valid email",
       "nameTooLong": "Name must be at most 100 characters",
-      "phoneRequired": "Please enter a phone number",
+      "phoneRequired": "Please enter a mobile number",
+      "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits.",
       "handleInvalid": "Only lowercase letters (any script), numbers and hyphens — no spaces, and no leading or trailing hyphen"
     },
     "profileCompletion": {
@@ -3905,7 +3906,7 @@
       },
       "validation": {
         "phoneRequired": "Phone number is required",
-        "phoneInvalid": "Invalid phone number. It must start with 09 and be 11 digits.",
+        "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits.",
         "codeRequired": "Verification code is required"
       }
     },
@@ -4035,7 +4036,8 @@
         "currencyRequired": "Please select a currency",
         "countryRequired": "Please select a country",
         "accountNameRequired": "Please enter an account name",
-        "phoneRequired": "Please enter a phone number",
+        "phoneRequired": "Please enter a mobile number",
+        "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits.",
         "handleInvalid": "Only lowercase letters (any script), numbers and hyphens — no spaces, and no leading or trailing hyphen"
       },
       "preview": {

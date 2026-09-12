@@ -108,6 +108,39 @@ export const useUpdateCustomer = (
   })
 }
 
+/**
+ * Change a customer's phone from the operator panel.
+ *
+ * A dedicated route rather than a field on the customer update, because the
+ * phone is this marketplace's sign-in credential: the backend moves the
+ * phone-OTP login identity with it. Writing it through the plain update would
+ * leave the shopper signing in with their old number while the panel showed the
+ * new one. See `POST /admin/customers/:id/phone` in @mercurjs/core.
+ */
+export const useUpdateCustomerPhone = (
+  id: string,
+  options?: UseMutationOptions<
+    InferClientOutput<typeof sdk.admin.customers.$id.phone.mutate>,
+    ClientError,
+    Omit<
+      InferClientInput<typeof sdk.admin.customers.$id.phone.mutate>,
+      "$id"
+    >
+  >
+) => {
+  return useMutation({
+    mutationFn: (payload) =>
+      sdk.admin.customers.$id.phone.mutate({ $id: id, ...payload }),
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: customersQueryKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: customersQueryKeys.detail(id) })
+
+      options?.onSuccess?.(data, variables, context)
+    },
+    ...options,
+  })
+}
+
 export const useDeleteCustomer = (
   id: string,
   options?: UseMutationOptions<

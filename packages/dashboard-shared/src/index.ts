@@ -4,6 +4,14 @@ export {
   type UseQueryOptionsWrapper,
 } from "./lib/query-key-factory"
 export {
+  IRAN_MOBILE_RE,
+  iranMobileSchema,
+  isIranMobile,
+  normalizeIranPhone,
+  optionalIranMobileSchema,
+  toLatinDigits,
+} from "./lib/phone"
+export {
   formatTomanAmount,
   getTomanLabel,
   isTomanCurrency,

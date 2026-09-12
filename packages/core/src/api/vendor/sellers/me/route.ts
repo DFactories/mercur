@@ -7,6 +7,7 @@ import { HttpTypes } from "@mercurjs/types"
 
 import { VendorUpdateSellerType } from "../validators"
 import { updateSellersWorkflow } from "../../../../workflows/seller"
+import { withPhoneVerificationReset } from "../../../utils/sellers"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -33,7 +34,11 @@ export const POST = async (
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const sellerId = req.seller_context!.seller_id
 
-  const { additional_data, ...update } = req.validatedBody
+  const { additional_data, ...rest } = req.validatedBody
+
+  // Same rule as `/vendor/sellers/:id`: a changed store phone loses whatever
+  // the old number had verified.
+  const update = await withPhoneVerificationReset(req.scope, sellerId, rest)
 
   await updateSellersWorkflow(req.scope).run({
     input: {

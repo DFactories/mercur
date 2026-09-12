@@ -8,6 +8,8 @@ import {
 import { booleanString } from "@medusajs/medusa/api/utils/common-validators/common"
 import { AdditionalData } from "@medusajs/framework/types"
 
+import { iranMobileField, optionalIranMobileField } from "../../utils/phone"
+
 export type AdminGetSellerParamsType = z.infer<typeof AdminGetSellerParams>
 export const AdminGetSellerParams = createSelectParams()
 
@@ -54,7 +56,9 @@ export const CreateSeller = z.object({
   name: z.string(),
   handle: z.string().optional(),
   email: z.string().email(),
-  phone: z.string().nullable().optional(),
+  // Same rule as the vendor side: the store phone is OTP-verified, so an
+  // operator cannot save a number that can never receive the code.
+  phone: optionalIranMobileField(),
   description: z.string().nullable().optional(),
   logo: z.string().url().nullable().optional(),
   banner: z.string().url().nullable().optional(),
@@ -79,7 +83,7 @@ export const UpdateSeller = z.object({
   name: z.string().optional(),
   handle: z.string().optional(),
   email: z.string().email().optional(),
-  phone: z.string().nullable().optional(),
+  phone: optionalIranMobileField(),
   description: z.string().nullable().optional(),
   logo: z.string().url().nullable().optional(),
   banner: z.string().url().nullable().optional(),
@@ -130,7 +134,8 @@ export type AdminInviteSellerMemberType = z.infer<
   typeof AdminInviteSellerMember
 >
 export const AdminInviteSellerMember = z.object({
-  phone: z.string().min(1),
+  // The invited member signs in with this number — see the vendor-side invite.
+  phone: iranMobileField(),
   email: z.string().email().optional(),
   role_id: z.string(),
 })

@@ -4,6 +4,10 @@ export const adminSellerFields = [
   "handle",
   "email",
   "phone",
+  // Whether the store phone has passed its SMS check. The operator panel shows
+  // it beside the number, and an operator editing the number clears it — so the
+  // badge has to be readable from here or the reset is invisible.
+  "phone_verified_at",
   "description",
   "logo",
   "banner",

@@ -6,6 +6,7 @@ import * as z from "zod";
 
 import {
   FormExtensionZone,
+  iranMobileSchema,
   useExtendableForm,
 } from "@mercurjs/dashboard-shared";
 
@@ -22,7 +23,12 @@ const StoreStepSchema = z.object({
     .email(i18n.t("onboarding.wizard.validation.emailInvalid"))
     .optional()
     .or(z.literal("")),
-  phone: z.string().min(1, i18n.t("onboarding.wizard.validation.phoneRequired")),
+  // The store phone is verified by SMS later on: a landline typed here is a
+  // verification that can never complete.
+  phone: iranMobileSchema(
+    i18n.t("onboarding.wizard.validation.phoneInvalid"),
+    i18n.t("onboarding.wizard.validation.phoneRequired"),
+  ),
   currency_code: z.string().min(1, i18n.t("onboarding.wizard.validation.currencyRequired")),
   description: z.string().optional(),
   handle: z
@@ -115,7 +121,14 @@ export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
                 <Form.Item>
                   <Form.Label>{t("fields.phone")}</Form.Label>
                   <Form.Control>
-                    <Input type="tel" autoComplete="tel" {...field} />
+                    <Input
+                      type="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      placeholder="09xxxxxxxxx"
+                      autoComplete="tel"
+                      {...field}
+                    />
                   </Form.Control>
                   <Form.ErrorMessage />
                 </Form.Item>

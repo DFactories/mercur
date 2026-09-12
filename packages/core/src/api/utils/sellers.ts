@@ -2,6 +2,8 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { SellerStatus } from "@mercurjs/types"
 
+import { normalizeIranPhone } from "./phone"
+
 /**
  * The filter that answers "which producers is the store allowed to show right
  * now?" — open, and not inside a scheduled closure.
@@ -52,4 +54,49 @@ export const resolveVisibleSellerIds = async (
   })
 
   return visibleSellers.map((s: { id: string }) => s.id)
+}
+
+/**
+ * A store phone that changed has not been verified — whatever the old one had
+ * proven. Returns the update body with `phone_verified_at: null` added when the
+ * incoming phone differs from the stored one.
+ *
+ * Every writer of `seller.phone` has to do this, which is why it is one
+ * function: the rule reached the vendor's `/vendor/sellers/:id` route and was
+ * missing from both `/vendor/sellers/me` and the operator's
+ * `/admin/sellers/:id`, so a store could change its number through either of
+ * those and keep a verification badge earned by a number it no longer answers.
+ */
+export const withPhoneVerificationReset = async <
+  T extends { phone?: string | null },
+>(
+  scope: MedusaContainer,
+  sellerId: string,
+  update: T
+): Promise<T & { phone_verified_at?: Date | null }> => {
+  if (update.phone === undefined) {
+    return update
+  }
+
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const {
+    data: [current],
+  } = await query.graph({
+    entity: "seller",
+    fields: ["phone"],
+    filters: { id: sellerId },
+  })
+
+  const currentPhone = (current?.phone as string | null) ?? null
+  const nextPhone = update.phone ?? null
+  const unchanged =
+    currentPhone !== null &&
+    nextPhone !== null &&
+    normalizeIranPhone(currentPhone) === normalizeIranPhone(nextPhone)
+
+  if (unchanged) {
+    return update
+  }
+
+  return { ...update, phone_verified_at: null }
 }

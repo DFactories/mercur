@@ -16,6 +16,10 @@ import {
   useInviteSellerMember,
   useSellerMembers,
 } from "../../../../hooks/api/sellers";
+import {
+  iranMobileSchema,
+  normalizeIranPhone as normalizePhone,
+} from "@mercurjs/dashboard-shared";
 import { SellerMemberDTO, SellerRole } from "@mercurjs/types";
 
 const ROLE_OPTIONS = [
@@ -35,25 +39,10 @@ const ROLE_OPTIONS = [
   { value: SellerRole.SUPPORT, labelKey: "users.roles.support" },
 ];
 
-/** Iranian mobile: 09 + 9 digits = 11 digits. Mirrors the backend check. */
-const IRAN_MOBILE_RE = /^09\d{9}$/;
-
-const normalizePhone = (input: string): string => {
-  let p = input.replace(/[\s-]/g, "");
-  if (p.startsWith("+98")) p = "0" + p.slice(3);
-  else if (p.startsWith("0098")) p = "0" + p.slice(4);
-  else if (p.startsWith("98") && p.length === 12) p = "0" + p.slice(2);
-  return p;
-};
-
 const InviteMemberSchema = zod.object({
-  phone: zod
-    .string()
-    .trim()
-    .transform(normalizePhone)
-    .refine((v) => IRAN_MOBILE_RE.test(v), {
-      message: i18n.t("stores.members.addUser.validation.phoneInvalid"),
-    }),
+  phone: iranMobileSchema(
+    i18n.t("stores.members.addUser.validation.phoneInvalid"),
+  ),
   role_id: zod
     .string()
     .min(1, { message: i18n.t("stores.members.addUser.validation.roleRequired") }),

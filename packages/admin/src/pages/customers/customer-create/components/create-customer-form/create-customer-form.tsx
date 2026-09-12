@@ -1,5 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import i18n from "i18next"
 import { Button, Heading, Input, Text, toast } from "@medusajs/ui"
+import { optionalIranMobileSchema } from "@mercurjs/dashboard-shared"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import * as zod from "zod"
@@ -12,13 +14,26 @@ import {
 import { KeyboundForm } from "../../../../../components/utilities/keybound-form"
 import { useCreateCustomer } from "../../../../../hooks/api/customers"
 
-const CreateCustomerSchema = zod.object({
-  email: zod.string().email(),
-  first_name: zod.string().optional(),
-  last_name: zod.string().optional(),
-  company_name: zod.string().optional(),
-  phone: zod.string().optional(),
-})
+const CreateCustomerSchema = zod
+  .object({
+    email: zod
+      .string()
+      .email({ message: i18n.t("customers.validation.emailInvalid") })
+      .optional()
+      .or(zod.literal("")),
+    first_name: zod.string().optional(),
+    last_name: zod.string().optional(),
+    company_name: zod.string().optional(),
+    phone: optionalIranMobileSchema(
+      i18n.t("customers.validation.phoneInvalid")
+    ),
+  })
+  // Shoppers here sign in by phone, so an email is no longer what identifies an
+  // account — but a record with neither is one nobody can ever reach.
+  .refine((data) => !!data.email || !!data.phone, {
+    message: i18n.t("customers.validation.contactRequired"),
+    path: ["email"],
+  })
 
 export const CreateCustomerForm = () => {
   const { t } = useTranslation()
@@ -40,7 +55,7 @@ export const CreateCustomerForm = () => {
   const handleSubmit = form.handleSubmit(async (data) => {
     await mutateAsync(
       {
-        email: data.email,
+        email: data.email || undefined,
         first_name: data.first_name || undefined,
         last_name: data.last_name || undefined,
         company_name: data.company_name || undefined,
@@ -50,7 +65,7 @@ export const CreateCustomerForm = () => {
         onSuccess: ({ customer }) => {
           toast.success(
             t("customers.create.successToast", {
-              email: customer.email,
+              email: customer.email || customer.phone || customer.id,
             })
           )
           handleSuccess(`/customers/${customer.id}`)
@@ -115,7 +130,7 @@ export const CreateCustomerForm = () => {
                 render={({ field }) => {
                   return (
                     <Form.Item data-testid="create-customer-form-email-item">
-                      <Form.Label data-testid="create-customer-form-email-label">{t("fields.email")}</Form.Label>
+                      <Form.Label optional data-testid="create-customer-form-email-label">{t("fields.email")}</Form.Label>
                       <Form.Control data-testid="create-customer-form-email-control">
                         <Input autoComplete="off" {...field} data-testid="create-customer-form-email-input" />
                       </Form.Control>
@@ -147,7 +162,15 @@ export const CreateCustomerForm = () => {
                     <Form.Item data-testid="create-customer-form-phone-item">
                       <Form.Label optional data-testid="create-customer-form-phone-label">{t("fields.phone")}</Form.Label>
                       <Form.Control data-testid="create-customer-form-phone-control">
-                        <Input autoComplete="off" {...field} data-testid="create-customer-form-phone-input" />
+                        <Input
+                          type="tel"
+                          inputMode="tel"
+                          dir="ltr"
+                          placeholder="09xxxxxxxxx"
+                          autoComplete="off"
+                          {...field}
+                          data-testid="create-customer-form-phone-input"
+                        />
                       </Form.Control>
                       <Form.ErrorMessage data-testid="create-customer-form-phone-error" />
                     </Form.Item>

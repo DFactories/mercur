@@ -1,9 +1,12 @@
+import i18n from "i18next"
 import { HttpTypes } from "@medusajs/types"
 import { Button, Input, toast } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 import * as zod from "zod"
 import {
   FormExtensionZone,
+  normalizeIranPhone,
+  optionalIranMobileSchema,
   useExtendableForm,
 } from "@mercurjs/dashboard-shared"
 import { ConditionalTooltip } from "../../../../../components/common/conditional-tooltip/index.ts"
@@ -13,18 +16,30 @@ import {
   useRouteModal,
 } from "../../../../../components/modals/index.ts"
 import { KeyboundForm } from "../../../../../components/utilities/keybound-form/keybound-form.tsx"
-import { useUpdateCustomer } from "../../../../../hooks/api/customers.tsx"
+import {
+  useUpdateCustomer,
+  useUpdateCustomerPhone,
+} from "../../../../../hooks/api/customers.tsx"
 
 type EditCustomerFormProps = {
   customer: HttpTypes.AdminCustomer
 }
 
 const EditCustomerSchema = zod.object({
-  email: zod.string().email(),
+  // Optional: a shopper who signed up with their phone has no email, and a
+  // required one made this drawer impossible to submit for exactly those
+  // accounts — including to fix the phone number itself.
+  email: zod
+    .string()
+    .email({ message: i18n.t("customers.validation.emailInvalid") })
+    .optional()
+    .or(zod.literal("")),
   first_name: zod.string().optional(),
   last_name: zod.string().optional(),
   company_name: zod.string().optional(),
-  phone: zod.string().optional(),
+  phone: optionalIranMobileSchema(
+    i18n.t("customers.validation.phoneInvalid")
+  ),
 })
 
 export const EditCustomerForm = ({ customer }: EditCustomerFormProps) => {
@@ -46,31 +61,56 @@ export const EditCustomerForm = ({ customer }: EditCustomerFormProps) => {
   })
 
   const { mutateAsync, isPending } = useUpdateCustomer(customer.id)
+  const { mutateAsync: updatePhone, isPending: isPhonePending } =
+    useUpdateCustomerPhone(customer.id)
+
+  // The phone route answers with codes, not sentences — the backend has no
+  // language, and this panel (unlike the vendor one) has no global translator
+  // for API errors, so the two it can actually return are mapped here.
+  const mapPhoneError = (message: string) => {
+    if (message.includes("PHONE_ALREADY_REGISTERED")) {
+      return t("customers.validation.phoneTaken")
+    }
+    if (message.includes("INVALID_PHONE")) {
+      return t("customers.validation.phoneInvalid")
+    }
+    return message
+  }
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    await mutateAsync(
-      {
-        email: customer.has_account ? undefined : data.email,
+    const nextPhone = data.phone || ""
+    const phoneChanged =
+      nextPhone !== "" &&
+      nextPhone !== normalizeIranPhone(customer.phone ?? "")
+
+    try {
+      // First, because it is the one that can be refused (the number may
+      // already open someone else's account) — and a refusal should leave the
+      // whole save undone rather than half-applied.
+      if (phoneChanged) {
+        await updatePhone({ phone: nextPhone })
+      }
+
+      await mutateAsync({
+        email: customer.has_account ? undefined : data.email || undefined,
         first_name: data.first_name || undefined,
         last_name: data.last_name || undefined,
-        phone: data.phone || undefined,
+        // Never here: the phone travels through its own route, which moves the
+        // sign-in identity with it.
         company_name: data.company_name || undefined,
-      },
-      {
-        onSuccess: ({ customer }) => {
-          toast.success(
-            t("customers.edit.successToast", {
-              email: customer.email,
-            })
-          )
+      })
 
-          handleSuccess()
-        },
-        onError: (error) => {
-          toast.error(error.message)
-        },
-      }
-    )
+      toast.success(
+        t("customers.edit.successToast", {
+          // A phone-only shopper has no email to name them by.
+          email: customer.email || nextPhone || customer.phone || customer.id,
+        })
+      )
+
+      handleSuccess()
+    } catch (error) {
+      toast.error(mapPhoneError((error as Error).message))
+    }
   })
 
   return (
@@ -84,7 +124,7 @@ export const EditCustomerForm = ({ customer }: EditCustomerFormProps) => {
               render={({ field }) => {
                 return (
                   <Form.Item data-testid="edit-customer-form-email-item">
-                    <Form.Label data-testid="edit-customer-form-email-label">{t("fields.email")}</Form.Label>
+                    <Form.Label optional data-testid="edit-customer-form-email-label">{t("fields.email")}</Form.Label>
                     <Form.Control data-testid="edit-customer-form-email-control">
                       <ConditionalTooltip
                         showTooltip={customer.has_account}
@@ -149,9 +189,16 @@ export const EditCustomerForm = ({ customer }: EditCustomerFormProps) => {
               render={({ field }) => {
                 return (
                   <Form.Item data-testid="edit-customer-form-phone-item">
-                    <Form.Label data-testid="edit-customer-form-phone-label">{t("fields.phone")}</Form.Label>
+                    <Form.Label optional data-testid="edit-customer-form-phone-label">{t("fields.phone")}</Form.Label>
                     <Form.Control data-testid="edit-customer-form-phone-control">
-                      <Input {...field} data-testid="edit-customer-form-phone-input" />
+                      <Input
+                        type="tel"
+                        inputMode="tel"
+                        dir="ltr"
+                        placeholder="09xxxxxxxxx"
+                        {...field}
+                        data-testid="edit-customer-form-phone-input"
+                      />
                     </Form.Control>
                     <Form.ErrorMessage data-testid="edit-customer-form-phone-error" />
                   </Form.Item>
@@ -174,7 +221,7 @@ export const EditCustomerForm = ({ customer }: EditCustomerFormProps) => {
               </Button>
             </RouteDrawer.Close>
             <Button
-              isLoading={isPending}
+              isLoading={isPending || isPhonePending}
               type="submit"
               variant="primary"
               size="small"

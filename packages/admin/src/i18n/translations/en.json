@@ -1224,6 +1224,12 @@
       "hint": "Create a new customer and manage their details.",
       "successToast": "Customer {{email}} was successfully created."
     },
+    "validation": {
+      "emailInvalid": "Please enter a valid email",
+      "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits.",
+      "contactRequired": "Enter an email or a mobile number",
+      "phoneTaken": "This phone number already belongs to another customer"
+    },
     "groups": {
       "label": "Customer groups",
       "removeTitle": "Remove customer",
@@ -4149,6 +4155,22 @@
         "linkCopied": "Invite link was successfully copied to clipboard.",
         "copyFailed": "Failed to copy invite link",
         "noVendorUrl": "Vendor URL is not configured on the backend (MERCUR_VENDOR_URL)"
+      },
+      "phone": {
+        "action": "Edit sign-in number",
+        "header": "Edit the member's sign-in number",
+        "label": "Sign-in number",
+        "description": "This is the number the member signs in to the vendor panel with — the code is sent to it. It is not the store's public contact number.",
+        "successToast": "Sign-in number changed to {{phone}}. The old number no longer opens this account.",
+        "savedNoLoginToast": "Number saved as {{phone}}. This member had no phone sign-in yet, so nothing was moved.",
+        "validation": {
+          "phoneRequired": "Please enter a mobile number",
+          "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits."
+        },
+        "errors": {
+          "alreadyRegistered": "This number already belongs to another account",
+          "unchanged": "This is already the member's number"
+        }
       }
     },
     "edit": {
@@ -4161,6 +4183,10 @@
       "uploadBannerLabel": "Upload banner",
       "uploadBannerHint": "Drag and drop your banner here or click to upload.",
       "successToast": "Store {{name}} was successfully updated."
+    },
+    "phoneVerification": {
+      "verified": "Verified",
+      "unverified": "Not verified"
     },
     "create": {
       "tabs": {
@@ -4178,6 +4204,7 @@
         "nameRequired": "Please enter a name",
         "emailRequired": "Please enter an email",
         "emailInvalid": "Please enter a valid email",
+        "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits.",
         "currencyRequired": "Please select a currency"
       }
     },

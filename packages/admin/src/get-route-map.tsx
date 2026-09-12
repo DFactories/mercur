@@ -922,6 +922,11 @@ export function getRouteMap({
                             lazy: () =>
                               import("./pages/stores/store-member-invite"),
                           },
+                          {
+                            path: "members/:member_id/phone",
+                            lazy: () =>
+                              import("./pages/stores/store-member-phone"),
+                          },
                         ],
                       },
                     ],

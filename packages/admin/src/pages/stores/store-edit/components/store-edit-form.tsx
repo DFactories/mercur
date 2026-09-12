@@ -22,6 +22,7 @@ import { RouteDrawer, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
 import {
   FormExtensionZone,
+  optionalIranMobileSchema,
   useExtendableForm,
 } from "@mercurjs/dashboard-shared";
 import { MediaSchema } from "@pages/products/product-create/constants";
@@ -44,11 +45,18 @@ const EditStoreSchema = zod.object({
     .min(1, { message: i18n.t("stores.create.validation.nameRequired") }),
   description: zod.string().optional().or(zod.literal("")),
   handle: zod.string().optional().or(zod.literal("")),
+  // Optional, because a store that signed up by phone has no email at all —
+  // requiring one here made this whole drawer unsubmittable for them, and the
+  // phone field below (the one an operator actually needs to correct) could
+  // never be saved.
   email: zod
     .string()
-    .min(1, { message: i18n.t("stores.create.validation.emailRequired") })
-    .email({ message: i18n.t("stores.create.validation.emailInvalid") }),
-  phone: zod.string().optional().or(zod.literal("")),
+    .email({ message: i18n.t("stores.create.validation.emailInvalid") })
+    .optional()
+    .or(zod.literal("")),
+  phone: optionalIranMobileSchema(
+    i18n.t("stores.create.validation.phoneInvalid"),
+  ),
   website_url: zod.string().optional().or(zod.literal("")),
   is_premium: zod.boolean(),
   media: zod.array(MediaSchema).optional(),
@@ -202,7 +210,7 @@ export const StoreEditForm = ({ seller }: StoreEditFormProps) => {
         onSuccess: () => {
           toast.success(
             t("stores.edit.successToast", {
-              name: values.name ?? values.email,
+              name: values.name || values.email || values.phone,
             }),
           );
           handleSuccess();
@@ -340,7 +348,7 @@ export const StoreEditForm = ({ seller }: StoreEditFormProps) => {
               name="email"
               render={({ field }) => (
                 <Form.Item>
-                  <Form.Label>{t("fields.email")}</Form.Label>
+                  <Form.Label optional>{t("fields.email")}</Form.Label>
                   <Form.Control>
                     <Input type="email" {...field} />
                   </Form.Control>
@@ -355,7 +363,13 @@ export const StoreEditForm = ({ seller }: StoreEditFormProps) => {
                 <Form.Item>
                   <Form.Label optional>{t("fields.phone")}</Form.Label>
                   <Form.Control>
-                    <Input type="tel" {...field} />
+                    <Input
+                      type="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      placeholder="09xxxxxxxxx"
+                      {...field}
+                    />
                   </Form.Control>
                   <Form.ErrorMessage />
                 </Form.Item>

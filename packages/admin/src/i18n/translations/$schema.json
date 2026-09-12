@@ -3677,6 +3677,24 @@
           },
           "additionalProperties": false
         },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "emailInvalid": {
+              "type": "string"
+            },
+            "phoneInvalid": {
+              "type": "string"
+            },
+            "contactRequired": {
+              "type": "string"
+            },
+            "phoneTaken": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
         "groups": {
           "type": "object",
           "properties": {
@@ -12456,6 +12474,54 @@
                 }
               },
               "additionalProperties": false
+            },
+            "phone": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string"
+                },
+                "header": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "successToast": {
+                  "type": "string"
+                },
+                "savedNoLoginToast": {
+                  "type": "string"
+                },
+                "validation": {
+                  "type": "object",
+                  "properties": {
+                    "phoneRequired": {
+                      "type": "string"
+                    },
+                    "phoneInvalid": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "errors": {
+                  "type": "object",
+                  "properties": {
+                    "alreadyRegistered": {
+                      "type": "string"
+                    },
+                    "unchanged": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
@@ -12488,6 +12554,18 @@
               "type": "string"
             },
             "successToast": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "phoneVerification": {
+          "type": "object",
+          "properties": {
+            "verified": {
+              "type": "string"
+            },
+            "unverified": {
               "type": "string"
             }
           },
@@ -12539,6 +12617,9 @@
                   "type": "string"
                 },
                 "emailInvalid": {
+                  "type": "string"
+                },
+                "phoneInvalid": {
                   "type": "string"
                 },
                 "currencyRequired": {

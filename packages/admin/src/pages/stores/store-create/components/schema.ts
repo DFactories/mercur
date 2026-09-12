@@ -1,4 +1,5 @@
 import i18n from "i18next";
+import { optionalIranMobileSchema } from "@mercurjs/dashboard-shared";
 import { z } from "zod";
 
 export const CreateStoreSchema = z.object({
@@ -9,7 +10,9 @@ export const CreateStoreSchema = z.object({
     .string()
     .min(1, { message: i18n.t("stores.create.validation.emailRequired") })
     .email({ message: i18n.t("stores.create.validation.emailInvalid") }),
-  phone: z.string().optional().or(z.literal("")),
+  phone: optionalIranMobileSchema(
+    i18n.t("stores.create.validation.phoneInvalid"),
+  ),
   currency_code: z
     .string()
     .min(1, { message: i18n.t("stores.create.validation.currencyRequired") }),

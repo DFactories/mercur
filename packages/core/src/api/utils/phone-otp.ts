@@ -19,6 +19,11 @@ import { z } from "zod"
 
 import OtpModuleService, { otpTiming } from "../../modules/otp/service"
 import { createSmsIrClient } from "../../providers/smsir/client"
+import {
+  assertIranMobile,
+  iranMobileVariants,
+  normalizeIranPhone,
+} from "./phone"
 
 /**
  * Phone (OTP) authentication, implemented as thin custom routes rather than a
@@ -56,18 +61,12 @@ export const VerifyOtpSchema = z.object({
   code: z.string().min(4).max(10),
 })
 
-/** Normalize common Iranian mobile formats to a single local form (09xxxxxxxxx). */
-export function normalizeIranPhone(input: string): string {
-  let p = input.replace(/[\s-]/g, "")
-  if (p.startsWith("+98")) {
-    p = "0" + p.slice(3)
-  } else if (p.startsWith("0098")) {
-    p = "0" + p.slice(4)
-  } else if (p.startsWith("98") && p.length === 12) {
-    p = "0" + p.slice(2)
-  }
-  return p
-}
+/**
+ * Re-exported so the routes that already import phone helpers from here keep
+ * working; the definitions live in `./phone`, which is also what the request
+ * validators use, so a number can never pass one guard and fail the other.
+ */
+export { normalizeIranPhone }
 
 type SellerModuleLike = {
   listMembers: (
@@ -141,7 +140,7 @@ async function findPendingInvitesByPhone(
 ): Promise<MemberInviteLite[]> {
   const seller = req.scope.resolve<InviteServiceLike>(MercurModules.SELLER)
   const invites = await seller.listMemberInvites({
-    phone: phoneVariants(phone),
+    phone: iranMobileVariants(phone),
     accepted: false,
   })
   const now = Date.now()
@@ -191,28 +190,6 @@ async function acceptInvitesByPhone(
   return memberId
 }
 
-/** Iranian mobile in canonical local form: 09 + 9 digits = 11 digits. */
-const IRAN_MOBILE_RE = /^09\d{9}$/
-
-function assertValidPhone(phone: string): void {
-  if (!IRAN_MOBILE_RE.test(phone)) {
-    throw new MedusaError(MedusaError.Types.INVALID_DATA, "INVALID_PHONE")
-  }
-}
-
-/** Common stored formats for an Iranian phone, so we match legacy/profile values. */
-function phoneVariants(normalized: string): string[] {
-  const variants = new Set<string>([normalized])
-  if (normalized.startsWith("0")) {
-    const local = normalized.slice(1)
-    variants.add(local)
-    variants.add("98" + local)
-    variants.add("+98" + local)
-    variants.add("0098" + local)
-  }
-  return Array.from(variants)
-}
-
 /**
  * Find an existing member (vendor user) by their *login* phone. Login identity is
  * the member phone only — the store phone (seller.phone) is a separate verified
@@ -223,7 +200,7 @@ async function findMemberIdByPhone(
   phone: string
 ): Promise<string | undefined> {
   const seller = req.scope.resolve<SellerModuleLike>(MercurModules.SELLER)
-  const members = await seller.listMembers({ phone: phoneVariants(phone) })
+  const members = await seller.listMembers({ phone: iranMobileVariants(phone) })
   return members[0]?.id
 }
 
@@ -241,7 +218,7 @@ async function isPhoneTaken(
     return true
   }
   const seller = req.scope.resolve<SellerModuleLike>(MercurModules.SELLER)
-  const sellers = await seller.listSellers({ phone: phoneVariants(phone) })
+  const sellers = await seller.listSellers({ phone: iranMobileVariants(phone) })
   return sellers.some((s) => !!s.phone_verified_at)
 }
 
@@ -251,7 +228,7 @@ async function findCustomerIdByPhone(
   phone: string
 ): Promise<string | undefined> {
   // `phone` is a real customer column but isn't in the typed filter props.
-  const filters = { phone: phoneVariants(phone) } as Parameters<
+  const filters = { phone: iranMobileVariants(phone) } as Parameters<
     ICustomerModuleService["listCustomers"]
   >[0]
   const customers = await customerService.listCustomers(filters)
@@ -391,7 +368,7 @@ export function createRequestOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
     const { phone: rawPhone, mode } = RequestOtpSchema.parse(req.body)
     const phone = normalizeIranPhone(rawPhone)
-    assertValidPhone(phone)
+    assertIranMobile(phone)
 
     // Enforce login/register separation before spending an SMS.
     // - login checks the *login identity* exists (member phone / customer phone)
@@ -441,7 +418,7 @@ export function createVerifyOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
     const { phone: rawPhone, code } = VerifyOtpSchema.parse(req.body)
     const phone = normalizeIranPhone(rawPhone)
-    assertValidPhone(phone)
+    assertIranMobile(phone)
 
     const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
     await otp.verifyOtp({ identifier: phone, actor_type: actorType, code })
@@ -539,7 +516,7 @@ async function resolveSellerPhoneContext(req: MedusaRequest): Promise<{
     throw new MedusaError(MedusaError.Types.INVALID_DATA, "PHONE_NOT_SET")
   }
   const phone = normalizeIranPhone(seller.phone)
-  assertValidPhone(phone)
+  assertIranMobile(phone)
 
   return {
     sellerModule,
