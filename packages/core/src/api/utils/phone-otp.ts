@@ -363,10 +363,43 @@ async function deliverOtp(
   }
 }
 
+
+/**
+ * Read a request body, or refuse it with a CODE the clients already understand.
+ *
+ * `Schema.parse()` throws a raw `ZodError`, which Medusa's error handler does
+ * not recognise: the caller gets a **500** carrying an English sentence
+ * ("Validation error: Too small: expected string to have >=8 characters"). In a
+ * Persian panel that is both the wrong status and untranslatable copy — and it
+ * is reachable, because the vendor login form never length-checks the code: a
+ * producer who mistypes a 3-digit code hit a 500. Found probing production
+ * right after this release went out.
+ *
+ * Which field failed decides the code, so each one maps to copy the panels
+ * already have.
+ */
+function parseBodyOrRefuse<T>(schema: z.ZodType<T>, body: unknown): T {
+  const result = schema.safeParse(body)
+  if (result.success) {
+    return result.data
+  }
+
+  const failed = new Set(
+    result.error.issues.map((issue) => String(issue.path[0] ?? ""))
+  )
+  throw new MedusaError(
+    MedusaError.Types.INVALID_DATA,
+    failed.has("code") && !failed.has("phone") ? "INVALID_CODE" : "INVALID_PHONE"
+  )
+}
+
 /** POST handler: generate an OTP and deliver it via sms.ir. Always 200 (never leaks whether the number exists). */
 export function createRequestOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
-    const { phone: rawPhone, mode } = RequestOtpSchema.parse(req.body)
+    const { phone: rawPhone, mode } = parseBodyOrRefuse(
+      RequestOtpSchema,
+      req.body
+    )
     const phone = normalizeIranPhone(rawPhone)
     assertIranMobile(phone)
 
@@ -416,7 +449,10 @@ export function createRequestOtpHandler(actorType: ActorType) {
 /** POST handler: verify an OTP and return a session token (find-or-create the auth identity). */
 export function createVerifyOtpHandler(actorType: ActorType) {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
-    const { phone: rawPhone, code } = VerifyOtpSchema.parse(req.body)
+    const { phone: rawPhone, code } = parseBodyOrRefuse(
+      VerifyOtpSchema,
+      req.body
+    )
     const phone = normalizeIranPhone(rawPhone)
     assertIranMobile(phone)
 
@@ -586,7 +622,7 @@ export function createSellerPhoneRequestOtpHandler() {
  */
 export function createSellerPhoneVerifyOtpHandler() {
   return async (req: MedusaRequest, res: MedusaResponse): Promise<void> => {
-    const { code } = SellerPhoneVerifySchema.parse(req.body)
+    const { code } = parseBodyOrRefuse(SellerPhoneVerifySchema, req.body)
     const { sellerModule, sellerId, phone } =
       await resolveSellerPhoneContext(req)
 

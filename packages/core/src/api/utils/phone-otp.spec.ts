@@ -6,7 +6,7 @@ vi.mock("../../providers/smsir/client", () => ({
   createSmsIrClient: () => ({ sendVerify }),
 }))
 
-import { createRequestOtpHandler } from "./phone-otp"
+import { createRequestOtpHandler, createVerifyOtpHandler } from "./phone-otp"
 
 /**
  * The undelivered-code boundary.
@@ -117,5 +117,55 @@ describe("the request response carries both clocks", () => {
     // user is told to wait for a resend they cannot yet ask for while holding a
     // code they are told is dead.
     expect(payload.expires_in).toBeGreaterThanOrEqual(payload.resend_in)
+  })
+})
+
+/**
+ * A malformed body is a 400 with a code, not a 500 with an English sentence.
+ *
+ * The handlers used to call `Schema.parse()`, whose `ZodError` Medusa's error
+ * handler does not recognise — so `{"phone":"0912"}` came back as HTTP 500
+ * carrying "Validation error: Too small: expected string to have >=8
+ * characters". Wrong status, and copy no Persian panel can translate. Reachable
+ * without trying: the vendor login form never length-checks the code, so a
+ * mistyped 3-digit code produced a 500. Measured against production on
+ * 2026-09-12, minutes after the release.
+ */
+describe("a malformed OTP body", () => {
+  const invoke = (handler: ReturnType<typeof createRequestOtpHandler>, body: unknown) => {
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    }
+    const req = { body, scope: { resolve: () => ({}) } }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return handler(req as any, res as any)
+  }
+
+  it("refuses a too-short phone as INVALID_PHONE", async () => {
+    await expect(
+      invoke(createRequestOtpHandler("member"), { phone: "0912" })
+    ).rejects.toThrow("INVALID_PHONE")
+  })
+
+  it("refuses a missing body as INVALID_PHONE", async () => {
+    await expect(
+      invoke(createRequestOtpHandler("member"), {})
+    ).rejects.toThrow("INVALID_PHONE")
+  })
+
+  it("names the CODE when that is the field that failed", async () => {
+    await expect(
+      invoke(createVerifyOtpHandler("member"), {
+        phone: "09121234567",
+        code: "12",
+      })
+    ).rejects.toThrow("INVALID_CODE")
+  })
+
+  it("still says INVALID_PHONE when both are wrong", async () => {
+    await expect(
+      invoke(createVerifyOtpHandler("member"), { phone: "x", code: "12" })
+    ).rejects.toThrow("INVALID_PHONE")
   })
 })

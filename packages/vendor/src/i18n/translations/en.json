@@ -3902,7 +3902,12 @@
       "resendIn": "Resend in {{seconds}}s",
       "errors": {
         "notRegistered": "This phone number is not registered. Please sign up.",
-        "alreadyRegistered": "This phone number is already registered. Please log in."
+        "alreadyRegistered": "This phone number is already registered. Please log in.",
+        "codeInvalid": "The verification code is not correct",
+        "codeExpired": "The code has expired — ask for a new one",
+        "codeMissing": "No code is waiting. Ask for a new one.",
+        "tooManyAttempts": "Too many wrong attempts. Ask for a new code.",
+        "tooSoon": "Wait before asking for another code"
       },
       "validation": {
         "phoneRequired": "Phone number is required",

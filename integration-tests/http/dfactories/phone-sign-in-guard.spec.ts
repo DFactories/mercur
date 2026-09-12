@@ -106,6 +106,27 @@ medusaIntegrationTestRunner({
           expect(stored.length).toBeGreaterThan(0)
         })
 
+        it("answers a malformed body with 400 and a code, not a 500", async () => {
+          // `Schema.parse()` threw a raw ZodError, which Medusa does not map:
+          // the caller got a 500 carrying "Validation error: Too small…", in
+          // English, inside a Persian panel. The login form never length-checks
+          // the code, so a mistyped 3-digit code reached exactly this.
+          const short = (await failed(
+            api.post("/vendor/auth/phone/request-otp", { phone: "0912" })
+          )) as ApiError
+          expect(short.response.status).toEqual(400)
+          expect(short.response.data.message).toContain("INVALID_PHONE")
+
+          const badCode = (await failed(
+            api.post("/vendor/auth/phone/verify-otp", {
+              phone: "09121234567",
+              code: "12",
+            })
+          )) as ApiError
+          expect(badCode.response.status).toEqual(400)
+          expect(badCode.response.data.message).toContain("INVALID_CODE")
+        })
+
         it("refuses a landline as a store phone", async () => {
           const error = (await failed(
             api.post(

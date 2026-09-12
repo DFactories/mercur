@@ -32,6 +32,25 @@ const EXACT: Record<string, string> = {
   // auth (reuse the login keys)
   "Invalid email or password": "login.errors.invalidCredentials",
   "Identity with email already exists": "login.errors.identityExists",
+  // phone sign-in. The backend answers these as CODES so every client can pick
+  // its own words — but an unmapped code falls through to the generic message
+  // for its status, so the panel had specific copy for each of them and showed
+  // none of it (and logged an `[api-error] untranslated` line every time a
+  // producer mistyped a code).
+  INVALID_PHONE: "login.phone.validation.phoneInvalid",
+  INVALID_CODE: "login.phone.errors.codeInvalid",
+  PHONE_NOT_REGISTERED: "login.phone.errors.notRegistered",
+  PHONE_ALREADY_REGISTERED: "login.phone.errors.alreadyRegistered",
+  // …and the OTP module's own sentences, which are what a producer actually
+  // hits while signing in.
+  "Invalid verification code.": "login.phone.errors.codeInvalid",
+  "Verification code has expired. Please request a new one.":
+    "login.phone.errors.codeExpired",
+  "No active verification code. Please request a new one.":
+    "login.phone.errors.codeMissing",
+  "Too many incorrect attempts. Please request a new code.":
+    "login.phone.errors.tooManyAttempts",
+  "Please wait before requesting another code.": "login.phone.errors.tooSoon",
   // standard HTTP statusText fallbacks
   Unauthorized: "apiErrors.unauthorized",
   Forbidden: "apiErrors.forbidden",

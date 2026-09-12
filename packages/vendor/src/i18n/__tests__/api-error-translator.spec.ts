@@ -91,3 +91,50 @@ describe("translateApiError", () => {
     expect(isPersian(translateApiError(undefined))).toBe(true)
   })
 })
+
+/**
+ * The sign-in flow's own errors.
+ *
+ * These are the messages a producer actually meets: a mistyped code, an expired
+ * one, a number that is not registered. The backend answers them as CODES
+ * (`INVALID_PHONE`) or as the OTP module's English sentences, and every one of
+ * them used to fall through to the generic message for its HTTP status — so the
+ * panel carried specific Persian copy for each and showed none of it, while
+ * logging `[api-error] untranslated backend message` on each attempt.
+ *
+ * Asserted as a table because the failure mode is "somebody added a new code
+ * and nobody noticed": each entry must come back Persian, and must not be the
+ * status fallback.
+ */
+describe("phone sign-in errors reach the producer in their own words", () => {
+  const genericFor = (status: number) =>
+    localizeApiMessage("something nobody mapped", status)
+
+  it.each([
+    ["INVALID_PHONE", 400],
+    ["INVALID_CODE", 400],
+    ["PHONE_NOT_REGISTERED", 404],
+    ["PHONE_ALREADY_REGISTERED", 422],
+    ["Invalid verification code.", 401],
+    ["Verification code has expired. Please request a new one.", 401],
+    ["No active verification code. Please request a new one.", 401],
+    ["Too many incorrect attempts. Please request a new code.", 400],
+    ["Please wait before requesting another code.", 400],
+  ])("translates %s", (message, status) => {
+    const translated = localizeApiMessage(message, status)
+
+    expect(isPersian(translated)).toBe(true)
+    expect(translated).not.toBe(genericFor(status))
+  })
+
+  it("tells a wrong code apart from an expired one", () => {
+    // Two different things to do about them — ask again vs. re-enter — so they
+    // must not collapse into one sentence.
+    expect(localizeApiMessage("Invalid verification code.", 401)).not.toBe(
+      localizeApiMessage(
+        "Verification code has expired. Please request a new one.",
+        401
+      )
+    )
+  })
+})

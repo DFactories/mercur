@@ -11715,6 +11715,21 @@
                 },
                 "alreadyRegistered": {
                   "type": "string"
+                },
+                "codeInvalid": {
+                  "type": "string"
+                },
+                "codeExpired": {
+                  "type": "string"
+                },
+                "codeMissing": {
+                  "type": "string"
+                },
+                "tooManyAttempts": {
+                  "type": "string"
+                },
+                "tooSoon": {
+                  "type": "string"
                 }
               },
               "additionalProperties": false
