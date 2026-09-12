@@ -242,6 +242,100 @@ medusaIntegrationTestRunner({
         })
       })
 
+      describe("an operator can find and see who signs in", () => {
+        const OWNER_PHONE = "09127770000"
+
+        beforeEach(async () => {
+          const sellerModule = container.resolve(
+            MercurModules.SELLER
+          ) as unknown as {
+            updateMembers: (data: {
+              id: string
+              phone: string
+            }) => Promise<unknown>
+            listMembers: (
+              filters: Record<string, unknown>
+            ) => Promise<Array<{ id: string }>>
+          }
+          const [member] = await sellerModule.listMembers({
+            email: "phone-guard@test.com",
+          })
+          await sellerModule.updateMembers({
+            id: member.id,
+            phone: OWNER_PHONE,
+          })
+        })
+
+        it("says which seat is the owner, and what number it signs in with", async () => {
+          // The store page reads the seats, not `seller.members` — that
+          // relation returns the members themselves with no `is_owner` on them,
+          // so there is no way to tell the owner from the rest through it.
+          const { data } = await api.get(
+            `/admin/sellers/${seller.id}/members`,
+            adminHeaders
+          )
+
+          const seats = data.seller_members as Array<{
+            is_owner?: boolean
+            member?: { phone?: string | null }
+          }>
+          const owner = seats.find((seat) => seat.is_owner)
+          expect(owner).toBeDefined()
+          expect(owner!.member?.phone).toEqual(OWNER_PHONE)
+        })
+
+        it("finds the store by the owner's sign-in number", async () => {
+          // The number a producer calls from is the owner's, not the store's —
+          // and `q` only ever searched the seller's own columns.
+          const { data } = await api.get(
+            `/admin/sellers?q=${OWNER_PHONE}`,
+            adminHeaders
+          )
+
+          expect(data.sellers.map((s: { id: string }) => s.id)).toEqual([
+            seller.id,
+          ])
+        })
+
+        it("finds it by the store's own number too, in any spelling", async () => {
+          await api.post(
+            `/admin/sellers/${seller.id}`,
+            { phone: "09128881122" },
+            adminHeaders
+          )
+
+          const { data } = await api.get(
+            `/admin/sellers?q=${encodeURIComponent("+98 912 888 1122")}`,
+            adminHeaders
+          )
+
+          expect(data.sellers.map((s: { id: string }) => s.id)).toEqual([
+            seller.id,
+          ])
+        })
+
+        it("returns nothing for a number nobody has — not everything", async () => {
+          const { data } = await api.get(
+            "/admin/sellers?q=09129999999",
+            adminHeaders
+          )
+
+          expect(data.sellers).toEqual([])
+          expect(data.count).toEqual(0)
+        })
+
+        it("leaves an ordinary text search alone", async () => {
+          const { data } = await api.get(
+            `/admin/sellers?q=${encodeURIComponent("Phone Guard")}`,
+            adminHeaders
+          )
+
+          expect(data.sellers.map((s: { id: string }) => s.id)).toContain(
+            seller.id
+          )
+        })
+      })
+
       describe("an operator can recover a locked-out producer", () => {
         const OLD_MEMBER_PHONE = "09125550000"
         const NEW_MEMBER_PHONE = "09125551111"

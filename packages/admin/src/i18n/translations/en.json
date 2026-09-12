@@ -4188,6 +4188,9 @@
       "verified": "Verified",
       "unverified": "Not verified"
     },
+    "ownerPhone": {
+      "label": "Owner sign-in number"
+    },
     "create": {
       "tabs": {
         "details": "Details",

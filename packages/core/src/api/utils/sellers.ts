@@ -2,7 +2,11 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { SellerStatus } from "@mercurjs/types"
 
-import { normalizeIranPhone } from "./phone"
+import {
+  iranMobileVariants,
+  isIranMobile,
+  normalizeIranPhone,
+} from "./phone"
 
 /**
  * The filter that answers "which producers is the store allowed to show right
@@ -99,4 +103,54 @@ export const withPhoneVerificationReset = async <
   }
 
   return { ...update, phone_verified_at: null }
+}
+
+/**
+ * A phone number typed into the stores search finds the store it belongs to —
+ * whether it is the store's own contact number or the SIGN-IN number of someone
+ * on its team.
+ *
+ * Medusa's free-text `q` searches the seller's own columns, so the owner's
+ * number matched nothing: an operator holding the number a producer calls from
+ * had no way to reach their store. Returns the seller ids to filter by, or null
+ * when the query is not a phone number at all (leave `q` alone then).
+ */
+export const resolveSellerIdsByPhone = async (
+  scope: MedusaContainer,
+  q: string
+): Promise<string[] | null> => {
+  if (!isIranMobile(q)) {
+    return null
+  }
+
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const variants = iranMobileVariants(q)
+
+  const { data: sellersByPhone } = await query.graph({
+    entity: "seller",
+    fields: ["id"],
+    filters: { phone: variants },
+  })
+
+  const { data: members } = await query.graph({
+    entity: "member",
+    fields: ["id"],
+    filters: { phone: variants },
+  })
+
+  const ids = new Set((sellersByPhone ?? []).map((s: { id: string }) => s.id))
+
+  const memberIds = (members ?? []).map((m: { id: string }) => m.id)
+  if (memberIds.length) {
+    const { data: seats } = await query.graph({
+      entity: "seller_member",
+      fields: ["seller_id"],
+      filters: { member_id: memberIds },
+    })
+    for (const seat of (seats ?? []) as Array<{ seller_id: string }>) {
+      ids.add(seat.seller_id)
+    }
+  }
+
+  return Array.from(ids)
 }

@@ -12571,6 +12571,15 @@
           },
           "additionalProperties": false
         },
+        "ownerPhone": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
         "create": {
           "type": "object",
           "properties": {

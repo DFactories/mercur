@@ -3,3 +3,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * StatusBadge, in RTL.
+ *
+ * @medusajs/ui builds it as [20px dot container][label] and pads it
+ * `pl-0 pr-1` — PHYSICAL padding. The flex order follows `direction`, so in RTL
+ * the dot moves to the right and the label to the left, while the 4px stays on
+ * the right: the label ends up flush against the border on its own side, and
+ * the dot gets 4px of slack it never has in LTR. Every status in the panel is
+ * this component, so the whole panel reads as if the badges were built for the
+ * other direction.
+ *
+ * The same padding expressed logically is correct in BOTH directions — in LTR
+ * `inline-start`/`inline-end` resolve to left/right, i.e. byte-for-byte what
+ * ships today. Keyed on the component's own class combination (specificity
+ * 0,5,1, so it wins over the utilities without `!important`); the panel's
+ * `status-badge-rtl.spec.ts` fails if upstream ever stops emitting those
+ * classes, rather than letting the override quietly stop matching.
+ */
+span.txt-compact-xsmall-plus.rounded-md.border.pl-0.pr-1 {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0.25rem;
+}
+
+/*
+ * …and the gap NEXT to it.
+ *
+ * Tailwind's `space-x-*` builds the gap out of `margin-left` on every child but
+ * the first — physical again. Under `dir="rtl"` the margin lands on the side
+ * the previous sibling already occupies, so the gap collapses to 0 and a status
+ * badge ends up touching whatever sits beside it. Tailwind ships the switch for
+ * exactly this (`--tw-space-x-reverse`), it just has to be turned on.
+ *
+ * Matched by class prefix rather than by listing every size: an enumerated list
+ * silently misses the first size a future component introduces, and this file
+ * cannot see which sizes the bundle uses. Setting the variable where no
+ * `space-x-*` margin is active does nothing — nothing reads it.
+ */
+[dir="rtl"] [class*="space-x-"] > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}

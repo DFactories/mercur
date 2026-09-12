@@ -4248,6 +4248,9 @@
       "verified": "تأیید شده",
       "unverified": "تأیید نشده"
     },
+    "ownerPhone": {
+      "label": "شماره ورود مالک"
+    },
     "create": {
       "tabs": {
         "details": "جزئیات",
