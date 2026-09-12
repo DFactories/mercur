@@ -62,8 +62,10 @@ export const MemberPhoneForm = ({
       toast.success(
         result?.login_identity_updated
           ? t("stores.members.phone.successToast", { phone: values.phone })
-          : // Saved, but this member had no phone sign-in to move — say so
-            // rather than promise them a login they do not have.
+          : // No identity existed to move — but the member is still reachable:
+            // the OTP route links a verified number to the member whose
+            // `member.phone` matches it, so this number opens the account from
+            // their next sign-in.
             t("stores.members.phone.savedNoLoginToast", {
               phone: values.phone,
             }),

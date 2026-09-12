@@ -4162,7 +4162,7 @@
         "label": "Sign-in number",
         "description": "This is the number the member signs in to the vendor panel with — the code is sent to it. It is not the store's public contact number.",
         "successToast": "Sign-in number changed to {{phone}}. The old number no longer opens this account.",
-        "savedNoLoginToast": "Number saved as {{phone}}. This member had no phone sign-in yet, so nothing was moved.",
+        "savedNoLoginToast": "Sign-in number saved as {{phone}}. This member signs in with it from now on.",
         "validation": {
           "phoneRequired": "Please enter a mobile number",
           "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits."

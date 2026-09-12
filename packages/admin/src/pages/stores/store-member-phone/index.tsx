@@ -18,8 +18,14 @@ const Root = () => {
 
   return (
     <RouteDrawer>
+      {/* An explicit Title, so the dialog has an accessible name rather than
+          the empty sr-only one the drawer falls back to. The description is
+          visible in the body; duplicating it here would only make a screen
+          reader say it twice. */}
       <RouteDrawer.Header>
-        <Heading>{t("stores.members.phone.header")}</Heading>
+        <RouteDrawer.Title asChild>
+          <Heading>{t("stores.members.phone.header")}</Heading>
+        </RouteDrawer.Title>
       </RouteDrawer.Header>
       {memberId ? (
         <MemberPhoneForm
