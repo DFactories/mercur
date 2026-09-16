@@ -161,7 +161,12 @@ function trimTrailingSlashes(value: string): string {
     return end === value.length ? value : value.slice(0, end);
 }
 
-async function loadMedusaConfig(
+/**
+ * Exported for testing. The rule worth pinning is that a caller-supplied
+ * `vendorUrl` survives a Medusa config that cannot be read — which is the
+ * normal case in a panel image, built without the backend's secrets.
+ */
+export async function loadMedusaConfig(
     medusaConfigPath: string,
     root: string,
     options: {
@@ -174,6 +179,23 @@ async function loadMedusaConfig(
     vendorAppUrl?: string;
 }> {
     const configDir = path.dirname(medusaConfigPath);
+
+    /**
+     * An explicitly configured vendor URL is a constant the caller handed us —
+     * it does not come from the Medusa config, so it must not disappear when
+     * the Medusa config cannot be read.
+     *
+     * That is not a hypothetical. A panel image is built without the backend's
+     * secrets, so `medusa-config.ts` fail-closes on the placeholder, the import
+     * below throws, and the catch returns a bare object. `vendorAppUrl` came
+     * back undefined, `__VENDOR_URL__` was defined as "", and the admin panel's
+     * invite link fell through to the relative `/seller` — resolving against
+     * the ADMIN host and 404ing, on a deployment where the two panels are
+     * separate subdomains. The option was passed correctly and thrown away.
+     */
+    const configuredVendorUrl = options.vendorUrl
+        ? trimTrailingSlashes(options.vendorUrl)
+        : undefined;
 
     try {
         // Medusa configs assume they execute from their own directory — `medusa` itself
@@ -199,8 +221,8 @@ async function loadMedusaConfig(
         const vendorModule = modules.vendor_ui;
         const vendorPath = vendorModule?.options?.path ?? "/seller";
 
-        if (options.vendorUrl) {
-            vendorAppUrl = trimTrailingSlashes(options.vendorUrl);
+        if (configuredVendorUrl) {
+            vendorAppUrl = configuredVendorUrl;
         } else if (options.isDevelopment) {
             const vendorHost =
                 vendorModule?.options?.viteDevServerHost ?? "localhost";
@@ -244,7 +266,8 @@ async function loadMedusaConfig(
                 `Building with base "/" and no plugin extensions — if this panel is served ` +
                 `under a sub-path (e.g. /dashboard), its assets will not resolve.`,
         );
-        return { pluginExtensions: [] };
+        // Whatever else is lost here, a caller-supplied vendor URL survives.
+        return { pluginExtensions: [], vendorAppUrl: configuredVendorUrl };
     }
 }
 
