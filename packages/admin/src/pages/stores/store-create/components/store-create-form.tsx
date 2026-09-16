@@ -27,7 +27,7 @@ export const StoreCreateForm = ({ children }: StoreCreateFormProps) => {
       phone: "",
       currency_code: "",
       handle: "",
-      member_email: "",
+      member_phone: "",
     },
     mode: "onSubmit",
     reValidateMode: "onSubmit",
@@ -45,7 +45,7 @@ export const StoreCreateForm = ({ children }: StoreCreateFormProps) => {
         currency_code: values.currency_code,
         handle: values.handle || undefined,
         member: {
-          email: values.member_email,
+          phone: values.member_phone,
         },
       });
 

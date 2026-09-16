@@ -12633,6 +12633,12 @@
                 },
                 "currencyRequired": {
                   "type": "string"
+                },
+                "memberPhoneRequired": {
+                  "type": "string"
+                },
+                "memberPhoneInvalid": {
+                  "type": "string"
                 }
               },
               "additionalProperties": false

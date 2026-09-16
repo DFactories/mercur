@@ -22,7 +22,10 @@ import { createMemberInvitesWorkflow } from "./create-member-invites"
 export const createSellersWorkflowId = "create-sellers"
 
 export type CreateSellersWorkflowInput = {
-  sellers: (CreateSellerDTO & { member: { email: string } })[]
+  sellers: (CreateSellerDTO & {
+    /** Who the initial Seller Administration invite goes to. One of the two. */
+    member: { email?: string | null; phone?: string | null }
+  })[]
 } & AdditionalData
 
 export type CreateSellersWorkflowHooks = [
@@ -63,7 +66,12 @@ export const createSellersWorkflow: ReturnWorkflow<
         ({ sellers, input }) =>
           sellers.map((seller, i) => ({
             seller_id: seller.id,
-            email: input.sellers[i].member.email,
+            // Both travel. A phone invite is delivered by SMS and accepted on
+            // OTP sign-in; an email-only one keeps the upstream behaviour.
+            // Dropping the phone here is what made the admin create-store form
+            // email-only in a marketplace nobody signs into with an email.
+            email: input.sellers[i].member.email ?? null,
+            phone: input.sellers[i].member.phone ?? null,
             role_id: SellerRole.SELLER_ADMINISTRATION,
           }))
       )

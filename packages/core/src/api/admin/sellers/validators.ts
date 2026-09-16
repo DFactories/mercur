@@ -72,9 +72,28 @@ export const CreateSeller = z.object({
   closed_to: z.coerce.date().nullable().optional(),
   closure_note: z.string().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
-  member: z.object({
-    email: z.string().email(),
-  }),
+  /**
+   * Who this store is being created FOR — the person the initial Seller
+   * Administration invite is addressed to, and therefore its owner, since a
+   * store created here has no seat until someone accepts.
+   *
+   * Phone OR email, because this marketplace signs vendors in with a phone and
+   * an OTP. Demanding an email meant an operator creating a store for a real
+   * producer had to invent one, then cancel the invite it produced and send a
+   * second one by phone — and an invented address is an invite nobody can
+   * accept sitting on the account forever.
+   *
+   * Email is kept for the email/password deployments upstream. Exactly one is
+   * required; both together is accepted and the phone wins at delivery.
+   */
+  member: z
+    .object({
+      email: z.string().email().optional(),
+      phone: optionalIranMobileField(),
+    })
+    .refine((m) => !!m.email || !!m.phone, {
+      message: "Either member.email or member.phone is required.",
+    }),
 })
 export const AdminCreateSeller = WithAdditionalData(CreateSeller)
 

@@ -10,7 +10,7 @@ import { defineTabMeta } from "../../../../components/tabbed-form/types";
 import { useMembers } from "../../../../hooks/api/members";
 import { CreateStoreSchemaType } from "./schema";
 
-type Member = { id: string; email: string };
+type Member = { id: string; email?: string | null; phone?: string | null };
 
 const Root = () => {
   const { t } = useTranslation();
@@ -20,18 +20,22 @@ const Root = () => {
   const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const emailValue = useWatch({
+  const phoneValue = useWatch({
     control: form.control,
-    name: "member_email",
+    name: "member_phone",
   });
 
+  // Searching by phone works because `q` covers the member's searchable
+  // columns and `/admin/members` returns `phone` — it did not until
+  // core 2.3.1-dfactories.16, which is why the same lookup on the "add user"
+  // form matched nobody.
   const { members } = useMembers(
-    { q: emailValue || undefined, limit: 10 },
+    { q: phoneValue || undefined, limit: 10 },
     { placeholderData: (prev: any) => prev },
   );
 
   const memberList = useMemo(
-    () => (members as Member[] | undefined) ?? [],
+    () => ((members as Member[] | undefined) ?? []).filter((m) => !!m.phone),
     [members],
   );
 
@@ -75,16 +79,17 @@ const Root = () => {
         <div className="flex flex-col gap-y-4">
           <Form.Field
             control={form.control}
-            name="member_email"
+            name="member_phone"
             render={({ field }) => (
               <Form.Item>
-                <Form.Label>{t("fields.email")}</Form.Label>
+                <Form.Label>{t("fields.phone")}</Form.Label>
                 <Form.Control>
                   <div ref={wrapperRef} className="relative">
                     <Input
                       {...field}
                       autoComplete="off"
-                      placeholder="admin@example.com"
+                      placeholder="09121234567"
+                      dir="ltr"
                       onFocus={() => setSuggestionsOpen(true)}
                       onBlur={() => {
                         field.onBlur();
@@ -106,12 +111,17 @@ const Root = () => {
                               type="button"
                               onMouseDown={(e) => {
                                 e.preventDefault();
-                                field.onChange(member.email);
+                                field.onChange(member.phone ?? "");
                                 setSuggestionsOpen(false);
                               }}
                               className="hover:bg-ui-bg-base-hover text-ui-fg-base flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm"
                             >
-                              {member.email}
+                              <span dir="ltr">{member.phone}</span>
+                              {member.email ? (
+                                <span className="text-ui-fg-subtle ms-2 truncate">
+                                  {member.email}
+                                </span>
+                              ) : null}
                             </button>
                           ))}
                         </div>,

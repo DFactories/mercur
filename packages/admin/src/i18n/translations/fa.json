@@ -4268,7 +4268,9 @@
         "emailRequired": "لطفاً یک ایمیل وارد کنید",
         "emailInvalid": "لطفاً یک ایمیل معتبر وارد کنید",
         "phoneInvalid": "شماره موبایل نامعتبر است. باید با ۰۹ شروع شود و ۱۱ رقم باشد.",
-        "currencyRequired": "لطفاً یک ارز انتخاب کنید"
+        "currencyRequired": "لطفاً یک ارز انتخاب کنید",
+        "memberPhoneRequired": "شمارهٔ موبایل الزامی است",
+        "memberPhoneInvalid": "شمارهٔ موبایل معتبر وارد کنید"
       }
     },
     "request": {

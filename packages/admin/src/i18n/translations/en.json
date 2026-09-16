@@ -4208,7 +4208,9 @@
         "emailRequired": "Please enter an email",
         "emailInvalid": "Please enter a valid email",
         "phoneInvalid": "Invalid mobile number. It must start with 09 and be 11 digits.",
-        "currencyRequired": "Please select a currency"
+        "currencyRequired": "Please select a currency",
+        "memberPhoneRequired": "A mobile number is required",
+        "memberPhoneInvalid": "Enter a valid Iranian mobile number"
       }
     },
     "request": {
