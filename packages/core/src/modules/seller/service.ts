@@ -23,9 +23,25 @@ import {
   OrderGroup,
 } from "./models"
 import { OrderGroupRepository } from "./repositories"
+import {
+  describeMemberIdentity,
+  findMemberByIdentity,
+  hasMemberIdentity,
+  indexMembersByIdentity,
+  type MemberIdentity,
+} from "./utils/member-identity"
 import { MemberDTO, MemberInviteDTO, OrderGroupDTO, SellerDTO, SellerModuleOptions } from "@mercurjs/types"
 
 const DEFAULT_INVITE_VALID_DURATION_SECONDS = 60 * 60 * 24 * 7 // 7 days
+
+/** What a caller may hand `createMemberInvites`. Exactly one identity is set. */
+type CreateMemberInviteInput = MemberIdentity & {
+  seller_id: string
+  role_id?: string
+  id?: string
+  accepted?: boolean
+  expires_at?: Date
+}
 
 type InjectedDependencies = {
   orderGroupRepository: OrderGroupRepository
@@ -106,6 +122,42 @@ class SellerModuleService extends MedusaService({
     return super.updateSellers(input, sharedContext) as any
   }
 
+  /**
+   * Every existing member named by these records, by EITHER identity.
+   *
+   * Two queries rather than one `$or`: `email` and `phone` are separate partial
+   * unique indexes, and querying them separately keeps each lookup on its own
+   * index. A member holding both is returned twice — `indexMembersByIdentity`
+   * dedupes on id.
+   */
+  private async listMembersByIdentity_(
+    records: MemberIdentity[],
+    config: FindConfig<MemberDTO> = {},
+    sharedContext?: Context,
+  ): Promise<MemberDTO[]> {
+    const emails = records
+      .map((r) => r.email)
+      .filter((e): e is string => !!e)
+    const phones = records
+      .map((r) => r.phone)
+      .filter((p): p is string => !!p)
+
+    const found: MemberDTO[] = []
+
+    if (emails.length) {
+      found.push(
+        ...(await this.listMembers({ email: emails }, config, sharedContext)),
+      )
+    }
+    if (phones.length) {
+      found.push(
+        ...(await this.listMembers({ phone: phones }, config, sharedContext)),
+      )
+    }
+
+    return found
+  }
+
   @InjectTransactionManager()
   async upsertMembers(
     data: {
@@ -117,47 +169,33 @@ class SellerModuleService extends MedusaService({
     sharedContext?: Context,
   ): Promise<MemberDTO[]> {
     // Members are keyed by email (email/password sign-up) OR phone (OTP sign-up).
-    const emails = data
-      .map((d) => d.email)
-      .filter((e): e is string => !!e)
-    const phones = data
-      .map((d) => d.phone)
-      .filter((p): p is string => !!p)
-
-    const existing: MemberDTO[] = []
-    if (emails.length) {
-      existing.push(
-        ...(await this.listMembers({ email: emails }, {}, sharedContext))
-      )
-    }
-    if (phones.length) {
-      existing.push(
-        ...(await this.listMembers({ phone: phones }, {}, sharedContext))
+    //
+    // A record with neither is rejected BEFORE anything is written. Such a row
+    // can never be matched again — both lookup maps below are keyed by identity
+    // and the unique indexes are partial on `IS NOT NULL`, so the database
+    // accepts any number of them — and it produces a member who cannot sign in
+    // and cannot be re-invited. The old code created the row first and only
+    // then failed to find it, returning `undefined` as a MemberDTO and leaving
+    // the orphan behind; refusing up front keeps that row from existing at all.
+    if (data.some((d) => !hasMemberIdentity(d))) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "A member requires an email or a phone number."
       )
     }
 
-    const byEmail = new Map(
-      existing.filter((m) => m.email).map((m) => [m.email as string, m])
-    )
-    const byPhone = new Map(
-      existing.filter((m) => m.phone).map((m) => [m.phone as string, m])
-    )
+    const existing = await this.listMembersByIdentity_(data, {}, sharedContext)
+    const index = indexMembersByIdentity(existing)
 
-    const findExisting = (d: { email?: string | null; phone?: string | null }) =>
-      (d.email ? byEmail.get(d.email) : undefined) ??
-      (d.phone ? byPhone.get(d.phone) : undefined)
+    const findExisting = (d: MemberIdentity) =>
+      findMemberByIdentity(index, d)
 
     const toCreate = data.filter((d) => !findExisting(d))
     const created = toCreate.length
       ? await this.createMembers(toCreate, sharedContext)
       : []
     const createdArr = Array.isArray(created) ? created : [created]
-    const createdByEmail = new Map(
-      createdArr.filter((m) => m.email).map((m) => [m.email as string, m])
-    )
-    const createdByPhone = new Map(
-      createdArr.filter((m) => m.phone).map((m) => [m.phone as string, m])
-    )
+    const createdIndex = indexMembersByIdentity(createdArr)
 
     const toUpdate = data
       .map((d) => {
@@ -189,10 +227,20 @@ class SellerModuleService extends MedusaService({
       if (ex) {
         return ex
       }
-      const createdMember =
-        (d.email ? createdByEmail.get(d.email) : undefined) ??
-        (d.phone ? createdByPhone.get(d.phone) : undefined)
-      return createdMember!
+      const createdMember = findMemberByIdentity(createdIndex, d)
+
+      // Unreachable: the identity guard at the top of this method means every
+      // record has an email or a phone, so it is in one of the two maps. Kept
+      // as a throw rather than a `!` because the previous non-null assertion
+      // was not true and cost an orphan member row to discover.
+      if (!createdMember) {
+        throw new MedusaError(
+          MedusaError.Types.UNEXPECTED_STATE,
+          "Upserted member could not be resolved after creation."
+        )
+      }
+
+      return createdMember
     })
   }
 
@@ -204,7 +252,13 @@ class SellerModuleService extends MedusaService({
   ): Promise<T extends any[] ? MemberInviteDTO[] : MemberInviteDTO> {
     const validDuration = this.options_.invite_valid_duration ?? DEFAULT_INVITE_VALID_DURATION_SECONDS
 
-    const inviteList = Array.isArray(data) ? data : [data]
+    // Named rather than inferred: the method's generic is `T extends any`, so
+    // `inviteList` widens to `(T & any[]) | T[]` and the identity helpers —
+    // which are typed — cannot accept it. This says what an invite actually
+    // carries, which is also the only documentation of that shape.
+    const inviteList = (
+      Array.isArray(data) ? data : [data]
+    ) as CreateMemberInviteInput[]
 
     const sellerIds = [...new Set(inviteList.map((i) => i.seller_id))]
     const sellers = await this.listSellers(
@@ -214,43 +268,56 @@ class SellerModuleService extends MedusaService({
     )
     const sellerMap = new Map(sellers.map((s) => [s.id, s.name]))
 
-    const emails = inviteList
-      .map((i) => i.email)
-      .filter((e): e is string => !!e)
-    const existingMembers = emails.length
-      ? await this.listMembers(
-          { email: emails },
-          { select: ["id", "email"] },
-          sharedContext,
-        )
-      : []
-    const existingEmailSet = new Set(existingMembers.map((m) => m.email))
+    // An invite is addressed by phone (the OTP-native, primary identity) or by
+    // email. Everything below resolves the invitee through EITHER — the
+    // previous version looked only at `email`, so on the phone path no existing
+    // member was ever found: the duplicate check passed for someone who already
+    // had a seat, and `existing_member` was stamped `false` into every token.
+    if (inviteList.some((i) => !hasMemberIdentity(i))) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "An invite requires an email or a phone number."
+      )
+    }
+
+    const index = indexMembersByIdentity(
+      await this.listMembersByIdentity_(
+        inviteList,
+        { select: ["id", "email", "phone"] },
+        sharedContext,
+      ),
+    )
+    const existingMembers = index.unique
+    const findMember = (i: MemberIdentity) => findMemberByIdentity(index, i)
 
     if (existingMembers.length > 0) {
-      const memberIds = existingMembers.map((m) => m.id)
       const existingSellerMembers = await this.listSellerMembers(
-        { seller_id: sellerIds, member_id: memberIds },
+        {
+          seller_id: sellerIds,
+          member_id: existingMembers.map((m) => m.id),
+        },
         { select: ["seller_id", "member_id"] },
         sharedContext,
       )
 
-      if (existingSellerMembers.length > 0) {
-        const memberIdToEmail = new Map(existingMembers.map((m) => [m.id, m.email]))
-        const alreadyInSeller = new Set(
-          existingSellerMembers.map((sm) => `${sm.seller_id}:${memberIdToEmail.get(sm.member_id)}`)
-        )
+      // Keyed on the member id rather than on the email the old code round-
+      // tripped through: the id is the thing the seat is actually held by, and
+      // it is present whichever identity the invite was addressed to.
+      const seatKeys = new Set(
+        existingSellerMembers.map((sm) => `${sm.seller_id}:${sm.member_id}`),
+      )
 
-        const duplicates = inviteList.filter((i) =>
-          alreadyInSeller.has(`${i.seller_id}:${i.email}`)
-        )
+      const duplicates = inviteList.filter((i) => {
+        const member = findMember(i)
+        return !!member && seatKeys.has(`${i.seller_id}:${member.id}`)
+      })
 
-        if (duplicates.length > 0) {
-          const emails = duplicates.map((d) => d.email).join(", ")
-          throw new MedusaError(
-            MedusaError.Types.INVALID_DATA,
-            `The following emails are already members of the seller: ${emails}`
-          )
-        }
+      if (duplicates.length > 0) {
+        const identities = duplicates.map(describeMemberIdentity).join(", ")
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          `The following are already members of the seller: ${identities}`
+        )
       }
     }
 
@@ -265,7 +332,10 @@ class SellerModuleService extends MedusaService({
             email: invite.email ?? null,
             phone: invite.phone ?? null,
             seller_name: sellerMap.get(invite.seller_id) ?? "",
-            existing_member: existingEmailSet.has(invite.email),
+            // Resolved through either identity. On the phone path this was
+            // always `false`, so the accept page routed a person who already
+            // had an account into sign-up and tried to mint a second one.
+            existing_member: !!findMember(invite),
           },
           validDuration,
         ),
