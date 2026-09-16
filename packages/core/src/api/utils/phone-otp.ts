@@ -492,18 +492,37 @@ export function createVerifyOtpHandler(actorType: ActorType) {
     if (actorType === "customer") {
       // Customers have no onboarding step: create (or reuse) the customer here.
       authIdentity = await ensureCustomerForAuthIdentity(req, authIdentity, phone)
-    } else if (!authIdentity.app_metadata?.member_id) {
-      // Link an existing member whose login phone matches, so phone login reaches
-      // their existing seller(s). Otherwise, accept any pending invites for this
-      // phone (OTP-native invites) — creating the member and joining the inviting
-      // store(s). If neither applies, they go through onboarding.
-      let memberId = await findMemberIdByPhone(req, phone)
-      if (!memberId) {
-        const invites = await findPendingInvitesByPhone(req, phone)
-        if (invites.length) {
-          memberId = await acceptInvitesByPhone(req, phone, invites)
-        }
+    } else {
+      // Pending invites are accepted on EVERY verification, for anyone.
+      //
+      // These two concerns are independent, and making them exclusive is what
+      // broke OTP-native invites for the people most likely to receive one.
+      // Acceptance used to sit in the `else` of "does this phone already have a
+      // member?", inside a branch that itself only ran while the auth identity
+      // had no `member_id` yet. So an invite was honoured for exactly one kind
+      // of recipient: a phone with no member that had also never signed in.
+      //
+      // Everyone else — a producer invited to a second store, a colleague who
+      // already sells somewhere, an operator taking a seat on a store they are
+      // helping set up — got an SMS saying they had been invited, signed in,
+      // and landed exactly where they started. The invite stayed pending until
+      // it expired, silently, and the token route led to a page that asks for
+      // an email and a password this marketplace does not issue.
+      //
+      // `acceptInvitesByPhone` finds or creates the member and skips a seat
+      // that already exists, so running it unconditionally is safe and
+      // idempotent.
+      const invites = await findPendingInvitesByPhone(req, phone)
+      if (invites.length) {
+        await acceptInvitesByPhone(req, phone, invites)
       }
+    }
+
+    if (actorType !== "customer" && !authIdentity.app_metadata?.member_id) {
+      // Link an existing member whose login phone matches, so phone login
+      // reaches their existing seller(s) — including one just joined above.
+      // If there is none, they go through onboarding.
+      const memberId = await findMemberIdByPhone(req, phone)
       if (memberId) {
         await authModule.updateAuthIdentities({
           id: authIdentity.id,
