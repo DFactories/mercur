@@ -44,6 +44,14 @@ export const retrieveVendorSellerQueryConfig = {
 export const listVendorMembersQueryConfig = {
   defaults: [
     "id",
+    // `role_id` and `member_id` are the flat columns the team page actually
+    // reads. `query.graph` returns a relation's id only where it is asked for,
+    // and `rbac_role.*` is a different shape — so the store's own team table
+    // resolved `row.original.role_id` to `undefined` and rendered "-" in the
+    // Role column for every teammate. An owner could not see who on their team
+    // held which role, which is the one question that table exists to answer.
+    "member_id",
+    "role_id",
     "is_owner",
     "member.*",
     "rbac_role.*",
@@ -56,6 +64,8 @@ export const listVendorMembersQueryConfig = {
 export const retrieveVendorMemberQueryConfig = {
   defaults: [
     "id",
+    "member_id",
+    "role_id",
     "is_owner",
     "member.*",
     "rbac_role.*",

@@ -57,7 +57,16 @@ export const adminMembersQueryConfig = {
   list: {
     defaults: [
       "id",
+      // The FK scalar, not just the expanded `member.*` object. `query.graph`
+      // returns a relation's id only where it is asked for, so a caller that
+      // reads `seller_member.member_id` — the admin team form's "is this person
+      // already on the team?" guard does exactly that — got `undefined` for
+      // every row and concluded the store had no members at all. That turns the
+      // duplicate check into a no-op and lets a re-add reach the
+      // `(seller_id, member_id)` unique index as a raw database error.
+      "member_id",
       "is_owner",
+      "role_id",
       "member.*",
       "created_at",
       "rbac_role.*",

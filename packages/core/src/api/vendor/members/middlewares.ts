@@ -11,6 +11,12 @@ import { VendorAcceptMemberInvite, VendorUpdateMember } from "./validators"
 const retrieveVendorMemberMeQueryConfig = {
   defaults: [
     "id",
+    // Same flat columns as the team list configs in ../sellers/query-config.ts.
+    // Kept in step deliberately: the seller-closure predicate lived in two
+    // files and drifted, and a "me" shape that quietly omits the caller's own
+    // role is the same trap waiting for the next consumer.
+    "member_id",
+    "role_id",
     "is_owner",
     "member.*",
     "rbac_role.*",
