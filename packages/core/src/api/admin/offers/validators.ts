@@ -40,7 +40,16 @@ export const AdminGetOffersParams = createFindParams({
 
 const AdminOfferPrice = z
   .object({
-    amount: z.number(),
+    // Same rule as `OfferAmount` on the vendor side, and for the same reason:
+    // `0` reaches the storefront as a buyable «۰ تومان» that also wins every
+    // "cheapest offer" comparison, poisoning the card price, the card MOQ, the
+    // search index's sort key and the PDP's default offer.
+    //
+    // The 2026-08-04 fix closed the vendor route and left this one open, so an
+    // operator could still write the amount the panel had been stopped from
+    // sending — which matters more now that operators enter prices on a
+    // producer's behalf.
+    amount: z.number().positive(),
     currency_code: z.string(),
     min_quantity: z.number().int().positive().nullish(),
     max_quantity: z.number().int().positive().nullish(),
