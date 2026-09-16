@@ -48,6 +48,22 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] = [
         QueryConfig.retrieveVendorSellerQueryConfig
       ),
     ],
+    // The same policy as `POST /vendor/sellers/:id` below, because it is the
+    // same operation: both take `VendorUpdateSeller` and both run
+    // `updateSellersWorkflow` against the caller's own seller. Only `:id`
+    // declared it, so any member of any role could make the identical change
+    // by posting to `/me` instead — and that includes the store's name, its
+    // handle, its public contact details and its `closed_from` / `closed_to`
+    // window, which removes the entire catalogue from the storefront.
+    //
+    // `/me` is also the route the vendor panel's store form actually calls, so
+    // the guarded twin was the one nobody used.
+    policies: [
+      {
+        resource: Entities.seller,
+        operation: PolicyOperation.update,
+      },
+    ],
   },
   {
     method: ["POST"],
