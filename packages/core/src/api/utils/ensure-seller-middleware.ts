@@ -37,7 +37,21 @@ export async function ensureSellerMiddleware(
   const { data: sellerMembers } = await query.graph(
     {
       entity: "seller_member",
-      fields: ["id", "seller_id", "member_id", "role_id", "seller.*"],
+      // `is_owner` is READ below to decide the effective role, so it has to be
+      // selected here. Leaving it out does not error — `query.graph` returns
+      // exactly what it is asked for, so the owner bypass silently read
+      // `undefined`, took the non-owner branch, and locked an owner whose role
+      // is not Seller Administration out of their own store. That is the same
+      // omission this codebase has now been bitten by four times; the guard is
+      // the spec below, which asserts on this list rather than on a mock.
+      fields: [
+        "id",
+        "seller_id",
+        "member_id",
+        "role_id",
+        "is_owner",
+        "seller.*",
+      ],
       filters: {
         seller_id: sellerId,
         member_id: memberId,

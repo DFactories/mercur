@@ -28,6 +28,13 @@ const invoke = async (sellerMember: {
   role_id: string | null
   is_owner: boolean
 }) => {
+  // The selection the middleware asks for, captured so a test cannot pass by
+  // asserting on a field the real query never requests. That is exactly how
+  // the owner bypass shipped broken: the mock handed back `is_owner`, the real
+  // `fields` list did not include it, and `query.graph` returns only what it
+  // is asked for.
+  let requestedFields: string[] = []
+
   const req = {
     get: () => "sel_1",
     session: {},
@@ -36,17 +43,23 @@ const invoke = async (sellerMember: {
       resolve: (key: string) => {
         if (key === "query") {
           return {
-            graph: async () => ({
-              data: [
-                {
-                  id: "selmem_1",
-                  seller_id: "sel_1",
-                  member_id: "mem_1",
-                  ...sellerMember,
-                  seller: { currency_code: "irr" },
-                },
-              ],
-            }),
+            graph: async (q: { fields: string[] }) => {
+              requestedFields = q.fields
+              // Only fields the caller actually selected come back.
+              const full: Record<string, unknown> = {
+                id: "selmem_1",
+                seller_id: "sel_1",
+                member_id: "mem_1",
+                ...sellerMember,
+                seller: { currency_code: "irr" },
+              }
+              const row: Record<string, unknown> = {}
+              for (const f of q.fields) {
+                const key = f.endsWith(".*") ? f.slice(0, -2) : f
+                if (key in full) row[key] = full[key]
+              }
+              return { data: [row] }
+            },
           }
         }
         if (key === "rbac") {
@@ -67,7 +80,11 @@ const invoke = async (sellerMember: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await ensureSellerMiddleware(req as any, {} as any, next)
 
-  return { next, roles: req.auth_context.app_metadata.roles as string[] | undefined }
+  return {
+    next,
+    roles: req.auth_context.app_metadata.roles as string[] | undefined,
+    requestedFields,
+  }
 }
 
 describe("ensureSellerMiddleware", () => {
@@ -76,13 +93,15 @@ describe("ensureSellerMiddleware", () => {
     // this produced ["role_seller_inventory_management"], which is bound to no
     // policies at all — so every policy-guarded route refused the owner of the
     // store.
-    const { next, roles } = await invoke({
+    const { next, roles, requestedFields } = await invoke({
       role_id: "role_seller_inventory_management",
       is_owner: true,
     })
 
     expect(next).toHaveBeenCalledWith()
     expect(roles).toEqual(["role_seller_administration"])
+    // The field has to be SELECTED, not just present in a fixture.
+    expect(requestedFields).toContain("is_owner")
   })
 
   it("gives an owner administration policies even with no role at all", async () => {
