@@ -37,6 +37,8 @@ import { INavItem, NavItem } from "../../layout/nav-item";
 import { Shell } from "../../layout/shell";
 import { UserMenu } from "../user-menu";
 import menuItemsModule from "virtual:mercur/menu-items";
+import { usePermissions } from "../../../providers/permissions-provider";
+import { isNavItemVisible } from "../../../lib/nav-permissions";
 import {
   applyNavOverrides,
   useExtension,
@@ -111,6 +113,33 @@ const MainSidebar = () => {
       items: addNestedItems(item.path),
     }));
 
+  /**
+   * Hide what this operator cannot reach.
+   *
+   * A courtesy, not a control — every one of these screens is also refused by
+   * the server, and that refusal is what actually protects anything. While the
+   * permission list is loading or unavailable `hasPermission` returns true, so
+   * the sidebar renders in full rather than flashing empty and reading as
+   * "your access was revoked".
+   *
+   * Sub-items are filtered too, and a parent survives if any child does: an
+   * operator granted `offer:read` alone should still see Products, because
+   * Offers lives under it.
+   */
+  const { hasPermission } = usePermissions();
+
+  const visible = <T extends { to: string; items?: { to: string }[] }>(
+    routes: T[],
+  ): T[] =>
+    routes
+      .filter((route) => isNavItemVisible(route, hasPermission))
+      .map((route) => ({
+        ...route,
+        items: route.items?.filter((item) =>
+          isNavItemVisible(item, hasPermission),
+        ),
+      }));
+
   return (
     <aside
       className="flex flex-1 flex-col justify-between overflow-y-auto"
@@ -133,18 +162,18 @@ const MainSidebar = () => {
               data-testid="sidebar-core-routes"
             >
               <Searchbar />
-              {routesWithNested.map((route) => {
+              {visible(routesWithNested).map((route) => {
                 return <NavItem key={route.to} {...route} />;
               })}
             </nav>
-            {customRoutesWithNested.length > 0 && (
+            {visible(customRoutesWithNested).length > 0 && (
               <>
                 <div className="px-3">
                   <Divider variant="dashed" />
                 </div>
                 <AdvancedSection
                   label={t("app.nav.common.advanced")}
-                  items={customRoutesWithNested}
+                  items={visible(customRoutesWithNested)}
                 />
               </>
             )}
