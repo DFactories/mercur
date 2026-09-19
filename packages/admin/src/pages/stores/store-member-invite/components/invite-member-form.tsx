@@ -37,6 +37,13 @@ const ROLE_OPTIONS = [
   },
   { value: SellerRole.ACCOUNTING, labelKey: "users.roles.accounting" },
   { value: SellerRole.SUPPORT, labelKey: "users.roles.support" },
+  // Internal staff only, and offered here rather than in the vendor panel's
+  // own invite form for that reason: assisted onboarding is something we do
+  // to a producer's store, not something a producer hands out.
+  {
+    value: SellerRole.ASSISTED_OPERATOR,
+    labelKey: "users.roles.assistedOperator",
+  },
 ];
 
 const InviteMemberSchema = zod.object({

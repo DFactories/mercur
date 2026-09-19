@@ -2973,7 +2973,8 @@
       "inventoryManagement": "Inventory Management",
       "orderManagement": "Order Management",
       "accounting": "Accounting",
-      "support": "Support"
+      "support": "Support",
+      "assistedOperator": "Assisted Onboarding Operator"
     },
     "list": {
       "empty": {

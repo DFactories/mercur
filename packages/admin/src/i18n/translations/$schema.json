@@ -8928,6 +8928,9 @@
             },
             "support": {
               "type": "string"
+            },
+            "assistedOperator": {
+              "type": "string"
             }
           },
           "additionalProperties": false

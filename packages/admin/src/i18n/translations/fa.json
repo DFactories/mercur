@@ -3109,7 +3109,8 @@
       "inventoryManagement": "مدیریت موجودی",
       "orderManagement": "مدیریت سفارش",
       "accounting": "حسابداری",
-      "support": "پشتیبانی"
+      "support": "پشتیبانی",
+      "assistedOperator": "اپراتور راه‌اندازی"
     },
     "list": {
       "empty": {

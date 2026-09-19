@@ -40,6 +40,37 @@ export const SELLER_ROLES: SellerRoleDefinition[] = [
     description: "Handle customer messages and view orders",
     policyKeys: [],
   },
+  {
+    /**
+     * Assisted onboarding: an internal operator filling a store in for the
+     * producer who owns it.
+     *
+     * The list is explicit rather than `"*"` on purpose. It grants the store
+     * profile — name, description, address, company details — because filling
+     * that in IS the job, and read access to the team so the operator can see
+     * whose store they are in. It withholds the three things that belong to
+     * the producer alone:
+     *
+     *   seller_payment_details:update  the IBAN. Money.
+     *   seller_member:create/update/delete  who else gets in.
+     *   (publication)  guarded separately, by the readiness workflow's
+     *                  `required_roles`, which this role is absent from.
+     *
+     * Catalogue work — products, offers, prices, stock locations, shipping —
+     * needs nothing here, because none of those routes declare a policy at
+     * all. That is a real gap (they fail open for every role), but it is the
+     * pre-existing one; this role neither widens nor depends on it.
+     */
+    id: SellerRole.ASSISTED_OPERATOR,
+    name: "Assisted Onboarding Operator",
+    description:
+      "Internal operator setting a store up for its producer: profile and catalogue, but no bank details, no team changes and no publishing",
+    policyKeys: [
+      "seller:read",
+      "seller:update",
+      "seller_member:read",
+    ],
+  },
 ]
 
 export async function ensureSellerDefaultRoles(

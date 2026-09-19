@@ -142,9 +142,13 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] = [
         QueryConfig.retrieveVendorSellerQueryConfig
       ),
     ],
+    // Its own resource, NOT `seller:update`. Sharing that policy with the
+    // store profile meant anyone allowed to type a postal code was also
+    // allowed to change the IBAN. Seller Administration still reaches it,
+    // because that role is bound to every policy there is.
     policies: [
       {
-        resource: Entities.seller,
+        resource: Entities.seller_payment_details,
         operation: PolicyOperation.update,
       },
     ],

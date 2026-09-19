@@ -1,6 +1,7 @@
 export enum Entities {
   seller = "seller",
   seller_member = "seller_member",
+  seller_payment_details = "seller_payment_details",
 }
 
 export const listVendorSellersQueryConfig = {

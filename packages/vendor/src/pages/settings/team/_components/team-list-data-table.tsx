@@ -22,6 +22,9 @@ const ROLE_TRANSLATION_MAP: Record<string, string> = {
   [SellerRole.ORDER_MANAGEMENT]: "users.roles.orderManagement",
   [SellerRole.ACCOUNTING]: "users.roles.accounting",
   [SellerRole.SUPPORT]: "users.roles.support",
+  // Granted from the admin panel only, but the producer sees it in their own
+  // team list — an unlabelled role there would read as "-" next to a stranger.
+  [SellerRole.ASSISTED_OPERATOR]: "users.roles.assistedOperator",
 };
 
 export const TeamListDataTable = () => {

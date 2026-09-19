@@ -3030,7 +3030,8 @@
       "inventoryManagement": "مدیریت موجودی",
       "orderManagement": "مدیریت سفارش‌ها",
       "accounting": "حسابداری",
-      "support": "پشتیبانی"
+      "support": "پشتیبانی",
+      "assistedOperator": "اپراتور راه‌اندازی"
     },
     "list": {
       "empty": {

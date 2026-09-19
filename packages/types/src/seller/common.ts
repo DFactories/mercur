@@ -10,6 +10,21 @@ export enum SellerRole {
   ORDER_MANAGEMENT = "role_seller_order_management",
   ACCOUNTING = "role_seller_accounting",
   SUPPORT = "role_seller_support",
+  /**
+   * An internal operator setting a store up on the producer's behalf.
+   *
+   * Everything Seller Administration can do to the CATALOGUE and the store
+   * PROFILE, and nothing that belongs to the producer alone: no bank details,
+   * no team changes, and — the reason the role exists — no publishing. The
+   * whole point of assisted onboarding is that the producer sees the store
+   * before it goes live, and until this role existed the only thing enforcing
+   * that was the operator remembering not to press the button.
+   *
+   * It is granted from the ADMIN panel only. It is deliberately absent from
+   * the vendor panel's own invite form: a producer has no reason to hand this
+   * out, and a role that says "internal staff" should not be self-serve.
+   */
+  ASSISTED_OPERATOR = "role_seller_assisted_operator",
 }
 
 export enum SellerStatus {

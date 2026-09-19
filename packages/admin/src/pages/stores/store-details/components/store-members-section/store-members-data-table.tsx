@@ -28,6 +28,7 @@ const ROLE_TRANSLATION_MAP: Record<string, string> = {
   [SellerRole.ORDER_MANAGEMENT]: "users.roles.orderManagement",
   [SellerRole.ACCOUNTING]: "users.roles.accounting",
   [SellerRole.SUPPORT]: "users.roles.support",
+  [SellerRole.ASSISTED_OPERATOR]: "users.roles.assistedOperator",
 };
 
 type MemberRow = {
