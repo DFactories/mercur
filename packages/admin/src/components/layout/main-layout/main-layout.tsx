@@ -282,7 +282,24 @@ const Header = () => {
 
   const isLoaded = !isPending && !!store && !!name && !!fallback;
 
-  if (isError) {
+  /**
+   * A 403 here is an authorization state, not a malfunction — do not crash on it.
+   *
+   * This used to be a bare `throw error`, which was fine while every admin
+   * could read every route. Once policies are declared, an operator without
+   * `store:read` 403s on the shell's OWN store lookup, this rethrows, and the
+   * error boundary replaces the entire panel — including the sign-out button
+   * and any page they ARE allowed to open. A restricted admin and a
+   * locked-out one became indistinguishable, both showing a blank error page
+   * with nothing to act on. That is what a new admin hit.
+   *
+   * The trigger is already disabled when there is no store (`isLoaded`), so
+   * degrading costs a greyed-out store name and nothing else. Every other
+   * failure still throws: swallowing a 500 would hide a real fault behind the
+   * same grey placeholder.
+   */
+  const status = (error as { status?: number } | null)?.status;
+  if (isError && status !== 403) {
     throw error;
   }
 

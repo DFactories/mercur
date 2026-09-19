@@ -7,6 +7,7 @@ import {
   Container,
   Heading,
   Input,
+  Select,
   StatusBadge,
   Text,
   Tooltip,
@@ -30,12 +31,24 @@ import {
   useInvites,
   useResendInvite,
 } from "../../../../../hooks/api/invites.tsx";
+import { useAssignableRoles } from "../../../../../hooks/api/rbac-roles.ts";
 import { useUserInviteTableQuery } from "../../../../../hooks/table/query/use-user-invite-table-query.tsx";
 import { useDataTable } from "../../../../../hooks/use-data-table.tsx";
 import { isFetchError } from "../../../../../lib/is-fetch-error.ts";
 
+/**
+ * A role is REQUIRED, and that is the whole point of this change.
+ *
+ * An invite with no role creates an admin who is refused by every admin route
+ * — including the store lookup the panel shell itself performs — so they
+ * cannot use the product at all. Before RBAC enforcement that was harmless;
+ * now it is a lockout, and it is what a real new admin hit. The server refuses
+ * such an invite too (`api/admin/invites/middlewares.ts` in dfactories-mp);
+ * this is so the super-admin is asked rather than rejected.
+ */
 const InviteUserSchema = zod.object({
   email: zod.string().email(),
+  role_id: zod.string().min(1),
 });
 
 const PAGE_SIZE = 10;
@@ -57,6 +70,7 @@ export const InviteUserForm = () => {
   const form = useForm<zod.infer<typeof InviteUserSchema>>({
     defaultValues: {
       email: "",
+      role_id: "",
     },
     resolver: zodResolver(InviteUserSchema),
   });
@@ -87,10 +101,13 @@ export const InviteUserForm = () => {
   });
 
   const { mutateAsync, isPending } = useCreateInvite();
+  // Only roles this admin may actually grant — the server scopes the list, so
+  // nobody is offered a role they would then be refused for choosing.
+  const { roles: assignableRoles } = useAssignableRoles();
 
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      await mutateAsync({ email: values.email });
+      await mutateAsync({ email: values.email, roles: [values.role_id] });
       form.reset();
     } catch (error) {
       if (isFetchError(error) && error.status === 400) {
@@ -165,6 +182,37 @@ export const InviteUserForm = () => {
                             />
                           </Form.Control>
                           <Form.ErrorMessage data-testid="user-invite-form-email-error" />
+                        </Form.Item>
+                      );
+                    }}
+                  />
+                  <Form.Field
+                    control={form.control}
+                    name="role_id"
+                    render={({ field: { onChange, ref, ...field } }) => {
+                      return (
+                        <Form.Item data-testid="user-invite-form-role-item">
+                          <Form.Label data-testid="user-invite-form-role-label">
+                            {t("fields.role")}
+                          </Form.Label>
+                          <Form.Control data-testid="user-invite-form-role-control">
+                            <Select {...field} onValueChange={onChange}>
+                              <Select.Trigger
+                                ref={ref}
+                                data-testid="user-invite-form-role-trigger"
+                              >
+                                <Select.Value />
+                              </Select.Trigger>
+                              <Select.Content>
+                                {assignableRoles.map((role) => (
+                                  <Select.Item key={role.id} value={role.id}>
+                                    {role.name}
+                                  </Select.Item>
+                                ))}
+                              </Select.Content>
+                            </Select>
+                          </Form.Control>
+                          <Form.ErrorMessage data-testid="user-invite-form-role-error" />
                         </Form.Item>
                       );
                     }}
