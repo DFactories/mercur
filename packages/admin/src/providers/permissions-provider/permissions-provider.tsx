@@ -1,6 +1,8 @@
 import { createContext, PropsWithChildren, useContext, useMemo } from "react"
 
 import { useMyPermissions } from "../../hooks/api/permissions"
+import { buildPermissionChecks } from "./checks"
+import type { PermissionChecks } from "./types"
 
 /**
  * Panel-side permission checks.
@@ -22,14 +24,12 @@ import { useMyPermissions } from "../../hooks/api/permissions"
  * usability bug. If the route declarations are wrong, someone approves a payout
  * they should not. Only one of those is this file's problem.
  */
-type PermissionsContextValue = {
+type PermissionsContextValue = PermissionChecks & {
   /** Literal `resource:operation` grants, wildcards already expanded. */
   permissions: string[]
   isLoading: boolean
   /** Did the fetch fail? Then nothing is hidden — see the note in the provider. */
   isUnavailable: boolean
-  hasPermission: (permission: string) => boolean
-  hasAnyPermission: (permissions: string[]) => boolean
 }
 
 const PermissionsContext = createContext<PermissionsContextValue | null>(null)
@@ -37,32 +37,15 @@ const PermissionsContext = createContext<PermissionsContextValue | null>(null)
 export const PermissionsProvider = ({ children }: PropsWithChildren) => {
   const { permissions, isLoading, isError } = useMyPermissions()
 
-  const value = useMemo<PermissionsContextValue>(() => {
-    const granted = new Set(permissions)
-
-    /**
-     * Fail OPEN, on purpose, and only here.
-     *
-     * While the list is loading or the request failed, every check passes and
-     * the full sidebar renders. That is the opposite of the server's rule, and
-     * it is right for this layer: hiding is a courtesy, so a failure should
-     * cost the operator a 403 they can read, not a panel that looks empty and
-     * makes them think their access was revoked. The route still refuses them.
-     */
-    const unavailable = isLoading || isError
-
-    const hasPermission = (permission: string) =>
-      unavailable || granted.has(permission)
-
-    return {
+  const value = useMemo<PermissionsContextValue>(
+    () => ({
       permissions,
       isLoading,
       isUnavailable: !!isError,
-      hasPermission,
-      hasAnyPermission: (list: string[]) =>
-        unavailable || list.some((p) => granted.has(p)),
-    }
-  }, [permissions, isLoading, isError])
+      ...buildPermissionChecks({ permissions, isLoading, isError: !!isError }),
+    }),
+    [permissions, isLoading, isError]
+  )
 
   return (
     <PermissionsContext.Provider value={value}>
