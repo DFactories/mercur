@@ -21,3 +21,17 @@ export { Notifications } from './components/layout/notifications/notifications'
 
 // Product constants
 export { PRODUCT_DETAIL_FIELDS, PRODUCT_DETAIL_QUERY } from './pages/products/constants'
+
+// RBAC — sidebar filtering.
+//
+// A marketplace's own screens arrive through the menu-item system, so this
+// package sees a path and a label and nothing else. `registerNavPermissions`
+// is how a consumer says which permission each of its paths needs; without it
+// on the public surface the whole filter is unreachable from outside.
+export {
+  registerNavPermissions,
+  permissionForPath,
+  isNavItemVisible,
+} from './lib/nav-permissions'
+export { usePermissions } from './providers/permissions-provider'
+export { useMyPermissions } from './hooks/api/permissions'
