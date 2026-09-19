@@ -96,4 +96,47 @@ describe("nav permissions", () => {
       expect(getNavPermissions()["/payouts"]).toBe("payout_request:read")
     })
   })
+
+  describe("the settings sidebar", () => {
+    it("maps every settings route the panel renders", () => {
+      const source = readFileSync(
+        join(__dirname, "../components/layout/settings-layout/settings-layout.tsx"),
+        "utf8"
+      )
+      const paths = [
+        ...source.matchAll(/\bto:\s*"(\/settings\/[a-z0-9-]+)"/g),
+      ].map((m) => m[1])
+
+      expect(paths.length).toBeGreaterThan(10)
+
+      // `/settings/profile` is the deliberate exception below; everything else
+      // must resolve.
+      const unmapped = [...new Set(paths)]
+        .filter((p) => p !== "/settings/profile")
+        .filter((p) => !permissionForPath(p))
+        .sort()
+
+      expect(unmapped).toEqual([])
+    })
+
+    it("never hides the operator's own account page", () => {
+      // Someone with the narrowest role must still reach their password and
+      // their language. Filtering this out is a lockout dressed as tidiness.
+      expect(permissionForPath("/settings/profile")).toBeNull()
+      expect(isNavItemVisible({ to: "/settings/profile" }, allowNone)).toBe(true)
+    })
+
+    it("does not let a parent mapping swallow the profile page", () => {
+      // If `/settings` were ever mapped, longest-match would still leave
+      // /settings/profile unmapped only by accident. Pin the intent.
+      expect(permissionForPath("/settings")).toBeNull()
+    })
+
+    it("hides a settings entry the operator cannot reach", () => {
+      expect(isNavItemVisible({ to: "/settings/users" }, allowNone)).toBe(false)
+      expect(
+        isNavItemVisible({ to: "/settings/users" }, allow("user:read"))
+      ).toBe(true)
+    })
+  })
 })

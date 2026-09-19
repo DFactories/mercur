@@ -12,6 +12,8 @@ import { type INavItem, NavItem } from "@components/layout/nav-item";
 import { Shell } from "@components/layout/shell";
 import { UserMenu } from "@components/layout/user-menu";
 import menuItemsModule from "virtual:mercur/menu-items";
+import { usePermissions } from "../../../providers/permissions-provider";
+import { isNavItemVisible } from "../../../lib/nav-permissions";
 import { getMenuItemsByType } from "../../../utils/routes";
 
 export const SettingsLayout = () => {
@@ -154,6 +156,19 @@ const SettingsSidebar = () => {
   const developerRoutes = useDeveloperRoutes();
   const myAccountRoutes = useMyAccountRoutes();
 
+  /**
+   * Hide the settings an operator cannot reach.
+   *
+   * Same courtesy-not-control rule as the main sidebar, with one thing that
+   * matters more here: `/settings/profile` is intentionally unmapped, so it
+   * always survives. Filtering someone out of their own account page — their
+   * password, their language — would be a lockout dressed as tidiness.
+   */
+  const { hasPermission } = usePermissions();
+  const visible = <T extends { to: string; items?: { to: string }[] }>(
+    items: T[],
+  ): T[] => items.filter((item) => isNavItemVisible(item, hasPermission));
+
   const { t } = useTranslation();
 
   return (
@@ -168,16 +183,16 @@ const SettingsSidebar = () => {
         <div className="flex flex-1 flex-col overflow-y-auto">
           <RadixCollapsibleSection
             label={t("app.nav.settings.general")}
-            items={routes}
+            items={visible(routes)}
           />
-          {extensionNavItems.length > 0 && (
+          {visible(extensionNavItems).length > 0 && (
             <>
               <div className="flex items-center justify-center px-3">
                 <Divider variant="dashed" />
               </div>
               <RadixCollapsibleSection
                 label={t("app.nav.common.advanced")}
-                items={extensionNavItems}
+                items={visible(extensionNavItems)}
               />
             </>
           )}
@@ -186,14 +201,14 @@ const SettingsSidebar = () => {
           </div>
           <RadixCollapsibleSection
             label={t("app.nav.settings.developer")}
-            items={developerRoutes}
+            items={visible(developerRoutes)}
           />
           <div className="flex items-center justify-center px-3">
             <Divider variant="dashed" />
           </div>
           <RadixCollapsibleSection
             label={t("app.nav.settings.myAccount")}
-            items={myAccountRoutes}
+            items={visible(myAccountRoutes)}
           />
         </div>
         <div className="sticky bottom-0 bg-ui-bg-subtle">

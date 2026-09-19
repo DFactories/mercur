@@ -37,6 +37,28 @@ const CORE_NAV_PERMISSIONS: Record<string, string> = {
   "/stores": "seller:read",
   "/reviews": "review:read",
   "/payouts": "payout:read",
+
+  // -- the settings sidebar --
+  //
+  // `/settings/profile` is deliberately ABSENT and must stay that way: it is
+  // the operator's own account, and hiding it would leave someone with a
+  // narrow role unable to reach their own password or language. `/settings`
+  // itself is absent for the same reason — it is the container those live in.
+  "/settings/marketplace": "store:read",
+  "/settings/users": "user:read",
+  "/settings/regions": "region:read",
+  "/settings/tax-regions": "tax_region:read",
+  "/settings/return-reasons": "return_reason:read",
+  "/settings/refund-reasons": "refund_reason:read",
+  "/settings/sales-channels": "sales_channel:read",
+  "/settings/product-types": "product_type:read",
+  "/settings/product-tags": "product_tag:read",
+  "/settings/attributes": "product_attribute:read",
+  "/settings/locations": "stock_location:read",
+  "/settings/commissions": "commission_rate:read",
+  "/settings/notifications": "notification_setting:read",
+  "/settings/publishable-api-keys": "api_key:read",
+  "/settings/secret-api-keys": "api_key:read",
 }
 
 const registered: Record<string, string> = { ...CORE_NAV_PERMISSIONS }
