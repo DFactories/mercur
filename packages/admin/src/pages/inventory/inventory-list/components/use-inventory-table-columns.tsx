@@ -22,7 +22,7 @@ interface ExtendedInventoryItem extends InventoryTypes.InventoryItemDTO {
 const columnHelper = createColumnHelper<ExtendedInventoryItem>()
 
 export const useInventoryTableColumns = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   return useMemo(
     () => [
@@ -172,13 +172,20 @@ export const useInventoryTableColumns = () => {
             return <PlaceholderCell />
           }
 
+          // Localized, like every other number in the panel. Rendering the raw
+          // value put Latin digits in a Persian, right-to-left column while the
+          // pagination beside it counted in Persian.
+          const formatted = new Intl.NumberFormat(i18n.language).format(
+            Number(quantity)
+          )
+
           return (
             <div className="flex size-full items-center overflow-hidden">
               <span
                 className="truncate"
                 data-testid={`inventory-table-cell-${row.id}-stocked_quantity-value`}
               >
-                {quantity}
+                {formatted}
               </span>
             </div>
           )
@@ -197,13 +204,20 @@ export const useInventoryTableColumns = () => {
             return <PlaceholderCell />
           }
 
+          // Localized, like every other number in the panel. Rendering the raw
+          // value put Latin digits in a Persian, right-to-left column while the
+          // pagination beside it counted in Persian.
+          const formatted = new Intl.NumberFormat(i18n.language).format(
+            Number(quantity)
+          )
+
           return (
             <div className="flex size-full items-center overflow-hidden">
               <span
                 className="truncate"
                 data-testid={`inventory-table-cell-${row.id}-reserved_quantity-value`}
               >
-                {quantity}
+                {formatted}
               </span>
             </div>
           )
@@ -219,6 +233,8 @@ export const useInventoryTableColumns = () => {
         cell: ({ row }) => <InventoryActions item={row.original} />,
       }),
     ],
-    [t]
+    // `i18n.language` is named explicitly: the quantity cells format through
+    // Intl with it, so a language switch has to rebuild these columns.
+    [t, i18n.language]
   )
 }
