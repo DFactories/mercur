@@ -323,7 +323,7 @@ export function getRouteMap({
               {
                 path: "/payouts",
                 errorElement: <ErrorBoundary />,
-                handle: { breadcrumb: () => "Payouts" },
+                handle: { breadcrumb: () => t("payouts.domain") },
                 children: [
                   {
                     path: "",
