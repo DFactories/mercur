@@ -10,6 +10,7 @@ import {
   adminMemberInvitesQueryConfig,
   adminSellerProductsQueryConfig,
 } from "./query-config"
+import { withHiddenPaymentDetails } from "../../utils/hide-seller-payment-details"
 import {
   AdminGetSellerParams,
   AdminGetSellersParams,
@@ -28,7 +29,8 @@ import {
   AdminUpsertSellerProfessionalDetails,
 } from "./validators"
 
-export const adminSellersMiddlewares: MiddlewareRoute[] = [
+export const adminSellersMiddlewares: MiddlewareRoute[] =
+  withHiddenPaymentDetails([
   {
     method: ["GET"],
     matcher: "/admin/sellers",
@@ -218,4 +220,4 @@ export const adminSellersMiddlewares: MiddlewareRoute[] = [
     matcher: "/admin/sellers/:id/members/:member_id",
     middlewares: [],
   },
-]
+  ])

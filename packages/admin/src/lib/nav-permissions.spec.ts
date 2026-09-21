@@ -23,7 +23,7 @@ describe("nav permissions", () => {
     // `useCoreRoutes` rather than re-listed, or this would assert a copy of the
     // list against the list.
     const source = readFileSync(
-      join(__dirname, "../components/layout/main-layout/main-layout.tsx"),
+      join(__dirname, "../components/layout/main-layout/core-routes.tsx"),
       "utf8"
     )
     const block = source

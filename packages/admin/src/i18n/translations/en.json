@@ -365,6 +365,10 @@
     "noMatchMessage": "The page you are looking for does not exist.",
     "backToDashboard": "Back to dashboard"
   },
+  "noAccess": {
+    "title": "You do not have access to this page",
+    "message": "Your role does not include this screen. Ask a super admin if you need it."
+  },
   "addresses": {
     "title": "Addresses",
     "shippingAddress": {

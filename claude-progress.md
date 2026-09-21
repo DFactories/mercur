@@ -512,3 +512,73 @@ would break. A test asserts both of those facts.
 **Not done / next.** Not published. This needs the usual bump →
 push `dfactories/**` → CI publish → bump the exact pin in `dfactories-mp` cycle
 before the panel shows it anywhere but a local dev build.
+
+## Session 10 (2026-09-21) — a restricted admin can use the panel, and `seller:read` stops carrying the IBAN
+
+Two holes left open when RBAC enforcement shipped, both reported from the live
+deployment and both reproduced before being touched.
+
+### 1. A restricted admin landed on a crash page
+
+Sign-in redirected to `/orders` unconditionally. The route declared no
+permission and there was no route-level guard at all — only the sidebar was
+filtered — so the order list mounted, asked for `order_group:read`, and threw
+on its 403. A correctly configured account looked broken on its first screen,
+and any bookmark to a refused URL did the same.
+
+- `components/authentication/route-permission-guard` — pathless, wrapped
+  around both layouts' children by `guarded()` in `get-route-map.tsx`, so it
+  covers extension routes too. It resolves the requirement through the
+  existing `permissionForPath` map, which a consumer already extends with
+  `registerNavPermissions` — no per-route `handle.permissions` to keep in step.
+- `components/utilities/no-access` — a refusal is not a fault, so it does not
+  reuse `ErrorBoundary`. Names the missing permission.
+- `routeAccess()` returns `pending` while the permission list loads. The
+  sidebar guesses "visible" in that state and must; a route cannot, or the
+  page mounts and throws before the answer lands.
+- `pages/home` now redirects to the first entry of the operator's own sidebar
+  instead of `/orders`, and renders `NoAccess` when there is none. `login` and
+  the settings back-link point at `/` so that choice runs in one place.
+- `useCoreRoutes` moved to `main-layout/core-routes.tsx` — the sidebar and the
+  landing page need the same ordered list, and a second copy would drift. The
+  extension-target generator read it from the old path and silently emitted an
+  empty `NavItemRegistry`; it now throws instead of shipping one.
+
+### 2. `seller:read` returned a producer's bank details
+
+`seller_payment_details` was split out of `seller` for writes only.
+`adminSellerFields` selects `*payment_details`, so every admin role that could
+open the store list read every producer's IBAN — including the onboarding
+operator role, whose entire point is that money is not its business.
+
+`api/utils/hide-seller-payment-details.ts` drops the field from
+`req.queryConfig.fields` unless the caller holds `seller_payment_details:read`,
+so the value is never read out of the database. Appended to every entry of
+`adminSellersMiddlewares`, so a route added later is covered by default.
+
+Not done with the platform's `RBACFieldFilter`: it is gated behind the
+`rbac_filter_fields` feature flag, which a deployment sets globally, and would
+then filter relations on every route carrying an `entity` in its query config.
+
+### Verification
+
+- `bun run lint` clean; `bun run build` 12/12.
+- Unit: admin 53, core 150, vendor 132, dashboard-shared 35, dashboard-sdk 3.
+- `bun run test:integration:http -- --testPathPatterns="seller/"` — 175 passed,
+  including the 5 new payment-details cases. With the middleware disabled and
+  core rebuilt, 3 of those 5 fail and print the full IBAN, which is the bug.
+- Driven in a browser against a real restricted session (`seller:read`,
+  `seller:create`, `store:read`): sign-in lands on Stores, `/orders` renders
+  the refusal naming `order:read`, and no `order-groups` request is made at
+  all. A super admin still lands on Orders.
+
+### Known, not fixed
+
+`GET /vendor/members/me` selects `seller.payment_details.*`, so any member of a
+store reads its bank details whatever their seller role. Same class of defect,
+different population, and whether a Support-role member should see the IBAN is
+a product decision rather than a patch.
+
+### Released
+
+`@mercurjs/core 2.3.1-dfactories.24`, `@mercurjs/admin 2.3.1-dfactories.18`.

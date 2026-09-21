@@ -1,17 +1,10 @@
 import {
   BuildingStorefront,
-  Buildings,
   CogSixTooth,
-  CreditCardRefresh,
-  CurrencyDollar,
   EllipsisHorizontal,
   MagnifyingGlass,
   MinusMini,
   OpenRectArrowOut,
-  ReceiptPercent,
-  ShoppingCart,
-  Tag,
-  Users,
 } from "@medusajs/icons";
 import components from "virtual:mercur/components";
 import {
@@ -34,6 +27,7 @@ import { queryClient } from "../../../lib/query-client";
 import { useSearch } from "../../../providers/search-provider";
 import { Skeleton } from "../../common/skeleton";
 import { INavItem, NavItem } from "../../layout/nav-item";
+import { useCoreRoutes } from "./core-routes";
 import { Shell } from "../../layout/shell";
 import { UserMenu } from "../user-menu";
 import menuItemsModule from "virtual:mercur/menu-items";
@@ -401,103 +395,6 @@ const Header = () => {
       </DropdownMenu>
     </div>
   );
-};
-
-const useCoreRoutes = (): Omit<INavItem, "pathname">[] => {
-  const { t } = useTranslation();
-
-  return [
-    {
-      icon: <ShoppingCart />,
-      label: t("orders.domain"),
-      to: "/orders",
-      items: [
-        // TODO: Enable when domin is introduced
-        // {
-        //   label: t("draftOrders.domain"),
-        //   to: "/draft-orders",
-        // },
-      ],
-    },
-    {
-      icon: <Tag />,
-      label: t("products.domain"),
-      to: "/products",
-      items: [
-        {
-          label: t("offers.domain"),
-          to: "/offers",
-        },
-        {
-          label: t("collections.domain"),
-          to: "/collections",
-        },
-        {
-          label: t("categories.domain"),
-          to: "/categories",
-        },
-        // TODO: Enable when domin is introduced
-        // {
-        //   label: t("giftCards.domain"),
-        //   to: "/gift-cards",
-        // },
-      ],
-    },
-    {
-      icon: <Buildings />,
-      label: t("inventory.domain"),
-      to: "/inventory",
-      items: [
-        {
-          label: t("reservations.domain"),
-          to: "/reservations",
-        },
-      ],
-    },
-    {
-      icon: <Users />,
-      label: t("customers.domain"),
-      to: "/customers",
-      items: [
-        {
-          label: t("customerGroups.domain"),
-          to: "/customer-groups",
-        },
-      ],
-    },
-    {
-      icon: <ReceiptPercent />,
-      label: t("promotions.domain"),
-      to: "/promotions",
-      items: [
-        {
-          label: t("campaigns.domain"),
-          to: "/campaigns",
-        },
-      ],
-    },
-    {
-      icon: <CurrencyDollar />,
-      label: t("priceLists.domain"),
-      to: "/price-lists",
-    },
-    {
-      icon: <BuildingStorefront />,
-      label: t("stores.domain"),
-      to: "/stores",
-      items: [
-        {
-          label: t("reviews.domain"),
-          to: "/reviews",
-        },
-      ],
-    },
-    {
-      icon: <CreditCardRefresh />,
-      label: t("payouts.domain"),
-      to: "/payouts",
-    },
-  ];
 };
 
 const Searchbar = () => {

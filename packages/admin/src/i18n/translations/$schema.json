@@ -1100,6 +1100,18 @@
       },
       "additionalProperties": false
     },
+    "noAccess": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "addresses": {
       "type": "object",
       "properties": {

@@ -101,6 +101,15 @@ export function permissionForPath(to: string): string | null {
   return best ? registered[best] : null
 }
 
+/** Whether a path's own permission, if it has one, is held. */
+export function canOpenPath(
+  to: string,
+  hasPermission: (permission: string) => boolean
+): boolean {
+  const required = permissionForPath(to)
+  return !required || hasPermission(required)
+}
+
 /**
  * Whether a nav entry should be shown.
  *
@@ -112,13 +121,73 @@ export function isNavItemVisible(
   item: { to: string; items?: { to: string }[] },
   hasPermission: (permission: string) => boolean
 ): boolean {
-  const own = permissionForPath(item.to)
-  if (!own || hasPermission(own)) {
+  if (canOpenPath(item.to, hasPermission)) {
     return true
   }
 
-  return (item.items ?? []).some((child) => {
-    const childPermission = permissionForPath(child.to)
-    return !childPermission || hasPermission(childPermission)
-  })
+  return (item.items ?? []).some((child) => canOpenPath(child.to, hasPermission))
+}
+
+export type RouteAccess = "allow" | "deny" | "pending"
+
+/**
+ * Whether the operator may open `pathname`.
+ *
+ * `pending` exists because the sidebar and a route need opposite things from
+ * the same unresolved state. The sidebar renders in full while permissions
+ * load, so it never flashes empty. A route cannot: mounting the page fires its
+ * queries, and a list that 403s throws during render, which is an error page
+ * rather than a refusal. So the route waits, and only the sidebar guesses.
+ *
+ * A FAILED permissions request still allows — same reason as the sidebar. The
+ * server refuses either way; blanking the panel over an unreachable courtesy
+ * endpoint would not.
+ */
+export function routeAccess(input: {
+  pathname: string
+  hasPermission: (permission: string) => boolean
+  isLoading: boolean
+  isUnavailable: boolean
+}): RouteAccess {
+  if (!permissionForPath(input.pathname)) {
+    return "allow"
+  }
+
+  if (input.isUnavailable) {
+    return "allow"
+  }
+
+  if (input.isLoading) {
+    return "pending"
+  }
+
+  return canOpenPath(input.pathname, input.hasPermission) ? "allow" : "deny"
+}
+
+/**
+ * The first entry in a nav list the operator can actually open.
+ *
+ * Used to land somebody somewhere that works instead of on the platform's
+ * default screen, which for a narrow role is a 403. Children count: an
+ * operator granted `offer:read` alone belongs on Offers, not nowhere.
+ */
+export function firstReachablePath(
+  items: { to: string; items?: { to: string }[] }[],
+  hasPermission: (permission: string) => boolean
+): string | null {
+  for (const item of items) {
+    if (canOpenPath(item.to, hasPermission)) {
+      return item.to
+    }
+
+    const child = (item.items ?? []).find((entry) =>
+      canOpenPath(entry.to, hasPermission)
+    )
+
+    if (child) {
+      return child.to
+    }
+  }
+
+  return null
 }

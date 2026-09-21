@@ -55,7 +55,12 @@ const LoginForm = () => {
   const [searchParams] = useSearchParams();
 
   const reason = searchParams.get("reason") || "";
-  const from = location.state?.from?.pathname || "/orders";
+  /**
+   * `/` rather than `/orders`: the home route picks a destination this
+   * operator may actually open, and the login page has no permission list to
+   * do that with — the request behind it is authenticated.
+   */
+  const from = location.state?.from?.pathname || "/";
 
   useEffect(() => {
     if (reason && reason.toLowerCase() === "unauthorized") {

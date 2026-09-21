@@ -254,16 +254,25 @@ function main() {
     for (const p of PLACEMENTS) zoneIds.add(`${slot}.${p}`)
   }
 
-  const mainLayout = path.join(
+  const coreRoutes = path.join(
     SRC,
     "components",
     "layout",
     "main-layout",
-    "main-layout.tsx"
+    "core-routes.tsx"
   )
-  const nav = fs.existsSync(mainLayout)
-    ? collectNav(mainLayout)
+  const nav = fs.existsSync(coreRoutes)
+    ? collectNav(coreRoutes)
     : { items: new Set<string>(), parents: new Set<string>() }
+
+  if (!nav.items.size) {
+    // The registry is what a consumer's `defineNavigationConfig` type-checks
+    // against, so an empty one is not a smaller file, it is every override
+    // silently losing its types.
+    throw new Error(
+      `No nav items found in ${coreRoutes}. Has useCoreRoutes moved again?`
+    )
+  }
 
   const models = collectCustomFields(files)
 

@@ -5,6 +5,7 @@ import { t } from "i18next";
 import { Outlet, type RouteObject, type UIMatch } from "react-router-dom";
 
 import { ProtectedRoute } from "@components/authentication/protected-route";
+import { RoutePermissionGuard } from "@components/authentication/route-permission-guard";
 import { MainLayout } from "@components/layout/main-layout";
 import { PublicLayout } from "@components/layout/public-layout";
 import { SettingsLayout } from "@components/layout/settings-layout";
@@ -48,6 +49,16 @@ function mergeRoutes(
   return result;
 }
 
+/**
+ * Wrap a layout's children in the permission guard.
+ *
+ * A pathless parent, so every route below it is checked — including the
+ * extension routes `mergeRoutes` folds in, which this package cannot name.
+ */
+function guarded(routes: RouteObject[]): RouteObject[] {
+  return [{ element: <RoutePermissionGuard />, children: routes }];
+}
+
 export function getRouteMap({
   settingsRoutes: customSettingsRoutes,
   mainRoutes: customMainRoutes,
@@ -76,7 +87,7 @@ export function getRouteMap({
       children: [
         {
           element: <MainLayout />,
-          children: mergeRoutes(
+          children: guarded(mergeRoutes(
             [
               {
                 path: "/",
@@ -1177,7 +1188,7 @@ export function getRouteMap({
               },
             ],
             customMainRoutes,
-          ),
+          )),
         },
       ],
     },
@@ -1203,7 +1214,7 @@ export function getRouteMap({
             breadcrumb: () => t("app.nav.settings.header"),
           },
           element: <SettingsLayout />,
-          children: mergeRoutes(
+          children: guarded(mergeRoutes(
             [
               {
                 index: true,
@@ -2220,7 +2231,7 @@ export function getRouteMap({
               },
             ],
             customSettingsRoutes?.[0]?.children || [],
-          ),
+          )),
         },
       ],
     },
