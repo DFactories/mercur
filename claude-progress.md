@@ -619,3 +619,29 @@ assisted-onboarding operator included.
 ### Released
 
 `@mercurjs/core 2.3.1-dfactories.25`.
+
+## Session 12 (2026-09-22) — Accounting may change the bank details, not only read them
+
+Asked for directly after `.25` shipped read-only. `seller_payment_details:update`
+reaches exactly one route, `POST /vendor/sellers/:id/payment-details`, and
+nothing else in either panel declares that resource — so the grant is bounded
+to the thing it names, and a store can put its finances in someone's hands
+without making them a full Seller Administration. No readiness step gates bank
+details either, and the vendor settings page does no client-side role check, so
+the route's policy is the whole control.
+
+Every other seat — Inventory, Orders, Support, the assisted-onboarding
+operator — still holds neither half.
+
+### Verification
+
+- `--testPathPatterns="seller/"` 190 passed (6 more than `.25`: Accounting
+  writes and reads back, the four other roles get 403, the owner still writes).
+- lint clean, build 12/12, unit green (core 150, admin 53, vendor 132,
+  shared 35, sdk 3).
+- Removing the `update` key and rebuilding fails exactly the "lets Accounting
+  change them" case and nothing else.
+
+### Released
+
+`@mercurjs/core 2.3.1-dfactories.26`.

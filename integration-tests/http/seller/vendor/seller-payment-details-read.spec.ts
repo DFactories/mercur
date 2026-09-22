@@ -158,6 +158,63 @@ medusaIntegrationTestRunner({
         expect(res.status).toBe(200)
         expect(res.data.seller.payment_details?.iban).toBe(IBAN)
       })
+
+      describe("changing them", () => {
+        const NEW_IBAN = "IR062960000000100324200001"
+
+        /** axios rejects non-2xx, so read the status off the error instead. */
+        const write = async (
+          headers: { headers: Record<string, string> },
+          iban: string
+        ) => {
+          try {
+            const res = await api.post(
+              `/vendor/sellers/${sellerId}/payment-details`,
+              { holder_name: "The Producer", iban, account_number: "1" },
+              headers
+            )
+            return res.status
+          } catch (e: unknown) {
+            const err = e as { response?: { status?: number } }
+            if (!err.response?.status) throw e
+            return err.response.status
+          }
+        }
+
+        it("lets Accounting change them", async () => {
+          // `POST /vendor/sellers/:id/payment-details` is the only route
+          // `seller_payment_details:update` reaches, which is what makes this
+          // grant something a store can hand out without also handing out
+          // Seller Administration.
+          const accountant = await teammate(
+            "books-write@test.com",
+            SellerRole.ACCOUNTING
+          )
+
+          await expect(write(accountant, NEW_IBAN)).resolves.toBe(200)
+
+          const res = await api.get("/vendor/sellers/me", accountant)
+          expect(res.data.seller.payment_details?.iban).toBe(NEW_IBAN)
+        })
+
+        it.each([
+          ["support", SellerRole.SUPPORT],
+          ["inventory management", SellerRole.INVENTORY_MANAGEMENT],
+          ["order management", SellerRole.ORDER_MANAGEMENT],
+          ["the assisted onboarding operator", SellerRole.ASSISTED_OPERATOR],
+        ])("refuses %s", async (label, role) => {
+          const member = await teammate(
+            `${label.replace(/\s/g, "-")}-write@test.com`,
+            role
+          )
+
+          await expect(write(member, NEW_IBAN)).resolves.toBe(403)
+        })
+
+        it("lets the owner change them", async () => {
+          await expect(write(ownerHeaders, NEW_IBAN)).resolves.toBe(200)
+        })
+      })
     })
   },
 })

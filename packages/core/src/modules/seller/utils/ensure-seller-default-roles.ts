@@ -33,15 +33,21 @@ export const SELLER_ROLES: SellerRoleDefinition[] = [
     name: "Accounting",
     description: "View billing and manage payment information",
     /**
-     * Reading the bank details is what this role is for — its description
-     * says so — and it became a grant that had to be held the moment the
-     * seller routes stopped handing `payment_details` to every member.
+     * The bank details, both halves — which is what "manage payment
+     * information" in the line above has always claimed.
      *
-     * Read only. Changing where the money goes stays with the owner and
-     * Seller Administration; widening that is a decision, not a consequence
-     * of closing a read.
+     * `read` became a grant that had to be held the moment the seller routes
+     * stopped handing `payment_details` to every member. `update` is the
+     * deliberate part: it reaches exactly one route,
+     * `POST /vendor/sellers/:id/payment-details`, and it means a store can put
+     * its finances in someone's hands without also making them a full Seller
+     * Administration. Every other seat — Inventory, Orders, Support, the
+     * assisted-onboarding operator — still has neither.
      */
-    policyKeys: ["seller_payment_details:read"],
+    policyKeys: [
+      "seller_payment_details:read",
+      "seller_payment_details:update",
+    ],
   },
   {
     id: SellerRole.SUPPORT,
