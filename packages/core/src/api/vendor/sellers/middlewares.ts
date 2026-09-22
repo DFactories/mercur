@@ -5,6 +5,8 @@ import {
 import { PolicyOperation } from "@medusajs/framework/utils"
 import { MiddlewareRoute } from "@medusajs/medusa"
 
+import { withHiddenPaymentDetails } from "../../utils/hide-seller-payment-details"
+
 import * as QueryConfig from "./query-config"
 import { Entities } from "./query-config"
 import {
@@ -20,7 +22,8 @@ import {
   VendorUpsertSellerProfessionalDetails,
 } from "./validators"
 
-export const vendorSellersMiddlewares: MiddlewareRoute[] = [
+export const vendorSellersMiddlewares: MiddlewareRoute[] =
+  withHiddenPaymentDetails([
   {
     method: ["POST"],
     matcher: "/vendor/sellers/select",
@@ -275,4 +278,4 @@ export const vendorSellersMiddlewares: MiddlewareRoute[] = [
       },
     ],
   },
-]
+  ])

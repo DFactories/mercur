@@ -12,12 +12,26 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
  *
  * `seller_payment_details` was split out of `seller` so that filling in a
  * store's profile and changing where its money goes could be different
- * grants — but only on the WRITE side. Reading stayed inside `seller:read`,
- * and `adminSellerFields` selects `*payment_details`, so every admin role that
- * can open the store list was handed every producer's IBAN with it.
+ * grants — but only on the WRITE side. Reading stayed inside `seller:read`
+ * and inside being a member at all, while three query configs select the
+ * relation by default:
+ *
+ *   admin  `adminSellerFields`                  `*payment_details`
+ *   vendor `retrieveVendorSellerQueryConfig`    `*payment_details`
+ *   vendor `retrieveVendorMemberMeQueryConfig`  `seller.payment_details.*`
+ *
+ * So every admin role that could open the store list read every producer's
+ * IBAN, and every member of a store read that store's — a Support or
+ * Inventory seat included, and the assisted-onboarding operator whose entire
+ * definition is that money is not their business.
  *
  * This drops the field from `req.queryConfig.fields` rather than scrubbing the
  * response, so the value is never read out of the database at all.
+ *
+ * On the vendor side the roles it asks about are the SELLER roles:
+ * `ensureSellerMiddleware` puts the member's effective role in
+ * `app_metadata.roles`, mapping an owner to Seller Administration, so an owner
+ * is never filtered out of their own bank details.
  *
  * Not done with the platform's own `RBACFieldFilter`: that is gated behind the
  * `rbac_filter_fields` feature flag, which a consumer sets globally, and it
@@ -27,11 +41,18 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
  */
 const FIELD = "payment_details"
 
-/** `payment_details`, `payment_details.*`, `payment_details.iban`, `*payment_details`. */
-const isPaymentDetailField = (field: string): boolean => {
-  const name = field.replace(/^[+*]/, "")
-  return name === FIELD || name.startsWith(`${FIELD}.`)
-}
+/**
+ * Any dotted path with a `payment_details` SEGMENT — `payment_details`,
+ * `payment_details.iban`, `*payment_details`, `seller.payment_details.*`.
+ *
+ * Matched by segment rather than by prefix so a future `payment_details_note`
+ * is not swept up, and so the nested vendor shape is not missed.
+ */
+const isPaymentDetailField = (field: string): boolean =>
+  field
+    .replace(/^[+]/, "")
+    .split(".")
+    .some((segment) => segment.replace(/^\*/, "") === FIELD)
 
 const rbacEnabled = (req: AuthenticatedMedusaRequest): boolean => {
   try {

@@ -572,13 +572,50 @@ then filter relations on every route carrying an `entity` in its query config.
   the refusal naming `order:read`, and no `order-groups` request is made at
   all. A super admin still lands on Orders.
 
-### Known, not fixed
-
-`GET /vendor/members/me` selects `seller.payment_details.*`, so any member of a
-store reads its bank details whatever their seller role. Same class of defect,
-different population, and whether a Support-role member should see the IBAN is
-a product decision rather than a patch.
-
 ### Released
 
 `@mercurjs/core 2.3.1-dfactories.24`, `@mercurjs/admin 2.3.1-dfactories.18`.
+
+## Session 11 (2026-09-22) — the same leak on the vendor side
+
+Left open above as "a product decision rather than a patch", then decided:
+a store's bank details are for the people who run it.
+
+Three query configs selected the relation by default, not one —
+`retrieveVendorSellerQueryConfig` (`*payment_details`, so every seller read AND
+every seller write's response) and `retrieveVendorMemberMeQueryConfig`
+(`seller.payment_details.*`) on top of the admin config already closed. So every
+member of a store read its IBAN whatever their seller role, the
+assisted-onboarding operator included.
+
+- `hide-seller-payment-details` now matches a `payment_details` path SEGMENT
+  rather than a prefix, which is what reaches the nested vendor shape while
+  still not sweeping up a future `payment_details_note`. Applied to
+  `vendorSellersMiddlewares` and `vendorMembersMiddlewares` the same way as the
+  admin ones.
+- It works unchanged on the vendor side because `ensureSellerMiddleware`
+  already puts the member's effective SELLER role in `app_metadata.roles` and
+  maps an owner to Seller Administration — so an owner is never filtered out of
+  their own bank details, and `hasPermission` is asked the same question in
+  both panels.
+- `SellerRole.ACCOUNTING` gains `seller_payment_details:read`. Its own
+  description is "View billing and manage payment information", and it held no
+  policy at all, so closing the read would otherwise have taken the details
+  away from the one role that exists to look at them. Read only: changing where
+  the money goes stays with the owner and Seller Administration.
+  `ensureSellerDefaultRoles` runs on every vendor request and only ever adds, so
+  existing installs pick the binding up without a migration.
+
+### Verification
+
+- `bun run lint` clean; `bun run build` 12/12; unit suites green (core 150,
+  admin 53, vendor 132, shared 35, sdk 3).
+- `--testPathPatterns="seller/"` 184 passed, including 9 new vendor cases;
+  `--testPathPatterns="http/dfactories/"` 78 passed.
+- Both halves shown to matter: with the guard disabled and core rebuilt, 6 of
+  the 9 fail and return the IBAN; with the guard on but Accounting's grant
+  removed, exactly the Accounting case fails.
+
+### Released
+
+`@mercurjs/core 2.3.1-dfactories.25`.

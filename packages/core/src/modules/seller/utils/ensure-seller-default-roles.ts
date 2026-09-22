@@ -32,7 +32,16 @@ export const SELLER_ROLES: SellerRoleDefinition[] = [
     id: SellerRole.ACCOUNTING,
     name: "Accounting",
     description: "View billing and manage payment information",
-    policyKeys: [],
+    /**
+     * Reading the bank details is what this role is for — its description
+     * says so — and it became a grant that had to be held the moment the
+     * seller routes stopped handing `payment_details` to every member.
+     *
+     * Read only. Changing where the money goes stays with the owner and
+     * Seller Administration; widening that is a decision, not a consequence
+     * of closing a read.
+     */
+    policyKeys: ["seller_payment_details:read"],
   },
   {
     id: SellerRole.SUPPORT,

@@ -5,6 +5,8 @@ import {
 } from "@medusajs/framework"
 import { MiddlewareRoute } from "@medusajs/medusa"
 
+import { withHiddenPaymentDetails } from "../../utils/hide-seller-payment-details"
+
 import { VendorGetSellerParams } from "../sellers/validators"
 import { VendorAcceptMemberInvite, VendorUpdateMember } from "./validators"
 
@@ -27,7 +29,8 @@ const retrieveVendorMemberMeQueryConfig = {
   ],
 }
 
-export const vendorMembersMiddlewares: MiddlewareRoute[] = [
+export const vendorMembersMiddlewares: MiddlewareRoute[] =
+  withHiddenPaymentDetails([
   {
     method: ["POST"],
     matcher: "/vendor/members/invites/accept",
@@ -59,4 +62,4 @@ export const vendorMembersMiddlewares: MiddlewareRoute[] = [
       ),
     ],
   },
-]
+  ])
