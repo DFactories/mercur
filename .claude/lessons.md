@@ -132,3 +132,35 @@ credentials:
 `POST /admin/customers/:id/phone`) and `withPhoneVerificationReset` the third.
 Writing the profile field alone is the bug that looks like a fix: the panel shows
 the new number while the old one still opens the account.
+
+### Two lines of noise in every integration log, and the crash that hides behind them
+
+Every spec in `integration-tests/` logs a run of
+
+    Connection Error: Connection ended unexpectedly      (knex/lib/logger.js:42)
+
+between tests. It is not a database fault. `@medusajs/test-utils` 2.18 resets
+the database between tests by restoring it from a template, and to do that
+`medusa-test-runner-utils/postgres-template.js:65` runs `pg_terminate_backend`
+on every connection the app under test holds; the app's knex pool logs each one
+it loses. Test-harness behaviour, nothing in this repo triggers it, no hook to
+silence it — upstream would have to drain the pool before terminating.
+
+The other line,
+
+    DeprecationWarning: Calling client.query() when the client is already
+    executing a query is deprecated and will be removed in pg@9.0
+
+traces (`--trace-deprecation`) to `knex/lib/execution/transaction.js:380` under
+`@mikro-orm/knex/AbstractSqlConnection.js:227`: queries issued concurrently on one
+transaction's client. It is how the framework's ORM layer runs, not something a
+route here does, and it becomes a real failure only when pg 9 lands.
+
+The trap is that both bury the line that matters. A run of many suites through
+the old `--runInBand` script died with `FATAL ERROR: ... JavaScript heap out of
+memory` and exit 134 at ~2.5 GB — every suite boots a full Medusa app in the same
+process and nothing is reclaimed — and the log above the crash was nothing but
+these two messages. The script now runs `--maxWorkers=1
+--workerIdleMemoryLimit=2048` with a 6 GB heap: still serial, which the
+per-suite database needs, but in a worker Jest recycles when it grows. dfactories-mp
+hit and fixed the identical crash in its own suite (`b7e8bbe`).
