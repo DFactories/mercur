@@ -227,6 +227,31 @@ export const useCancelProductEdit = (
   });
 };
 
+/** Send a draft or rejected product in for review (published without the approval flow). */
+export const useSubmitProductForReview = (
+  id: string,
+  options?: UseMutationOptions<
+    InferClientOutput<typeof sdk.vendor.products.$id.submit.mutate>,
+    ClientError,
+    void
+  >
+) => {
+  return useMutation({
+    // Spread first: a caller's `onSuccess` must not replace the invalidation.
+    ...options,
+    mutationFn: () => sdk.vendor.products.$id.submit.mutate({ $id: id }),
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: productsQueryKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: productsQueryKeys.lists() });
+      // A request still pending from before is canceled on the way in.
+      queryClient.invalidateQueries({
+        queryKey: productChangeQueryKeys.detail(id),
+      });
+      options?.onSuccess?.(data, variables, context);
+    },
+  });
+};
+
 // --- Variant queries ---
 
 export const useProductVariant = (

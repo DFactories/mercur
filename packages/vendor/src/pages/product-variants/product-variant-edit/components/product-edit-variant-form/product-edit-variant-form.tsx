@@ -7,14 +7,14 @@ import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { HttpTypes } from "@medusajs/types"
-import { ProductDTO, AttributeType, MercurFeatureFlags } from "@mercurjs/types"
+import { ProductDTO, AttributeType } from "@mercurjs/types"
 
 import { Form } from "@components/common/form"
 import { AttributeValueInput } from "@components/inputs/attribute-value-input"
 import { CountrySelect } from "@components/inputs/country-select"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
-import { useFeatureFlags } from "@hooks/api"
+import { isQueuedForReview } from "@lib/product-change"
 import { useUpdateProductVariant } from "@hooks/api/products"
 import {
   transformNullableFormData,
@@ -51,10 +51,6 @@ export const ProductEditVariantForm = ({
 }: ProductEditVariantFormProps) => {
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
-
-  const { feature_flags } = useFeatureFlags()
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST]
 
   const variantAttributes =
     (product as HttpTypes.AdminProduct & Pick<ProductDTO, "attributes">)
@@ -139,10 +135,10 @@ export const ProductEditVariantForm = ({
         ...nullableData,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           handleSuccess("../")
           toast.success(
-            isProductRequestEnabled
+            isQueuedForReview(response)
               ? t("products.edit.requestSuccessToast")
               : t("products.variant.edit.success"),
           )

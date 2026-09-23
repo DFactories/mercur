@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, ThumbnailBadge } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import { MercurFeatureFlags } from "@mercurjs/types"
 import { Button, Checkbox, clx, CommandBar, toast, Tooltip } from "@medusajs/ui"
 import { Fragment, useCallback, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -10,7 +9,7 @@ import { z } from "zod"
 
 import { RouteFocusModal, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
-import { useFeatureFlags } from "@hooks/api"
+import { isQueuedForReview } from "@lib/product-change"
 import { useUpdateProductVariant } from "@hooks/api/products"
 
 type ProductImage = {
@@ -48,10 +47,6 @@ export const EditVariantMediaForm = ({
 }) => {
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
-
-  const { feature_flags } = useFeatureFlags()
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST]
 
   const allProductImages = variant.product?.images ?? []
   const variantImageIds = allProductImages
@@ -99,9 +94,9 @@ export const EditVariantMediaForm = ({
         thumbnail,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           toast.success(
-            isProductRequestEnabled
+            isQueuedForReview(response)
               ? t("products.edit.requestSuccessToast")
               : t("products.media.successToast")
           )

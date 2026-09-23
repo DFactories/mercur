@@ -14,6 +14,10 @@ import {
   ProductStatus,
 } from "@mercurjs/types"
 
+import {
+  adminHeaders,
+  createAdminUser,
+} from "../../../helpers/create-admin-user"
 import { createSellerUser } from "../../../helpers/create-seller-user"
 
 jest.setTimeout(60_000)
@@ -26,11 +30,13 @@ jest.setTimeout(60_000)
  *
  *  - deleting a `draft` product applies inline (product gone, change
  *    CONFIRMED), bypassing the queue, and
- *  - deleting a non-draft (`proposed`) product still stages a PENDING
- *    change for the operator (product preserved).
+ *  - deleting a PUBLISHED product still stages a PENDING change for the
+ *    operator (product preserved). Every unpublished status — draft,
+ *    proposed, rejected — deletes inline since 2026-09-23 (see
+ *    product-edit-unpublished.spec.ts).
  */
 medusaIntegrationTestRunner({
-  testSuite: ({ getContainer, api }) => {
+  testSuite: ({ getContainer, api, dbConnection }) => {
     describe("Vendor DELETE /vendor/products/:id — draft bypass (MER-181)", () => {
       let container: MedusaContainer
       let sellerHeaders: { headers: Record<string, string> }
@@ -40,6 +46,7 @@ medusaIntegrationTestRunner({
       })
 
       beforeEach(async () => {
+        await createAdminUser(dbConnection, adminHeaders, container)
         const a = await createSellerUser(container, {
           email: "draft-delete-seller@test.com",
           name: "Draft Delete Seller",
@@ -104,11 +111,12 @@ medusaIntegrationTestRunner({
         expect(deleteChange!.status).toBe(ProductChangeStatus.CONFIRMED)
       })
 
-      it("keeps a non-draft delete pending for admin approval when PRODUCT_REQUEST is enabled", async () => {
+      it("keeps a published product's delete pending for admin approval when PRODUCT_REQUEST is enabled", async () => {
         const productId = await createVendorProduct(
-          "Proposed Keepme",
+          "Published Keepme",
           ProductStatus.PROPOSED,
         )
+        await api.post(`/admin/products/${productId}/confirm`, {}, adminHeaders)
 
         const res = await api.delete(
           `/vendor/products/${productId}`,

@@ -1,4 +1,4 @@
-import { Button, toast, usePrompt } from "@medusajs/ui"
+import { Button, Text, toast, usePrompt } from "@medusajs/ui"
 import { ProductChangeStatus } from "@mercurjs/types"
 import {
   ProductChangePanel,
@@ -127,6 +127,15 @@ export const ProductActiveEditSection = ({
       product={panelProduct}
       actions={product_change.actions ?? []}
       resolvers={resolversFor(product.id)}
+      headerDescription={
+        <Text
+          size="small"
+          className="text-ui-fg-subtle"
+          data-testid="product-active-edit-description"
+        >
+          {t("products.edits.panel.description")}
+        </Text>
+      }
       footer={
         <Button
           size="small"

@@ -849,6 +849,7 @@ export type Routes = {
                 variants: typeof import("../src/api/vendor/products/[id]/variants/route") & {
                     $variantId: typeof import("../src/api/vendor/products/[id]/variants/[variant_id]/route");
                 };
+                submit: typeof import("../src/api/vendor/products/[id]/submit/route");
             };
         };
         promotions: typeof import("../src/api/vendor/promotions/route") & {

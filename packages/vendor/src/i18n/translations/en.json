@@ -494,10 +494,14 @@
         "title": "Product update request",
         "deleteRequested": "Product deletion is pending approval.",
         "cancelTitle": "Cancel update request",
-        "cancelDescription": "Are you sure you want to cancel this product update request? This action cannot be undone."
+        "cancelDescription": "Are you sure you want to cancel this product update request? This action cannot be undone.",
+        "description": "An operator reviews these changes before they appear in the store. Until then no other change to this product can be saved; cancel the request to edit it again."
       },
       "toast": {
         "canceledSuccessfully": "Product update request was successfully canceled."
+      },
+      "errors": {
+        "pendingRequest": "This product already has an update request awaiting review. No other change can be saved until it is approved or canceled — you can cancel it at the top of the product page."
       }
     },
     "create": {
@@ -953,6 +957,10 @@
         },
         "error": {
           "header": "Failed to delete product"
+        },
+        "requested": {
+          "header": "Deletion requested",
+          "description": "{{title}} will be deleted once an operator approves the request."
         }
       }
     },
@@ -971,6 +979,13 @@
         "alreadyManaged": "This inventory item is already editable under {{title}}.",
         "alreadyManagedWithSku": "This inventory item is already editable under {{title}} ({{sku}})."
       }
+    },
+    "submitForReview": {
+      "action": "Submit for review",
+      "title": "Submit for review?",
+      "description": "{{title}} will be sent to the marketplace operators for review and appears in the store once approved.",
+      "successToast": "{{title}} was submitted for review.",
+      "publishedToast": "{{title}} was published."
     }
   },
   "collections": {

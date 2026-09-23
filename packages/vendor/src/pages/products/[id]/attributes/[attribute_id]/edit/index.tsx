@@ -10,9 +10,8 @@ import {
   RouteDrawer,
   useLinkQuery,
 } from "@mercurjs/dashboard-shared";
-import { MercurFeatureFlags } from "@mercurjs/types";
 
-import { useFeatureFlags } from "@hooks/api";
+import { isQueuedForReview } from "@lib/product-change";
 import { useBatchProductAttributes, useProduct } from "@hooks/api/products";
 import { useProductAttribute } from "@hooks/api/product-attributes";
 import { PRODUCT_DETAIL_QUERY } from "../../../../common/constants";
@@ -34,10 +33,6 @@ export const Component = () => {
   } = useProductAttribute(attribute_id!, undefined, {
     enabled: !!attribute_id && !isLoading && !attached,
   });
-
-  const { feature_flags } = useFeatureFlags();
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST];
 
   const { mutateAsync, isPending } = useBatchProductAttributes(id!);
 
@@ -73,9 +68,9 @@ export const Component = () => {
 
   const onSubmit = async (payload: ProductAttributeBatchPayload) => {
     await mutateAsync(payload, {
-      onSuccess: () => {
+      onSuccess: (response) => {
         toast.success(
-          isProductRequestEnabled
+          isQueuedForReview(response)
             ? t("products.edit.requestSuccessToast")
             : t("products.edit.attributes.updateSuccessToast"),
         );

@@ -15,7 +15,7 @@ import {
   ProductChangeDTO,
 } from "@mercurjs/types"
 
-import { validateNoPendingProductChangeStep } from "../steps"
+import { prepareProductEditWorkflow } from "./prepare-product-edit"
 import { stageProductChangeWorkflow } from "./stage-product-change"
 
 export type ProductEditUpdateProductWorkflowInput = {
@@ -69,11 +69,12 @@ export const productEditUpdateProductWorkflow: ReturnWorkflow<
 > = createWorkflow(
   productEditUpdateProductWorkflowId,
   function (input: ProductEditUpdateProductWorkflowInput) {
-    validateNoPendingProductChangeStep(
-      transform({ input }, ({ input }) => ({
-        product_ids: [input.product_id],
+    const editMode = prepareProductEditWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({
+        product_id: input.product_id,
+        canceled_by: input.created_by,
       })),
-    )
+    })
 
     const { data: currentProducts } = useQueryGraphStep({
       entity: "product",
@@ -174,11 +175,15 @@ export const productEditUpdateProductWorkflow: ReturnWorkflow<
     )
 
     const change = stageProductChangeWorkflow.runAsStep({
-      input: transform({ input, actions }, ({ input, actions }) => ({
-        product_id: input.product_id,
-        created_by: input.created_by,
-        actions,
-      })),
+      input: transform(
+        { input, actions, editMode },
+        ({ input, actions, editMode }) => ({
+          product_id: input.product_id,
+          created_by: input.created_by,
+          actions,
+          auto_confirm: editMode.direct,
+        }),
+      ),
     })
 
     const productChangeCreated = createHook("productChangeCreated", {

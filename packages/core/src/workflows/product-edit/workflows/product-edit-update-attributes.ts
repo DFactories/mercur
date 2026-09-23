@@ -13,7 +13,7 @@ import {
   ProductChangeDTO,
 } from "@mercurjs/types"
 
-import { validateNoPendingProductChangeStep } from "../steps"
+import { prepareProductEditWorkflow } from "./prepare-product-edit"
 import { stageProductChangeWorkflow } from "./stage-product-change"
 
 export type ProductEditUpdateAttributesWorkflowInput = {
@@ -34,11 +34,12 @@ export const productEditUpdateAttributesWorkflow: ReturnWorkflow<
 > = createWorkflow(
   productEditUpdateAttributesWorkflowId,
   function (input: ProductEditUpdateAttributesWorkflowInput) {
-    validateNoPendingProductChangeStep(
-      transform({ input }, ({ input }) => ({
-        product_ids: [input.product_id],
+    const editMode = prepareProductEditWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({
+        product_id: input.product_id,
+        canceled_by: input.created_by,
       })),
-    )
+    })
 
     const actions = transform({ input }, ({ input }) => {
       const acts: Array<
@@ -73,11 +74,15 @@ export const productEditUpdateAttributesWorkflow: ReturnWorkflow<
     })
 
     const change = stageProductChangeWorkflow.runAsStep({
-      input: transform({ input, actions }, ({ input, actions }) => ({
-        product_id: input.product_id,
-        created_by: input.created_by,
-        actions,
-      })),
+      input: transform(
+        { input, actions, editMode },
+        ({ input, actions, editMode }) => ({
+          product_id: input.product_id,
+          created_by: input.created_by,
+          actions,
+          auto_confirm: editMode.direct,
+        }),
+      ),
     })
 
     return new WorkflowResponse(change)

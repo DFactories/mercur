@@ -496,6 +496,7 @@
   "/vendor/products/:id/attributes/batch": "typeof import(\"@mercurjs/core/api/vendor/products/[id]/attributes/batch/route\")",
   "/vendor/products/:id/cancel": "typeof import(\"@mercurjs/core/api/vendor/products/[id]/cancel/route\")",
   "/vendor/products/:id/preview": "typeof import(\"@mercurjs/core/api/vendor/products/[id]/preview/route\")",
+  "/vendor/products/:id/submit": "typeof import(\"@mercurjs/core/api/vendor/products/[id]/submit/route\")",
   "/vendor/products/:id/variants": "typeof import(\"@mercurjs/core/api/vendor/products/[id]/variants/route\")",
   "/vendor/products/:id/variants/:variant_id": "typeof import(\"@mercurjs/core/api/vendor/products/[id]/variants/[variant_id]/route\")",
   "/vendor/promotions": "typeof import(\"@mercurjs/core/api/vendor/promotions/route\")",

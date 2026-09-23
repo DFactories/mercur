@@ -1489,6 +1489,9 @@
                 },
                 "cancelDescription": {
                   "type": "string"
+                },
+                "description": {
+                  "type": "string"
                 }
               },
               "additionalProperties": false
@@ -1497,6 +1500,15 @@
               "type": "object",
               "properties": {
                 "canceledSuccessfully": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "errors": {
+              "type": "object",
+              "properties": {
+                "pendingRequest": {
                   "type": "string"
                 }
               },
@@ -2866,6 +2878,18 @@
                     }
                   },
                   "additionalProperties": false
+                },
+                "requested": {
+                  "type": "object",
+                  "properties": {
+                    "header": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
                 }
               },
               "additionalProperties": false
@@ -2917,6 +2941,27 @@
                 }
               },
               "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "submitForReview": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "successToast": {
+              "type": "string"
+            },
+            "publishedToast": {
+              "type": "string"
             }
           },
           "additionalProperties": false

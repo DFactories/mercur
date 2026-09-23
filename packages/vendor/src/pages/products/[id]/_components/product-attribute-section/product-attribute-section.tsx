@@ -2,10 +2,11 @@ import { toast } from "@medusajs/ui";
 import {
   ProductAttributeSection as SharedProductAttributeSection,
 } from "@mercurjs/dashboard-shared";
-import { MercurFeatureFlags, ProductAttributeDTO } from "@mercurjs/types";
+import { ProductAttributeDTO } from "@mercurjs/types";
 import { useTranslation } from "react-i18next";
 
-import { useFeatureFlags, useProductAttributes } from "@hooks/api";
+import { useProductAttributes } from "@hooks/api";
+import { isQueuedForReview } from "@lib/product-change";
 import { useBatchProductAttributes } from "@hooks/api/products";
 
 type ProductWithAttributes = {
@@ -21,10 +22,6 @@ export const ProductAttributeSection = ({
 }) => {
   const { t } = useTranslation();
 
-  const { feature_flags } = useFeatureFlags();
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST];
-
   const categoryId = product.categories?.[0]?.id;
   const { product_attributes } = useProductAttributes(
     { category_id: categoryId, is_required: true },
@@ -38,9 +35,9 @@ export const ProductAttributeSection = ({
       await mutateAsync(
         { remove: [attribute.id] },
         {
-          onSuccess: () => {
+          onSuccess: (response) => {
             toast.success(
-              isProductRequestEnabled
+              isQueuedForReview(response)
                 ? t("products.edit.requestSuccessToast")
                 : t("products.edit.attributes.deleteSuccessToast"),
             );

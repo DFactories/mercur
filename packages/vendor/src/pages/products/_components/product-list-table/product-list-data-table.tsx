@@ -12,6 +12,7 @@ import type { productListLoader } from "../../list-loader";
 import { ActionMenu } from "@components/common/action-menu";
 import { _DataTable } from "@components/table/data-table";
 import { useDeleteProduct, useProducts } from "@hooks/api/products";
+import { isQueuedForReview } from "@lib/product-change";
 import { useProductTableColumns } from "@hooks/table/columns/use-product-table-columns";
 import { useProductTableFilters } from "@hooks/table/filters/use-product-table-filters";
 import { useProductTableQuery } from "@hooks/table/query/use-product-table-query";
@@ -121,7 +122,17 @@ const ProductActions = ({ product }: { product: ExtendedAdminProduct }) => {
     }
 
     await mutateAsync(undefined, {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        if (isQueuedForReview(response)) {
+          // A published product stays until an operator approves the delete.
+          toast.success(t("products.toasts.delete.requested.header"), {
+            description: t("products.toasts.delete.requested.description", {
+              title: product.title,
+            }),
+          });
+          return;
+        }
+
         toast.success(t("products.toasts.delete.success.header"), {
           description: t("products.toasts.delete.success.description", {
             title: product.title,
@@ -133,7 +144,8 @@ const ProductActions = ({ product }: { product: ExtendedAdminProduct }) => {
           description: e.message,
         });
       },
-    });
+      // Shown above; without this the rejection escaped as an uncaught promise.
+    }).catch(() => undefined);
   };
 
   return (

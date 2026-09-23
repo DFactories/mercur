@@ -1,5 +1,4 @@
 import { Button, Input, Text, Textarea, toast } from "@medusajs/ui";
-import { MercurFeatureFlags } from "@mercurjs/types";
 import { useTranslation } from "react-i18next";
 import * as zod from "zod";
 
@@ -7,7 +6,8 @@ import { ExtendedAdminProduct } from "@custom-types/products";
 import { Form } from "@components/common/form";
 import { SwitchBox } from "@components/common/switch-box";
 import { RouteDrawer, useRouteModal } from "@components/modals";
-import { useFeatureFlags, useUpdateProduct } from "@hooks/api";
+import { useUpdateProduct } from "@hooks/api";
+import { isQueuedForReview } from "@lib/product-change";
 
 import { KeyboundForm } from "@components/utilities/keybound-form";
 import {
@@ -30,10 +30,6 @@ const EditProductSchema = zod.object({
 export const EditProductForm = ({ product }: EditProductFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
-
-  const { feature_flags } = useFeatureFlags();
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST];
 
   const form = useExtendableForm({
     schema: EditProductSchema,
@@ -69,19 +65,17 @@ export const EditProductForm = ({ product }: EditProductFormProps) => {
     await mutateAsync(
       payload,
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           toast.success(
-            isProductRequestEnabled
+            isQueuedForReview(response)
               ? t("products.edit.requestSuccessToast")
               : t("products.edit.successToast", { title }),
           );
           handleSuccess(`/products/${product.id}`);
         },
         onError: (e) => {
-          if (/pending product change/i.test(e.message)) {
-            toast.error(t("products.edit.duplicateRequestErrorToast"));
-            return;
-          }
+          // A request already pending on the product arrives translated by
+          // the API error translator (products.edits.errors.pendingRequest).
           toast.error(e.message);
         },
       },

@@ -12,14 +12,12 @@ import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import * as zod from "zod"
 
-import { MercurFeatureFlags } from "@mercurjs/types"
-
 import { ChipInput } from "@components/inputs/chip-input"
 import { Form } from "@components/common/form"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { AttributeType } from "@mercurjs/types"
-import { useFeatureFlags } from "@hooks/api"
+import { isQueuedForReview } from "@lib/product-change"
 import { useBatchProductAttributes } from "@hooks/api/products"
 
 type CreateAttributeFormValues = {
@@ -37,10 +35,6 @@ export const CreateAttributeForm = ({
 }: CreateAttributeFormProps) => {
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
-
-  const { feature_flags } = useFeatureFlags()
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST]
 
   const schema = zod.object({
     title: zod
@@ -92,10 +86,10 @@ export const CreateAttributeForm = ({
         ],
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           handleSuccess()
           toast.success(
-            isProductRequestEnabled
+            isQueuedForReview(response)
               ? t("products.edit.requestSuccessToast")
               : t("products.edit.attributes.createSuccessToast")
           )

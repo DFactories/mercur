@@ -12,7 +12,8 @@ import {
   ProductChangeDTO,
 } from "@mercurjs/types"
 
-import { validateNoPendingProductChangeStep } from "../steps"
+import { validateProductVariantsStep } from "../steps"
+import { prepareProductEditWorkflow } from "./prepare-product-edit"
 import { stageProductChangeWorkflow } from "./stage-product-change"
 
 export type ProductEditVariantAddOperation = {
@@ -54,12 +55,15 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
 > = createWorkflow(
   productEditUpdateVariantsWorkflowId,
   function (input: ProductEditUpdateVariantsWorkflowInput) {
-    validateNoPendingProductChangeStep(
-      transform({ input }, ({ input }) => ({
-        product_ids: [input.product_id],
+    const editMode = prepareProductEditWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({
+        product_id: input.product_id,
+        canceled_by: input.created_by,
       })),
-    )
+    })
 
+    // Every variant the edit names — updated or removed — is loaded from the
+    // product in the URL, so one that lives elsewhere comes back missing.
     const variantIdsToLoad = transform({ input }, ({ input }) =>
       Array.from(
         new Set(
@@ -67,11 +71,10 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
             .filter(
               (
                 op,
-              ): op is {
-                type: "update"
-                variant_id: string
-                fields: Record<string, unknown>
-              } => op.type === "update",
+              ): op is
+                | ProductEditVariantUpdateOperation
+                | ProductEditVariantRemoveOperation =>
+                op.type === "update" || op.type === "remove",
             )
             .map((op) => op.variant_id),
         ),
@@ -103,8 +106,19 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
         "options.value",
         "options.option.title",
       ],
-      filters: { id: variantIdsToLoad },
+      filters: transform(
+        { input, variantIdsToLoad },
+        ({ input, variantIdsToLoad }) => ({
+          id: variantIdsToLoad,
+          product_id: input.product_id,
+        }),
+      ),
     }).config({ name: "pc-load-variants-for-diff" })
+
+    validateProductVariantsStep({
+      variant_ids: variantIdsToLoad,
+      variants: currentVariants,
+    })
 
     const actions = transform(
       { input, currentVariants },
@@ -247,11 +261,15 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
     )
 
     const change = stageProductChangeWorkflow.runAsStep({
-      input: transform({ input, actions }, ({ input, actions }) => ({
-        product_id: input.product_id,
-        created_by: input.created_by,
-        actions,
-      })),
+      input: transform(
+        { input, actions, editMode },
+        ({ input, actions, editMode }) => ({
+          product_id: input.product_id,
+          created_by: input.created_by,
+          actions,
+          auto_confirm: editMode.direct,
+        }),
+      ),
     })
 
     return new WorkflowResponse(change)

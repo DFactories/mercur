@@ -1,9 +1,10 @@
 import {
   ContainerRegistrationKeys,
   MedusaError,
+  promiseAll,
 } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ProductChangeActionType } from "@mercurjs/types"
+import { ProductChangeActionType, ProductStatus } from "@mercurjs/types"
 
 export const getSellerOwnedProductIds = async (
   scope: MedusaContainer,
@@ -58,6 +59,54 @@ export const getProductIdsRestrictedFromSeller = async (
   return Array.from(restricted).filter((id) => !assigned.has(id))
 }
 
+/**
+ * The subset of `productIds` this seller manages: one it is assigned to
+ * (product_seller eligibility) OR one it created (master-product authoring).
+ * Both lookups are narrowed to the ids asked about.
+ */
+export const getProductIdsManagedBySeller = async (
+  scope: MedusaContainer,
+  sellerId: string,
+  productIds: string[]
+): Promise<Set<string>> => {
+  if (!productIds.length) {
+    return new Set()
+  }
+
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const [{ data: links }, { data: authored }] = await promiseAll([
+    query.graph({
+      entity: "product_seller",
+      fields: ["product_id"],
+      filters: { seller_id: sellerId, product_id: productIds },
+    }),
+    query.graph({
+      entity: "product_change_action",
+      fields: ["product_id"],
+      filters: {
+        action: ProductChangeActionType.PRODUCT_ADD,
+        product_id: productIds,
+        product_change: { created_by: sellerId },
+      },
+    }),
+  ])
+
+  const managed = new Set<string>()
+  for (const row of [...links, ...authored] as { product_id?: string | null }[]) {
+    if (row.product_id) {
+      managed.add(row.product_id)
+    }
+  }
+  return managed
+}
+
+const productNotFound = (productId: string) =>
+  new MedusaError(
+    MedusaError.Types.NOT_FOUND,
+    `Product with id ${productId} was not found`
+  )
+
 export const ensureSellerOwnsProduct = async (
   scope: MedusaContainer,
   sellerId: string,
@@ -67,31 +116,67 @@ export const ensureSellerOwnsProduct = async (
     return
   }
 
-  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
-
-  // A seller may manage a product it is assigned to (product_seller eligibility)
-  // OR a product it created (master-product authoring).
-  const { data } = await query.graph({
-    entity: "product_seller",
-    fields: ["product_id"],
-    filters: {
-      seller_id: sellerId,
-      product_id: productIds,
-    },
-  })
-
-  const ownedProductIds = new Set<string | null>(
-    data.map(({ product_id }) => product_id)
+  const managed = await getProductIdsManagedBySeller(
+    scope,
+    sellerId,
+    productIds
   )
-  for (const id of await getSellerOwnedProductIds(scope, sellerId)) {
-    ownedProductIds.add(id)
-  }
-  const missingProductId = productIds.find((id) => !ownedProductIds.has(id))
+  const missingProductId = productIds.find((id) => !managed.has(id))
 
   if (missingProductId) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_FOUND,
-      `Product with id ${missingProductId} was not found`
-    )
+    throw productNotFound(missingProductId)
+  }
+}
+
+/**
+ * Which product a seller may reach under `/vendor/products/:id` — to read it
+ * or to file a change against it. The same rule as the list: its own products
+ * whatever their status, and anybody's PUBLISHED product unless it is
+ * restricted to other sellers. Everything else answers 404.
+ *
+ * Reaching a published master product it did not create lets a seller REQUEST
+ * a change (the shared catalog is edited that way, and the request waits for
+ * an operator). What it can never reach is another store's unpublished
+ * product: those are the ones edited and deleted directly, and the routes used
+ * to accept any id — one store could delete another's draft.
+ */
+export const ensureSellerCanAccessProduct = async (
+  scope: MedusaContainer,
+  sellerId: string,
+  productId: string
+): Promise<void> => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const [
+    {
+      data: [product],
+    },
+    managed,
+    { data: links },
+  ] = await promiseAll([
+    query.graph({
+      entity: "product",
+      fields: ["id", "status"],
+      filters: { id: productId },
+    }),
+    getProductIdsManagedBySeller(scope, sellerId, [productId]),
+    query.graph({
+      entity: "product_seller",
+      fields: ["seller_id"],
+      filters: { product_id: productId },
+    }),
+  ])
+
+  if (!product) {
+    throw productNotFound(productId)
+  }
+
+  if (managed.has(productId)) {
+    return
+  }
+
+  const restrictedToOthers = (links as { seller_id?: string | null }[]).length > 0
+  if (product.status !== ProductStatus.PUBLISHED || restrictedToOthers) {
+    throw productNotFound(productId)
   }
 }

@@ -12,6 +12,7 @@ import { ProductStatus } from "@mercurjs/types"
 
 import { applyOfferedProductsFilter } from "../../utils"
 import {
+  ensureSellerCanAccessProduct,
   getProductIdsRestrictedFromSeller,
   getSellerOwnedProductIds,
 } from "./helpers"
@@ -63,6 +64,21 @@ const applySellerProductLinkFilter = async (
   return next()
 }
 
+/** See {@link ensureSellerCanAccessProduct}. */
+const ensureSellerCanAccess = async (
+  req: AuthenticatedMedusaRequest,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  await ensureSellerCanAccessProduct(
+    req.scope,
+    req.seller_context!.seller_id,
+    req.params.id
+  )
+
+  return next()
+}
+
 export const vendorProductsMiddlewares: MiddlewareRoute[] = [
   {
     method: ["GET"],
@@ -92,6 +108,7 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
     method: ["GET"],
     matcher: "/vendor/products/:id",
     middlewares: [
+      ensureSellerCanAccess,
       validateAndTransformQuery(
         VendorGetProductParams,
         vendorProductQueryConfig.retrieve
@@ -102,6 +119,7 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
     method: ["POST"],
     matcher: "/vendor/products/:id",
     middlewares: [
+      ensureSellerCanAccess,
       validateAndTransformBody(VendorUpdateProduct),
       validateAndTransformQuery(
         VendorGetProductParams,
@@ -112,19 +130,34 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
   {
     method: ["DELETE"],
     matcher: "/vendor/products/:id",
-    middlewares: [],
+    middlewares: [ensureSellerCanAccess],
   },
 
   {
     method: ["POST"],
     matcher: "/vendor/products/:id/cancel",
-    middlewares: [validateAndTransformBody(VendorCancelProductChange)],
+    middlewares: [
+      ensureSellerCanAccess,
+      validateAndTransformBody(VendorCancelProductChange),
+    ],
+  },
+  {
+    method: ["POST"],
+    matcher: "/vendor/products/:id/submit",
+    middlewares: [
+      ensureSellerCanAccess,
+      validateAndTransformQuery(
+        VendorGetProductParams,
+        vendorProductQueryConfig.retrieve
+      ),
+    ],
   },
 
   {
     method: ["GET"],
     matcher: "/vendor/products/:id/variants",
     middlewares: [
+      ensureSellerCanAccess,
       validateAndTransformQuery(
         VendorGetProductVariantsParams,
         vendorProductVariantQueryConfig.list
@@ -135,6 +168,7 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
     method: ["POST"],
     matcher: "/vendor/products/:id/variants",
     middlewares: [
+      ensureSellerCanAccess,
       validateAndTransformBody(VendorAddProductVariant),
       validateAndTransformQuery(
         VendorGetProductParams,
@@ -147,6 +181,7 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
     method: ["GET"],
     matcher: "/vendor/products/:id/variants/:variant_id",
     middlewares: [
+      ensureSellerCanAccess,
       validateAndTransformQuery(
         VendorGetProductVariantParams,
         vendorProductVariantQueryConfig.retrieve
@@ -157,6 +192,7 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
     method: ["POST"],
     matcher: "/vendor/products/:id/variants/:variant_id",
     middlewares: [
+      ensureSellerCanAccess,
       validateAndTransformBody(VendorUpdateProductVariant),
       validateAndTransformQuery(
         VendorGetProductParams,
@@ -167,13 +203,14 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
   {
     method: ["DELETE"],
     matcher: "/vendor/products/:id/variants/:variant_id",
-    middlewares: [],
+    middlewares: [ensureSellerCanAccess],
   },
 
   {
     method: ["POST"],
     matcher: "/vendor/products/:id/attributes/batch",
     middlewares: [
+      ensureSellerCanAccess,
       validateAndTransformBody(VendorBatchProductAttributes),
       validateAndTransformQuery(
         VendorGetProductParams,

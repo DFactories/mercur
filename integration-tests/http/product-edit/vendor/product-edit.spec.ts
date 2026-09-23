@@ -170,7 +170,17 @@ medusaIntegrationTestRunner({
         })
 
         it("rejects a second pending edit while one is already open", async () => {
-          const productId = await createVendorProduct("Title")
+          // Only a PUBLISHED product's edits queue; an unpublished one is
+          // edited directly (see product-edit-unpublished.spec.ts).
+          const {
+            data: {
+              product: { id: productId },
+            },
+          } = await api.post(
+            `/vendor/products`,
+            { title: "Title", status: "published" },
+            sellerHeaders,
+          )
           await seedPendingChange(productId, "seller-x", [
             {
               action: ProductChangeActionType.UPDATE,

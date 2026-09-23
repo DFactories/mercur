@@ -5,14 +5,12 @@ import {
   WorkflowResponse,
   type ReturnWorkflow,
 } from "@medusajs/framework/workflows-sdk"
-import { useQueryGraphStep } from "@medusajs/medusa/core-flows"
 import {
   ProductChangeActionType,
   ProductChangeDTO,
-  ProductStatus,
 } from "@mercurjs/types"
 
-import { validateNoPendingProductChangeStep } from "../steps"
+import { prepareProductEditWorkflow } from "./prepare-product-edit"
 import { stageProductChangeWorkflow } from "./stage-product-change"
 
 export type ProductEditDeleteProductWorkflowInput = {
@@ -30,24 +28,21 @@ export const productEditDeleteProductWorkflow: ReturnWorkflow<
 > = createWorkflow(
   productEditDeleteProductWorkflowId,
   function (input: ProductEditDeleteProductWorkflowInput) {
-    validateNoPendingProductChangeStep(
-      transform({ input }, ({ input }) => ({
-        product_ids: [input.product_id],
+    // An unpublished product is deleted on the spot, whatever request is
+    // still open on it: that request is canceled with it. Only a published
+    // product's delete waits for an operator.
+    const editMode = prepareProductEditWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({
+        product_id: input.product_id,
+        canceled_by: input.created_by,
       })),
-    )
-
-    const { data: products } = useQueryGraphStep({
-      entity: "product",
-      fields: ["id", "status"],
-      filters: { id: input.product_id },
-      options: { throwIfKeyNotFound: true },
-    }).config({ name: "delete-load-product" })
+    })
 
     const change = stageProductChangeWorkflow.runAsStep({
-      input: transform({ input, products }, ({ input, products }) => ({
+      input: transform({ input, editMode }, ({ input, editMode }) => ({
         product_id: input.product_id,
         created_by: input.created_by,
-        auto_confirm: products[0]?.status === ProductStatus.DRAFT,
+        auto_confirm: editMode.direct,
         actions: [
           {
             product_id: input.product_id,

@@ -22,7 +22,6 @@ import { CSS } from "@dnd-kit/utilities"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ThumbnailBadge } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import { MercurFeatureFlags } from "@mercurjs/types"
 import { ExtendedAdminProduct } from "@custom-types/products"
 import { Button, Checkbox, clx, CommandBar, toast, Tooltip } from "@medusajs/ui"
 import { Fragment, useCallback, useState } from "react"
@@ -36,7 +35,7 @@ import {
   useRouteModal,
 } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
-import { useFeatureFlags } from "@hooks/api"
+import { isQueuedForReview } from "@lib/product-change"
 import { useUpdateProduct } from "@hooks/api/products"
 import { sdk } from "@lib/client"
 import { UploadMediaFormItem } from "../../../common/components/upload-media-form-item"
@@ -56,10 +55,6 @@ export const EditProductMediaForm = ({ product }: ProductMediaViewProps) => {
   const [selection, setSelection] = useState<Record<string, true>>({})
   const { t } = useTranslation()
   const { handleSuccess } = useRouteModal()
-
-  const { feature_flags } = useFeatureFlags()
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST]
 
   const form = useForm<EditProductMediaSchemaType>({
     defaultValues: {
@@ -150,9 +145,9 @@ export const EditProductMediaForm = ({ product }: ProductMediaViewProps) => {
         thumbnail: thumbnail || null,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           toast.success(
-            isProductRequestEnabled
+            isQueuedForReview(response)
               ? t("products.edit.requestSuccessToast")
               : t("products.media.successToast")
           )

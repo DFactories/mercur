@@ -1,5 +1,4 @@
 import { Button, toast } from "@medusajs/ui";
-import { MercurFeatureFlags } from "@mercurjs/types";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +8,7 @@ import { Form } from "@components/common/form";
 import { Combobox } from "@components/inputs/combobox";
 import { RouteDrawer, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
-import { useFeatureFlags } from "@hooks/api";
+import { isQueuedForReview } from "@lib/product-change";
 import { useUpdateProduct } from "@hooks/api/products";
 import { useComboboxData } from "@hooks/use-combobox-data";
 import { sdk } from "@lib/client";
@@ -32,10 +31,6 @@ export const ProductOrganizationForm = ({
 }: ProductOrganizationFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
-
-  const { feature_flags } = useFeatureFlags();
-  const isProductRequestEnabled =
-    !!feature_flags?.[MercurFeatureFlags.PRODUCT_REQUEST];
 
   const collections = useComboboxData({
     queryKey: ["product_collections"],
@@ -88,9 +83,9 @@ export const ProductOrganizationForm = ({
         tags: data.tag_ids?.map((t) => ({ id: t })),
       } as any,
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           toast.success(
-            isProductRequestEnabled
+            isQueuedForReview(response)
               ? t("products.edit.requestSuccessToast")
               : t("products.organization.edit.toasts.success", {
                   title: product.title,

@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest"
 import en from "../translations/en.json"
 import fa from "../translations/fa.json"
 import { localizeApiMessage, translateApiError } from "../api-error-translator"
+import { PENDING_PRODUCT_CHANGE_ERROR_MESSAGE } from "../../lib/product-change"
 
 /**
  * Gate for «ارورهای فرم‌های vendor همگی ترجمه باشند».
@@ -136,5 +137,24 @@ describe("phone sign-in errors reach the producer in their own words", () => {
         401
       )
     )
+  })
+})
+
+/**
+ * REGRESSION — production, 2026-09-23. A producer's every edit and the delete
+ * of their product were refused with "There is already an active update
+ * request for this product…", and the panel showed the generic 400 text
+ * («درخواست نامعتبر است.») seventeen times — nothing about a pending request,
+ * nothing about where to cancel it — while logging `[api-error] untranslated`.
+ */
+describe("a request already pending on the product", () => {
+  it("reaches the producer as its own sentence, not the status fallback", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {})
+    const message = localizeApiMessage(PENDING_PRODUCT_CHANGE_ERROR_MESSAGE, 400)
+
+    expect(message).toBe(fa.products.edits.errors.pendingRequest)
+    expect(message).not.toBe(localizeApiMessage("Bad Request"))
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
   })
 })

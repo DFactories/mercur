@@ -2,6 +2,11 @@ import i18n from "i18next"
 
 import { setClientErrorMessageTransformer } from "@mercurjs/client"
 
+import {
+  PENDING_PRODUCT_CHANGE_ERROR_KEY,
+  PENDING_PRODUCT_CHANGE_ERROR_MESSAGE,
+} from "../lib/product-change"
+
 /**
  * Panel-wide localization of backend (Medusa/Mercur) error messages.
  *
@@ -51,6 +56,10 @@ const EXACT: Record<string, string> = {
   "Too many incorrect attempts. Please request a new code.":
     "login.phone.errors.tooManyAttempts",
   "Please wait before requesting another code.": "login.phone.errors.tooSoon",
+  // products: a published product with a request still awaiting review. It
+  // used to fall through to the generic 400 text, which told the producer
+  // nothing about why every edit and the delete kept failing.
+  [PENDING_PRODUCT_CHANGE_ERROR_MESSAGE]: PENDING_PRODUCT_CHANGE_ERROR_KEY,
   // standard HTTP statusText fallbacks
   Unauthorized: "apiErrors.unauthorized",
   Forbidden: "apiErrors.forbidden",
