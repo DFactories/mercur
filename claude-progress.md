@@ -645,3 +645,42 @@ operator — still holds neither half.
 ### Released
 
 `@mercurjs/core 2.3.1-dfactories.26`.
+
+## Session 13 (2026-09-23) — a product created in the vendor panel belongs to its creator
+
+Found by a read-only production audit: of six products, the four oldest had a
+`product_seller` row and the two created through `POST /vendor/products` had
+none. `createProductsWorkflow` builds that link only from each product's
+`seller_ids`; the vendor route passed the seller as `created_by` alone, which
+feeds the audit trail and nothing else, and the `.strict()` validator meant no
+client could supply it. The route now sets `seller_ids: [sellerId]` from the
+session. The body still cannot name an owner.
+
+Consequence worth knowing: `product_seller` is also the restriction allowlist
+the vendor product lists read, so a product one seller creates is no longer
+listed to other sellers. That is what the older, correctly-linked products
+already did.
+
+Found on the way: running more than a dozen suites in one `--runInBand` process
+dies at ~2.5 GB (`JavaScript heap out of memory`, exit 134), hidden under the
+test-utils connection noise. `test:integration:http` now recycles one serial
+worker (`--maxWorkers=1 --workerIdleMemoryLimit=2048`, 6 GB heap). Both noise
+lines are traced in `.claude/lessons.md`.
+
+### Verification
+
+- New `http/dfactories/vendor-product-owner.spec.ts` (3 cases): red on the
+  unfixed build (no `product_seller` row), green after. It also pins that the
+  admin route re-adding the same owner stays harmless — the Crawler importer
+  still does that until it drops its workaround.
+- 66 suites touching vendor-created products (collections, customer,
+  dfactories, inventory, offer, order, payouts, price-lists, product*,
+  promotions, reservation*, returns, sales-channels): 63 passed, 3 skipped by
+  source, 0 failed — 434 tests. The same run crashed out of heap before the
+  script change.
+- lint clean, build 12/12, unit green, `release-pins.spec.ts` green,
+  `bun install --frozen-lockfile` clean.
+
+### Released
+
+`@mercurjs/core 2.3.1-dfactories.27`.

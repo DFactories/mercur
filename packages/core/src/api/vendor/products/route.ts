@@ -65,9 +65,12 @@ export const POST = async (
 
   const { additional_data, ...payload } = req.validatedBody
 
+  // `created_by` only feeds the audit trail; the `product_seller` owner row is
+  // written from `seller_ids`, and it must come from the session, not the body.
   const productInput = {
     ...payload,
     status: payload.status ?? ProductStatus.PROPOSED,
+    seller_ids: [sellerId],
   } as unknown as CreateProductsWorkflowInput["products"][number]
 
   const { result } = await createProductsWorkflow(req.scope).run({
