@@ -13,6 +13,35 @@ type AttributeWithCategories = {
   categories?: CategoryRef | CategoryRef[] | null
 }
 
+/**
+ * The requested categories plus every ancestor of each.
+ *
+ * An attribute scoped to a category applies to everything filed beneath it:
+ * the dictionary links `polymer` to «ظروف غذا» once, and a product filed under
+ * its child «جعبه غذا» must still be offered it. Matching the link only against
+ * the exact category a product sits on — almost always a leaf — left every
+ * parent-scoped facet empty on every product.
+ *
+ * Ancestry is read from `mpath` (`<root id>.<…>.<own id>`), which the product
+ * module keeps current on create and on re-parenting and itself relies on to
+ * build the tree. The requested ids are kept even when no row comes back for
+ * them, so an unknown id still narrows to exact links plus globals.
+ */
+export const categoryIdsWithAncestors = (
+  requestedIds: string[],
+  categories: { mpath?: string | null }[]
+): Set<string> => {
+  const ids = new Set(requestedIds)
+  for (const category of categories) {
+    for (const id of (category.mpath ?? "").split(".")) {
+      if (id) {
+        ids.add(id)
+      }
+    }
+  }
+  return ids
+}
+
 export const filterAttributesByCategoryLinkOrGlobal = async (
   req: MedusaRequest,
   _: MedusaResponse,
@@ -33,12 +62,19 @@ export const filterAttributesByCategoryLinkOrGlobal = async (
 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
-  const { data: attributes } = await query.graph({
-    entity: "product_attribute",
-    fields: ["id", "categories.id"],
-  })
+  const [{ data: categories }, { data: attributes }] = await Promise.all([
+    query.graph({
+      entity: "product_category",
+      fields: ["id", "mpath"],
+      filters: { id: categoryIds },
+    }),
+    query.graph({
+      entity: "product_attribute",
+      fields: ["id", "categories.id"],
+    }),
+  ])
 
-  const categoryIdSet = new Set(categoryIds)
+  const categoryIdSet = categoryIdsWithAncestors(categoryIds, categories)
   const linkedToCategoryIds: string[] = []
   const anyLinkedIds: string[] = []
 
