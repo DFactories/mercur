@@ -30,6 +30,7 @@ import {
   indexMembersByIdentity,
   type MemberIdentity,
 } from "./utils/member-identity"
+import { withoutImplicitHandleChange } from "./utils/seller-handle"
 import { MemberDTO, MemberInviteDTO, OrderGroupDTO, SellerDTO, SellerModuleOptions } from "@mercurjs/types"
 
 const DEFAULT_INVITE_VALID_DURATION_SECONDS = 60 * 60 * 24 * 7 // 7 days
@@ -108,18 +109,18 @@ class SellerModuleService extends MedusaService({
     data: T,
     sharedContext?: Context,
   ): Promise<T extends any[] ? SellerDTO[] : SellerDTO> {
+    // No name-derived handle here — that is `createSellers`' job only. See
+    // `withoutImplicitHandleChange`.
     const input = (Array.isArray(data) ? data : [data]).map((seller) => {
       this.validateSellerData_(seller)
-
-      if (!seller.handle && seller.name) {
-        seller.handle = toHandle(seller.name)
-      }
-
-      return seller
+      return withoutImplicitHandleChange(seller)
     })
 
     // @ts-ignore
-    return super.updateSellers(input, sharedContext) as any
+    const result = await super.updateSellers(input, sharedContext)
+    // One seller in, one seller out — as the signature promises and as
+    // `createSellers` already does. It used to return a one-element array.
+    return (Array.isArray(data) ? result : result[0]) as any
   }
 
   /**
