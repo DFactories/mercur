@@ -3305,6 +3305,11 @@
       "edit": {
         "header": "مدارک فروشگاه",
         "description": "جواز فعالیت و جواز بهداشت فروشگاه خود را بارگذاری کنید"
+      },
+      "provided": "ثبت شده",
+      "errors": {
+        "unsupportedType": "فقط فایل JPG، PNG، WebP، HEIC یا PDF پذیرفته می‌شود.",
+        "contentMismatch": "محتوای این فایل با نوع آن هم‌خوانی ندارد. عکس یا PDF اصلی را بارگذاری کنید."
       }
     }
   },
@@ -4514,7 +4519,8 @@
     "mustBePositive": "مبلغ باید بزرگ‌تر از صفر باشد.",
     "fieldRequired": "یکی از فیلدهای الزامی پر نشده است.",
     "duplicate": "این مقدار قبلاً استفاده شده است. مقدار دیگری انتخاب کنید.",
-    "entityNotFound": "یافت نشد: {{detail}}"
+    "entityNotFound": "یافت نشد: {{detail}}",
+    "fileTooLarge": "حجم فایل بیش از حد مجاز است (حداکثر {{detail}} مگابایت)."
   },
   "authHero": {
     "login": {

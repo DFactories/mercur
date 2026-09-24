@@ -101,6 +101,19 @@ const PATTERNS: { test: RegExp; key: string }[] = [
     test: /(?:already exists|duplicate key value|must be unique)/i,
     key: "apiErrors.duplicate",
   },
+  // store documents — refusals from the host's private upload route
+  // (`POST /vendor/store-documents`). Above the generic shapes: "Unsupported
+  // file type" would otherwise land on the bare 400 text.
+  {
+    test: /^Unsupported file type for (business_license|health_permit)\b/i,
+    key: "store.documents.errors.unsupportedType",
+  },
+  {
+    test: /^File contents for (\S+) do not match its declared type$/i,
+    key: "store.documents.errors.contentMismatch",
+  },
+  // any multipart upload over its limit — store documents, KYC, support
+  { test: /is too large \(max (\d+) MB\)$/i, key: "apiErrors.fileTooLarge" },
   // generic shapes
   { test: /^(.+) (?:was |is )?not found$/i, key: "apiErrors.entityNotFound" },
   { test: /not allowed|cannot be|is not permitted/i, key: "apiErrors.forbidden" },

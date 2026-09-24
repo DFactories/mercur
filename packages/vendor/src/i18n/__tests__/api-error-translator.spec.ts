@@ -158,3 +158,32 @@ describe("a request already pending on the product", () => {
     spy.mockRestore()
   })
 })
+
+describe("store document refusals", () => {
+  // Written by the host's private upload route; the producer must learn what
+  // to upload instead, not read «درخواست نامعتبر است».
+  it("names the accepted file types", () => {
+    const message = localizeApiMessage(
+      "Unsupported file type for business_license (allowed: jpg, png, webp, heic, pdf)",
+      400
+    )
+    expect(message).toBe(fa.store.documents.errors.unsupportedType)
+  })
+
+  it("tells a disguised file apart from a wrong type", () => {
+    const message = localizeApiMessage(
+      "File contents for health_permit do not match its declared type",
+      400
+    )
+    expect(message).toBe(fa.store.documents.errors.contentMismatch)
+  })
+
+  it("keeps the size limit in the sentence", () => {
+    const message = localizeApiMessage(
+      'File "business_license" is too large (max 10 MB)',
+      400
+    )
+    expect(isPersian(message)).toBe(true)
+    expect(message).toContain("10")
+  })
+})

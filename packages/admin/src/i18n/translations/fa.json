@@ -3254,10 +3254,16 @@
     "documents": {
       "businessLicense": "جواز فعالیت",
       "healthPermit": "جواز بهداشت",
-      "adminUrlHint": "نشانی فایل مدرک (بارگذاری‌شده توسط فروشنده)",
       "header": "مدارک فروشگاه",
       "view": "مشاهده",
-      "notProvided": "ثبت نشده"
+      "notProvided": "ثبت نشده",
+      "provided": "ثبت شده",
+      "upload": "بارگذاری",
+      "uploadLabel": "بارگذاری فایل",
+      "uploadHint": "تصویر یا PDF",
+      "invalidFileType": "فقط فایل تصویری یا PDF مجاز است",
+      "successToast": "مدارک فروشگاه به‌روزرسانی شد",
+      "editDescription": "جواز فعالیت و جواز بهداشت فروشگاه را بارگذاری کنید. فایل‌ها به‌صورت خصوصی نگهداری می‌شوند."
     },
     "subscription": {
       "header": "طرح اشتراک",

@@ -9385,9 +9385,6 @@
             "healthPermit": {
               "type": "string"
             },
-            "adminUrlHint": {
-              "type": "string"
-            },
             "header": {
               "type": "string"
             },
@@ -9395,6 +9392,27 @@
               "type": "string"
             },
             "notProvided": {
+              "type": "string"
+            },
+            "provided": {
+              "type": "string"
+            },
+            "upload": {
+              "type": "string"
+            },
+            "uploadLabel": {
+              "type": "string"
+            },
+            "uploadHint": {
+              "type": "string"
+            },
+            "invalidFileType": {
+              "type": "string"
+            },
+            "successToast": {
+              "type": "string"
+            },
+            "editDescription": {
               "type": "string"
             }
           },

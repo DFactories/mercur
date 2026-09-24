@@ -2,19 +2,15 @@ import { Heading } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 
 import { RouteDrawer } from "@components/modals";
-import { useMe } from "@hooks/api";
+import { useStoreDocuments } from "@hooks/api";
 
 import { StoreDocumentsForm } from "./store-documents-form";
 
 export const Component = () => {
   const { t } = useTranslation();
-  const { seller_member, isPending, isError, error } = useMe();
-
-  const seller = seller_member?.seller;
-
-  if (isError) {
-    throw error;
-  }
+  // Wait for the current documents: they are the form's defaults, and a form
+  // mounted before them would treat an existing document as removed.
+  const { store_documents, isPending } = useStoreDocuments();
 
   return (
     <RouteDrawer>
@@ -26,7 +22,7 @@ export const Component = () => {
           {t("store.documents.edit.description")}
         </RouteDrawer.Description>
       </RouteDrawer.Header>
-      {!isPending && seller && <StoreDocumentsForm seller={seller} />}
+      {!isPending && <StoreDocumentsForm documents={store_documents} />}
     </RouteDrawer>
   );
 };

@@ -3,45 +3,57 @@ import { Container, Heading, Text } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 
 import { ActionMenu } from "@components/common/action-menu";
+import { useStoreDocuments } from "@hooks/api";
+import { StoreDocumentType } from "@lib/client";
 import { HttpTypes } from "@mercurjs/types";
 
 type StoreDocumentsSectionProps = {
   seller: HttpTypes.StoreSellerResponse["seller"];
 };
 
+/**
+ * DFACTORIES: the documents are private. `professional_details` only holds an
+ * object key, which says whether a document exists; the link comes from
+ * `/vendor/store-documents` as a short-lived URL. A seat without `seller:read`
+ * gets no link but still sees whether each document was provided.
+ */
 export const StoreDocumentsSection = ({
   seller,
 }: StoreDocumentsSectionProps) => {
   const { t } = useTranslation();
+  const { store_documents } = useStoreDocuments();
   const details = seller.professional_details as
     | { business_license?: string | null; health_permit?: string | null }
     | null
     | undefined;
-  const license = details?.business_license;
-  const permit = details?.health_permit;
-  const hasAny = !!license || !!permit;
+  const hasAny = !!details?.business_license || !!details?.health_permit;
 
-  const renderRow = (label: string, url?: string | null) => (
-    <div className="text-ui-fg-subtle grid grid-cols-2 px-6 py-4">
-      <Text size="small" leading="compact" weight="plus">
-        {label}
-      </Text>
-      {url ? (
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="text-ui-fg-interactive text-sm"
-        >
-          {t("store.documents.view")}
-        </a>
-      ) : (
-        <Text size="small" className="text-ui-fg-muted">
-          {t("store.documents.notProvided")}
+  const renderRow = (label: string, type: StoreDocumentType) => {
+    const doc = store_documents?.[type];
+    return (
+      <div className="text-ui-fg-subtle grid grid-cols-2 px-6 py-4">
+        <Text size="small" leading="compact" weight="plus">
+          {label}
         </Text>
-      )}
-    </div>
-  );
+        {doc ? (
+          <a
+            href={doc.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-ui-fg-interactive text-sm"
+          >
+            {t("store.documents.view")}
+          </a>
+        ) : details?.[type] ? (
+          <Text size="small">{t("store.documents.provided")}</Text>
+        ) : (
+          <Text size="small" className="text-ui-fg-muted">
+            {t("store.documents.notProvided")}
+          </Text>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Container className="divide-y p-0">
@@ -63,8 +75,8 @@ export const StoreDocumentsSection = ({
           ]}
         />
       </div>
-      {renderRow(t("store.documents.businessLicense"), license)}
-      {renderRow(t("store.documents.healthPermit"), permit)}
+      {renderRow(t("store.documents.businessLicense"), "business_license")}
+      {renderRow(t("store.documents.healthPermit"), "health_permit")}
     </Container>
   );
 };

@@ -4,6 +4,7 @@ import config from 'virtual:mercur/config'
 
 import { assetUrl } from '../../utils/asset-url'
 import { localizeApiMessage } from '../../i18n/api-error-translator'
+import { postMultipart } from './multipart'
 
 export const backendUrl = config.backendUrl ?? 'http://localhost:9000'
 
@@ -85,8 +86,13 @@ export const fetchQuery = async (
   return response.json()
 }
 
-// DFACTORIES: multipart upload helper for vendor media (member photo, store
-// documents). Kept separate from the typed sdk because it posts FormData.
+const redirectToLogin = () => {
+  window.location.href = `${assetUrl('/login')}?reason=Unauthorized`
+}
+
+// DFACTORIES: multipart upload helper for vendor media (member photo). Kept
+// separate from the typed sdk because it posts FormData. Stores PUBLICLY —
+// never use it for a document; see `uploadStoreDocumentsQuery`.
 export const uploadFilesQuery = async (files: any[]) => {
   const formData = new FormData()
 
@@ -94,15 +100,34 @@ export const uploadFilesQuery = async (files: any[]) => {
     formData.append('files', file)
   }
 
-  const response = await fetch(`${backendUrl}/vendor/uploads`, {
-    method: 'POST',
-    credentials: 'include',
-    body: formData,
-  })
+  return postMultipart<{ files: { id: string; url: string }[] }>(
+    `${backendUrl}/vendor/uploads`,
+    formData,
+    redirectToLogin
+  )
+}
 
-  if (!response.ok) {
-    return null
-  }
+// DFACTORIES: the store's business license / health permit, into the host's
+// PRIVATE bucket. One part per document, named after it: `business_license`,
+// `health_permit`. Answers with the documents as they now stand.
+export const uploadStoreDocumentsQuery = async (formData: FormData) =>
+  postMultipart<StoreDocumentsResponse>(
+    `${backendUrl}/vendor/store-documents`,
+    formData,
+    redirectToLogin
+  )
 
-  return response.json()
+export type StoreDocumentType = 'business_license' | 'health_permit'
+
+export type StoreDocument = {
+  /** Short-lived presigned URL — never store it. */
+  url: string
+  mime_type: string | null
+  /** Seconds `url` stays valid; null for a not-yet-migrated public URL. */
+  expires_in: number | null
+  legacy: boolean
+}
+
+export type StoreDocumentsResponse = {
+  store_documents: Record<StoreDocumentType, StoreDocument | null>
 }

@@ -3126,10 +3126,16 @@
     "documents": {
       "businessLicense": "Business license",
       "healthPermit": "Health permit",
-      "adminUrlHint": "Document file URL (uploaded by the vendor)",
       "header": "Store documents",
       "view": "View",
-      "notProvided": "Not provided"
+      "notProvided": "Not provided",
+      "provided": "Provided",
+      "upload": "Upload",
+      "uploadLabel": "Upload a file",
+      "uploadHint": "Image or PDF",
+      "invalidFileType": "Only images or PDF files are allowed",
+      "successToast": "Store documents updated",
+      "editDescription": "Upload the store's business license and health permit. Files are stored privately."
     }
   },
   "regions": {

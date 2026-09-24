@@ -3550,6 +3550,11 @@
       "edit": {
         "header": "Store documents",
         "description": "Upload your store business license and health permit"
+      },
+      "provided": "Provided",
+      "errors": {
+        "unsupportedType": "Only JPG, PNG, WebP, HEIC or PDF files are accepted.",
+        "contentMismatch": "This file is not what its type says. Upload the original photo or PDF."
       }
     }
   },
@@ -4551,7 +4556,8 @@
     "mustBePositive": "The amount must be greater than zero.",
     "fieldRequired": "A required field is missing.",
     "duplicate": "This value is already in use. Choose another one.",
-    "entityNotFound": "Not found: {{detail}}"
+    "entityNotFound": "Not found: {{detail}}",
+    "fileTooLarge": "The file is too large (maximum {{detail}} MB)."
   },
   "authHero": {
     "login": {

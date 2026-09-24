@@ -8,18 +8,18 @@ import { FileType, FileUpload } from "@components/common/file-upload";
 import { Form } from "@components/common/form";
 import { RouteDrawer, useRouteModal } from "@components/modals";
 import { KeyboundForm } from "@components/utilities/keybound-form";
-import { uploadFilesQuery } from "@lib/client";
+import {
+  StoreDocumentsResponse,
+  StoreDocumentType,
+} from "@lib/client";
 import { MediaSchema } from "@pages/products/create/constants";
-import { HttpTypes } from "@mercurjs/types";
-import { useUpdateSellerProfessionalDetails } from "@hooks/api";
+import { useDeleteStoreDocument, useUploadStoreDocuments } from "@hooks/api";
 
-const SUPPORTED_DOC_FORMATS = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "application/pdf",
-];
+import {
+  planDocumentChanges,
+  SUPPORTED_DOC_FORMATS,
+  withKnownType,
+} from "./plan-document-changes";
 
 const StoreDocumentsSchema = zod.object({
   business_license: zod.array(MediaSchema).optional(),
@@ -27,25 +27,30 @@ const StoreDocumentsSchema = zod.object({
 });
 
 type StoreDocumentsFormProps = {
-  seller: HttpTypes.StoreSellerResponse["seller"];
+  /** Undefined when the member may not read them (no `seller:read`). */
+  documents?: StoreDocumentsResponse["store_documents"];
 };
 
-export const StoreDocumentsForm = ({ seller }: StoreDocumentsFormProps) => {
+/**
+ * DFACTORIES: uploads go to the host's PRIVATE `/vendor/store-documents`,
+ * which writes the seller record itself — never through `/vendor/uploads`,
+ * which stores publicly.
+ */
+export const StoreDocumentsForm = ({ documents }: StoreDocumentsFormProps) => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
-  const details = seller.professional_details as
-    | { business_license?: string | null; health_permit?: string | null }
-    | null
-    | undefined;
+
+  const existing = (type: StoreDocumentType) => {
+    const doc = documents?.[type];
+    return doc
+      ? [{ id: `existing-${type}`, url: doc.url, isThumbnail: false, file: null }]
+      : [];
+  };
 
   const form = useForm<zod.infer<typeof StoreDocumentsSchema>>({
     defaultValues: {
-      business_license: details?.business_license
-        ? [{ id: "existing-license", url: details.business_license, isThumbnail: false, file: null }]
-        : [],
-      health_permit: details?.health_permit
-        ? [{ id: "existing-permit", url: details.health_permit, isThumbnail: false, file: null }]
-        : [],
+      business_license: existing("business_license"),
+      health_permit: existing("health_permit"),
     },
     resolver: zodResolver(StoreDocumentsSchema),
   });
@@ -61,27 +66,29 @@ export const StoreDocumentsForm = ({ seller }: StoreDocumentsFormProps) => {
     keyName: "field_id",
   });
 
-  const { mutateAsync, isPending } = useUpdateSellerProfessionalDetails(
-    seller.id,
-  );
-
-  const uploadOne = async (
-    files?: { file?: File | null; url?: string }[],
-  ): Promise<string | null> => {
-    const newFile = files?.find((m) => m.file);
-    if (newFile) {
-      const uploaded = await uploadFilesQuery([newFile]);
-      return uploaded.files?.[0]?.url || null;
-    }
-    return files?.length ? files[0].url ?? null : null;
-  };
+  const upload = useUploadStoreDocuments();
+  const remove = useDeleteStoreDocument();
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    let businessLicense: string | null = null;
-    let healthPermit: string | null = null;
+    const { files, removed } = planDocumentChanges(
+      {
+        business_license: values.business_license?.[0],
+        health_permit: values.health_permit?.[0],
+      },
+      documents,
+    );
+
+    if (!Object.keys(files).length && !removed.length) {
+      handleSuccess();
+      return;
+    }
+
     try {
-      businessLicense = await uploadOne(values.business_license);
-      healthPermit = await uploadOne(values.health_permit);
+      if (Object.keys(files).length) {
+        await upload.mutateAsync(files);
+      }
+      // Each clears its own column, so they need not wait for each other.
+      await Promise.all(removed.map((type) => remove.mutateAsync(type)));
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -89,23 +96,15 @@ export const StoreDocumentsForm = ({ seller }: StoreDocumentsFormProps) => {
       return;
     }
 
-    await mutateAsync(
-      { business_license: businessLicense, health_permit: healthPermit },
-      {
-        onSuccess: () => {
-          toast.success(t("store.documents.successToast"));
-          handleSuccess();
-        },
-        onError: (error) => toast.error(error.message),
-      },
-    );
+    toast.success(t("store.documents.successToast"));
+    handleSuccess();
   });
 
   const makeOnUploaded =
-    (field: "business_license" | "health_permit") => (files: FileType[]) => {
+    (field: StoreDocumentType) => (files: FileType[]) => {
       form.clearErrors(field);
       const invalid = files.find(
-        (f) => !SUPPORTED_DOC_FORMATS.includes(f.file.type),
+        (f) => !SUPPORTED_DOC_FORMATS.includes(withKnownType(f.file).type),
       );
       if (invalid) {
         form.setError(field, {
@@ -116,6 +115,8 @@ export const StoreDocumentsForm = ({ seller }: StoreDocumentsFormProps) => {
       }
       form.setValue(field, [{ ...files[0], isThumbnail: false }]);
     };
+
+  const isPending = upload.isPending || remove.isPending;
 
   return (
     <RouteDrawer.Form form={form}>
@@ -137,7 +138,9 @@ export const StoreDocumentsForm = ({ seller }: StoreDocumentsFormProps) => {
                   <Form.Control>
                     <FileUpload
                       uploadedImage={file?.url || null}
-                      fileName={file?.file?.name}
+                      fileName={
+                        file?.file?.name ?? t("store.documents.businessLicense")
+                      }
                       fileSize={file?.file?.size}
                       multiple={false}
                       label={t("products.media.uploadImagesLabel")}
@@ -166,7 +169,9 @@ export const StoreDocumentsForm = ({ seller }: StoreDocumentsFormProps) => {
                   <Form.Control>
                     <FileUpload
                       uploadedImage={file?.url || null}
-                      fileName={file?.file?.name}
+                      fileName={
+                        file?.file?.name ?? t("store.documents.healthPermit")
+                      }
                       fileSize={file?.file?.size}
                       multiple={false}
                       label={t("products.media.uploadImagesLabel")}

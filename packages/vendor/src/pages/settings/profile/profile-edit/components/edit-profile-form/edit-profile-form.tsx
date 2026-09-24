@@ -103,7 +103,7 @@ export const EditProfileForm = () => {
     try {
       if (newPhotoFile) {
         const uploaded = await uploadFilesQuery([newPhotoFile])
-        photoUrl = uploaded.files?.[0]?.url || null
+        photoUrl = uploaded?.files?.[0]?.url || null
       } else if (values.photo?.length) {
         photoUrl = values.photo[0].url
       }

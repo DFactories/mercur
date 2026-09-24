@@ -33,6 +33,7 @@ export * from "./shipping-options";
 export * from "./shipping-option-types";
 export * from "./shipping-profiles";
 export * from "./stock-locations";
+export * from "./store-documents";
 export * from "./store";
 export * from "./tags";
 export * from "./tax-rates";

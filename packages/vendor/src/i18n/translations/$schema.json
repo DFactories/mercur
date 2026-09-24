@@ -10659,6 +10659,21 @@
                 }
               },
               "additionalProperties": false
+            },
+            "provided": {
+              "type": "string"
+            },
+            "errors": {
+              "type": "object",
+              "properties": {
+                "unsupportedType": {
+                  "type": "string"
+                },
+                "contentMismatch": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
@@ -13661,6 +13676,9 @@
           "type": "string"
         },
         "entityNotFound": {
+          "type": "string"
+        },
+        "fileTooLarge": {
           "type": "string"
         }
       },
