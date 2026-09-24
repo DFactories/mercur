@@ -60,6 +60,11 @@ const EXACT: Record<string, string> = {
   // used to fall through to the generic 400 text, which told the producer
   // nothing about why every edit and the delete kept failing.
   [PENDING_PRODUCT_CHANGE_ERROR_MESSAGE]: PENDING_PRODUCT_CHANGE_ERROR_KEY,
+  // uploads — the host's image optimizer, which every product/store image
+  // passes through. Phone photos (HEIC) are converted there; this is what a
+  // producer sees when one cannot be.
+  "Uploaded image could not be processed (corrupt or unsupported)":
+    "apiErrors.imageUnprocessable",
   // standard HTTP statusText fallbacks
   Unauthorized: "apiErrors.unauthorized",
   Forbidden: "apiErrors.forbidden",
@@ -91,6 +96,11 @@ const PATTERNS: { test: RegExp; key: string }[] = [
     key: "apiErrors.priceNotOwned",
   },
   { test: /Offer must have at least one inventory item/i, key: "apiErrors.offerNeedsInventory" },
+  // uploads
+  {
+    test: /^Uploaded image is too large to process \(maximum (\d+) megapixels\)$/i,
+    key: "apiErrors.imageTooLarge",
+  },
   // validation — zod/Medusa body validation, e.g.
   // "Invalid request body: amount: Number must be greater than 0"
   { test: /^Invalid request(?: body)?:?\s*(.+)$/i, key: "apiErrors.invalidField" },

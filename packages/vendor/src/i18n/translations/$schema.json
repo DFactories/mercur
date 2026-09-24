@@ -13680,6 +13680,12 @@
         },
         "fileTooLarge": {
           "type": "string"
+        },
+        "imageUnprocessable": {
+          "type": "string"
+        },
+        "imageTooLarge": {
+          "type": "string"
         }
       },
       "additionalProperties": false

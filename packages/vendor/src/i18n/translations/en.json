@@ -4557,7 +4557,9 @@
     "fieldRequired": "A required field is missing.",
     "duplicate": "This value is already in use. Choose another one.",
     "entityNotFound": "Not found: {{detail}}",
-    "fileTooLarge": "The file is too large (maximum {{detail}} MB)."
+    "fileTooLarge": "The file is too large (maximum {{detail}} MB).",
+    "imageUnprocessable": "This image could not be processed — the file may be damaged or in an unsupported format. Please upload it as JPG or PNG.",
+    "imageTooLarge": "This image is too large to process (maximum {{detail}} megapixels). Please upload a smaller photo."
   },
   "authHero": {
     "login": {

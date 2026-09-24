@@ -187,3 +187,27 @@ describe("store document refusals", () => {
     expect(message).toContain("10")
   })
 })
+
+describe("image upload errors say what to do instead", () => {
+  // Phone photos are HEIC; the host converts them on upload. When it cannot,
+  // the producer must learn why and what to upload instead — a generic
+  // «درخواست نامعتبر است» leaves them re-trying the same photo.
+  it("explains an image the server could not process", () => {
+    const message = localizeApiMessage(
+      "Uploaded image could not be processed (corrupt or unsupported)",
+      400
+    )
+    expect(message).toBe(fa.apiErrors.imageUnprocessable)
+    expect(message).toContain("JPG")
+  })
+
+  it("explains an image above the size limit, keeping the limit", () => {
+    const message = localizeApiMessage(
+      "Uploaded image is too large to process (maximum 50 megapixels)",
+      400
+    )
+    expect(message).toBe(
+      fa.apiErrors.imageTooLarge.replace("{{detail}}", "50")
+    )
+  })
+})
