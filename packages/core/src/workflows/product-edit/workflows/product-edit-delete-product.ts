@@ -16,6 +16,7 @@ import { stageProductChangeWorkflow } from "./stage-product-change"
 export type ProductEditDeleteProductWorkflowInput = {
   product_id: string
   created_by?: string
+  auto_confirm?: boolean
 } & AdditionalData
 
 export const productEditDeleteProductWorkflowId =
@@ -43,7 +44,7 @@ export const productEditDeleteProductWorkflow: ReturnWorkflow<
       input: transform({ input, editMode }, ({ input, editMode }) => ({
         product_id: input.product_id,
         created_by: input.created_by,
-        auto_confirm: editMode.direct,
+        auto_confirm: input.auto_confirm ?? editMode.direct,
         actions: [
           {
             product_id: input.product_id,
