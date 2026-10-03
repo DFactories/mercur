@@ -1,4 +1,4 @@
-import { Text } from "@medusajs/ui"
+import { StatusBadge, Text } from "@medusajs/ui"
 import { createColumnHelper } from "@tanstack/react-table"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -17,6 +17,12 @@ import {
 import { PlaceholderCell } from "../../../components/table/table-cells/common/placeholder-cell"
 import { ProductStatus } from "@mercurjs/types"
 import { OfferProduct } from "../common/types"
+import {
+  completeDraftPath,
+  countOfferedVariants,
+  isDraftOnly,
+  openDraftsOf,
+} from "../common/drafts"
 import { OfferActions } from "./offer-actions"
 
 /**
@@ -27,9 +33,6 @@ import { OfferActions } from "./offer-actions"
  * the product-level delete.
  */
 const columnHelper = createColumnHelper<OfferProduct>()
-
-const countOfferedVariants = (row: OfferProduct) =>
-  (row.variants ?? []).filter((v) => (v.offers?.length ?? 0) > 0).length
 
 export const collectOfferIds = (row: OfferProduct) =>
   (row.variants ?? []).flatMap((v) => (v.offers ?? []).map((o) => o.id))
@@ -74,18 +77,37 @@ export const useOfferTableColumns = () => {
       columnHelper.display({
         id: "variants",
         header: t("offers.fields.variants"),
-        cell: ({ row }) => (
-          <Text size="small" leading="compact" className="truncate">
-            {t("offers.fields.variantsCount", {
-              count: countOfferedVariants(row.original),
-            })}
-          </Text>
-        ),
+        cell: ({ row }) => {
+          if (isDraftOnly(row.original)) {
+            const drafts = openDraftsOf(row.original)
+            return (
+              <Text size="small" leading="compact" className="truncate">
+                {drafts.some((draft) => !draft.variant_id)
+                  ? t("offers.draft.wholeProduct")
+                  : t("offers.draft.variantsCount", { count: drafts.length })}
+              </Text>
+            )
+          }
+          return (
+            <Text size="small" leading="compact" className="truncate">
+              {t("offers.fields.variantsCount", {
+                count: countOfferedVariants(row.original),
+              })}
+            </Text>
+          )
+        },
       }),
       columnHelper.display({
         id: "status",
         header: () => <ProductStatusHeader />,
         cell: ({ row }) => {
+          if (isDraftOnly(row.original)) {
+            return (
+              <StatusBadge color="orange" className="truncate">
+                {t("offers.draft.badge")}
+              </StatusBadge>
+            )
+          }
           const status = row.original.status
           if (!status) return <PlaceholderCell />
           return <ProductStatusCell status={status as ProductStatus} />
@@ -99,6 +121,7 @@ export const useOfferTableColumns = () => {
               id: row.original.id,
               title: row.original.title ?? "",
               offerIds: collectOfferIds(row.original),
+              completeDraftPath: completeDraftPath(row.original),
             }}
           />
         ),

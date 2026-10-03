@@ -10,6 +10,7 @@ import { useDataTable } from "../../../hooks/use-data-table"
 import { useProducts } from "../../../hooks/api/products"
 import { OFFERS_PAGE_SIZE } from "../common/constants"
 import { OfferProduct } from "../common/types"
+import { completeDraftPath, isDraftOnly } from "../common/drafts"
 import { useOfferTableColumns } from "./use-offer-table-columns"
 import { useOfferTableFilters } from "./use-offer-table-filters"
 import { useOfferTableQuery } from "./use-offer-table-query"
@@ -71,7 +72,11 @@ export const OfferListDataTable = () => {
         { key: "updated_at", label: t("fields.updatedAt") },
       ]}
       defaultOrderBy="title"
-      navigateTo={(row) => `${row.original.id}`}
+      navigateTo={(row) =>
+        isDraftOnly(row.original)
+          ? (completeDraftPath(row.original) ?? `${row.original.id}`)
+          : `${row.original.id}`
+      }
       noRecords={{
         title: t("offers.empty.heading"),
         message: t("offers.empty.description"),

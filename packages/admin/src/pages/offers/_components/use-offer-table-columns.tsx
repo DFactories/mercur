@@ -1,8 +1,8 @@
-import { Checkbox, Text } from "@medusajs/ui"
+import { Checkbox, StatusBadge, Text } from "@medusajs/ui"
 import { createColumnHelper } from "@tanstack/react-table"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { OfferDTO, ProductStatus } from "@mercurjs/types"
+import { ProductStatus } from "@mercurjs/types"
 
 import { PlaceholderCell } from "../../../components/table/table-cells/common/placeholder-cell"
 import {
@@ -17,9 +17,10 @@ import {
   ProductStatusCell,
   ProductStatusHeader,
 } from "../../../components/table/table-cells/product/product-status-cell"
+import { isDraftRow, OfferListRow } from "../common/types"
 import { OfferActions } from "./offer-actions"
 
-const columnHelper = createColumnHelper<OfferDTO>()
+const columnHelper = createColumnHelper<OfferListRow>()
 
 export const useOfferTableColumns = (options?: {
   hideStoreAction?: boolean
@@ -46,6 +47,7 @@ export const useOfferTableColumns = (options?: {
         cell: ({ row }) => (
           <Checkbox
             checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             onClick={(e) => e.stopPropagation()}
           />
@@ -110,6 +112,13 @@ export const useOfferTableColumns = (options?: {
           </div>
         ),
         cell: ({ row }) => {
+          if (isDraftRow(row.original)) {
+            return (
+              <Text size="small" leading="compact" className="truncate">
+                {t("offers.draft.variants")}
+              </Text>
+            )
+          }
           const count = row.original.variant_count
           if (!count) return <PlaceholderCell />
           return (
@@ -123,6 +132,13 @@ export const useOfferTableColumns = (options?: {
         id: "status",
         header: () => <ProductStatusHeader />,
         cell: ({ row }) => {
+          if (isDraftRow(row.original)) {
+            return (
+              <StatusBadge color="orange" className="truncate">
+                {t("offers.draft.badge")}
+              </StatusBadge>
+            )
+          }
           const status = row.original.product?.status
           if (!status) return <PlaceholderCell />
           return <ProductStatusCell status={status as ProductStatus} />
@@ -134,10 +150,12 @@ export const useOfferTableColumns = (options?: {
           <OfferActions
             product={{
               id: row.original.product_id,
-              offerIds:
-                row.original.offer_ids?.length
+              offerIds: isDraftRow(row.original)
+                ? []
+                : row.original.offer_ids?.length
                   ? row.original.offer_ids
                   : [row.original.id],
+              draftIds: row.original.offer_draft_ids ?? [],
               sellerId: hideStoreAction ? null : row.original.seller_id ?? null,
               storeName: row.original.seller?.name ?? null,
             }}

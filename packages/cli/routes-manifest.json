@@ -93,6 +93,8 @@
   "/admin/notification-settings": "typeof import(\"@mercurjs/core/api/admin/notification-settings/route\")",
   "/admin/notifications": "typeof import(\"@medusajs/medusa/api/admin/notifications/route\")",
   "/admin/notifications/:id": "typeof import(\"@medusajs/medusa/api/admin/notifications/[id]/route\")",
+  "/admin/offer-drafts": "typeof import(\"@mercurjs/core/api/admin/offer-drafts/route\")",
+  "/admin/offer-drafts/:id": "typeof import(\"@mercurjs/core/api/admin/offer-drafts/[id]/route\")",
   "/admin/offers": "typeof import(\"@mercurjs/core/api/admin/offers/route\")",
   "/admin/offers/:id": "typeof import(\"@mercurjs/core/api/admin/offers/[id]/route\")",
   "/admin/offers/batch": "typeof import(\"@mercurjs/core/api/admin/offers/batch/route\")",

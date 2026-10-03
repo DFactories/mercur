@@ -119,3 +119,31 @@ export const useBulkDeleteOffers = (
     ...options,
   })
 }
+
+export const useDeleteOfferDrafts = (
+  options?: UseMutationOptions<BulkDeleteOffersResult, ClientError, string[]>,
+) => {
+  return useMutation({
+    ...options,
+    mutationFn: async (ids: string[]) => {
+      const results = await Promise.allSettled(
+        ids.map((id) => sdk.admin.offerDrafts.$id.delete({ $id: id })),
+      )
+      const succeeded = results
+        .map((r, i) => (r.status === "fulfilled" ? ids[i] : null))
+        .filter((x): x is string => x !== null)
+      const failed = results
+        .map((r, i) =>
+          r.status === "rejected"
+            ? { id: ids[i], error: r.reason as ClientError }
+            : null,
+        )
+        .filter((x): x is { id: string; error: ClientError } => x !== null)
+      return { succeeded, failed }
+    },
+    onSuccess: (result, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: offerQueryKeys.lists() })
+      options?.onSuccess?.(result, variables, context)
+    },
+  })
+}

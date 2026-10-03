@@ -12,9 +12,17 @@ export type OfferProductVariant = HttpTypes.AdminProductVariant & {
   offers?: OfferDTO[] | null
 }
 
+/** One of the seller's open offer drafts on a product; `variant_id` null is the whole product. */
+export type OfferDraftSummary = {
+  id: string
+  variant_id: string | null
+  created_at?: string | null
+}
+
 /** A product with the seller's offers wrapped under each variant. */
 export type OfferProduct = HttpTypes.AdminProduct & {
   variants?: OfferProductVariant[] | null
+  offer_drafts?: OfferDraftSummary[] | null
 }
 
 export type OfferPriceRule = {

@@ -22,6 +22,7 @@ import { CreateOfferDTO, MercurModules, OfferDTO } from "@mercurjs/types"
 
 import {
   addOfferPricesStep,
+  closeOfferDraftsStep,
   createOffersStep,
   ensureVariantPriceSetsStep,
 } from "../steps"
@@ -314,6 +315,17 @@ export const createOffersWorkflow: ReturnWorkflow<
     createRemoteLinkStep(offerPriceLinks).config({
       name: "create-offer-price-links",
     })
+
+    const createdOfferRefs = transform({ offers }, ({ offers }) =>
+      offers.map((o) => ({
+        id: o.id,
+        seller_id: o.seller_id,
+        product_id: o.product_id ?? null,
+        variant_id: o.variant_id,
+      })),
+    )
+
+    closeOfferDraftsStep(createdOfferRefs)
 
     const eventData = transform({ offers }, ({ offers }) =>
       offers.map((o) => ({ id: o.id, product_id: o.product_id })),

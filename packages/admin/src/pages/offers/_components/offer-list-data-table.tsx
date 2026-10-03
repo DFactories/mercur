@@ -2,13 +2,13 @@ import { keepPreviousData } from "@tanstack/react-query"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { OfferDTO } from "@mercurjs/types"
 import { useExtendableTable } from "@mercurjs/dashboard-shared"
 
 import { _DataTable } from "../../../components/table/data-table"
 import { useDataTable } from "../../../hooks/use-data-table"
 import { useOffers } from "../../../hooks/api/offers"
 import { OFFERS_PAGE_SIZE } from "../common/constants"
+import { isDraftRow, OfferListRow } from "../common/types"
 import { useOfferTableColumns } from "./use-offer-table-columns"
 import { useOfferTableCommands } from "./use-offer-table-commands"
 import { useOfferTableFilters } from "./use-offer-table-filters"
@@ -27,16 +27,16 @@ export const OfferListDataTable = () => {
     placeholderData: keepPreviousData,
   })
 
-  const rows = (offers ?? []) as OfferDTO[]
+  const rows = (offers ?? []) as OfferListRow[]
 
   const baseFilters = useOfferTableFilters()
   const baseColumns = useOfferTableColumns()
   const actionColumn = baseColumns[baseColumns.length - 1]
   const { columns: extended, filters: extFilters } =
-    useExtendableTable<OfferDTO>({
+    useExtendableTable<OfferListRow>({
       model: "offer",
       columns: baseColumns.slice(0, -1) as unknown as ColumnDef<
-        OfferDTO,
+        OfferListRow,
         unknown
       >[],
     })
@@ -59,7 +59,8 @@ export const OfferListDataTable = () => {
     enablePagination: true,
     getRowId: (row) => row.id,
     pageSize: OFFERS_PAGE_SIZE,
-    enableRowSelection: true,
+    // Bulk delete removes offers; a draft row has none.
+    enableRowSelection: (row) => !isDraftRow(row.original),
     rowSelection: {
       state: selection,
       updater: setSelection,

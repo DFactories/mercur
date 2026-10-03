@@ -4,7 +4,10 @@ import {
   validateAndTransformQuery,
 } from "@medusajs/framework"
 
-import { applyGroupedOfferProductFilter } from "../../utils"
+import {
+  applyGroupedOfferProductFilter,
+  applyOfferDraftVisibility,
+} from "../../utils"
 import { adminOfferQueryConfig } from "./query-config"
 import {
   AdminCreateOffersBatch,
@@ -22,6 +25,7 @@ export const adminOffersMiddlewares: MiddlewareRoute[] = [
         adminOfferQueryConfig.list
       ),
       applyGroupedOfferProductFilter,
+      applyOfferDraftVisibility,
     ],
   },
   {

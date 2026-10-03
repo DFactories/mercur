@@ -1348,6 +1348,12 @@
       "proposed": "Proposed",
       "rejected": "Rejected"
     },
+    "draft": {
+      "badge": "Draft — complete the price and stock",
+      "wholeProduct": "All variants — you choose",
+      "variantsCount": "{{count}} variant(s) in draft",
+      "complete": "Complete draft"
+    },
     "stockStatus": {
       "in_stock": "In stock",
       "low_stock": "Low stock",

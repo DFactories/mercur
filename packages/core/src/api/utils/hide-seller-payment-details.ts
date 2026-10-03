@@ -54,7 +54,7 @@ const isPaymentDetailField = (field: string): boolean =>
     .split(".")
     .some((segment) => segment.replace(/^\*/, "") === FIELD)
 
-const rbacEnabled = (req: AuthenticatedMedusaRequest): boolean => {
+export const rbacEnabled = (req: AuthenticatedMedusaRequest): boolean => {
   try {
     const router = req.scope.resolve<{
       isFeatureEnabled: (key: string) => boolean

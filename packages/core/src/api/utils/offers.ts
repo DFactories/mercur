@@ -16,7 +16,9 @@ import type {
   TaxableItemDTO,
   TaxCalculationContext,
 } from "@medusajs/framework/types"
+import { hasPermission } from "@medusajs/framework"
 import { resolveVisibleSellerIds } from "./sellers"
+import { rbacEnabled } from "./hide-seller-payment-details"
 
 const OFFER_WRAP_FIELDS = [
   "id",
@@ -50,8 +52,19 @@ const OFFER_WRAP_FIELDS = [
 ]
 
 type WrappableVariant = { id: string; offers?: unknown[] }
-type WrappableProduct = { variants?: WrappableVariant[] | null }
+type OfferDraftSummary = {
+  id: string
+  variant_id: string | null
+  created_at: Date | string
+}
+type WrappableProduct = {
+  id?: string
+  variants?: WrappableVariant[] | null
+  offer_drafts?: OfferDraftSummary[]
+}
 type OfferRow = { variant_id: string }
+
+const OPEN_DRAFT_FIELDS = ["id", "product_id", "variant_id", "created_at"]
 
 /**
  * The `offer ↔ variant` link is shared across sellers, so a raw graph
@@ -96,6 +109,50 @@ export const wrapProductVariantsWithOffers = async (
       variant.offers = offersByVariant.get(variant.id) ?? []
     }
   }
+
+  if (sellerId) {
+    await wrapProductsWithOpenDrafts(scope, products, sellerId)
+  }
+}
+
+/**
+ * The seller's open offer drafts on each product, as `offer_drafts`. A draft
+ * is listed with the seller's offers rather than on a screen of its own; its
+ * metadata (the producer's own site price, among others) is never included.
+ */
+const wrapProductsWithOpenDrafts = async (
+  scope: MedusaContainer,
+  products: WrappableProduct[],
+  sellerId: string
+): Promise<void> => {
+  const productIds = products
+    .map((p) => p.id)
+    .filter((id): id is string => !!id)
+  if (!productIds.length) {
+    return
+  }
+
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data: drafts } = await query.graph({
+    entity: "offer_draft",
+    fields: OPEN_DRAFT_FIELDS,
+    filters: { seller_id: sellerId, product_id: productIds, status: "open" },
+  })
+
+  const draftsByProduct = new Map<string, OfferDraftSummary[]>()
+  for (const draft of drafts as (OfferDraftSummary & { product_id: string })[]) {
+    const { product_id, ...summary } = draft
+    draftsByProduct.set(product_id, [
+      ...(draftsByProduct.get(product_id) ?? []),
+      summary,
+    ])
+  }
+
+  for (const product of products) {
+    product.offer_drafts = product.id
+      ? draftsByProduct.get(product.id) ?? []
+      : []
+  }
 }
 
 type OfferAwareRequest = AuthenticatedMedusaRequest & {
@@ -138,10 +195,29 @@ export const applyOfferedProductsFilter = async (
     )
   )
 
+  // A seller's own open drafts list the product too: a draft is an offer that
+  // is not finished, and belongs on the same list.
+  let draftProductIds: string[] = []
+  if (contextSellerId) {
+    const { data: drafts } = await query.graph({
+      entity: "offer_draft",
+      fields: ["product_id"],
+      filters: { seller_id: contextSellerId, status: "open" },
+    })
+    draftProductIds = Array.from(
+      new Set((drafts as { product_id: string }[]).map((d) => d.product_id))
+    )
+  }
+
+  const offered = {
+    variants: { id: variantIds.length ? variantIds : ["__none__"] },
+  }
   const existingAnd = (req.filterableFields.$and as object[] | undefined) ?? []
   req.filterableFields.$and = [
     ...existingAnd,
-    { variants: { id: variantIds.length ? variantIds : ["__none__"] } },
+    draftProductIds.length
+      ? { $or: [offered, { id: draftProductIds }] }
+      : offered,
   ]
 
   return next()
@@ -424,3 +500,48 @@ const wrapVariantsWithTaxPrices = async (
     }
   }
 }
+
+/**
+ * Draft rows join the grouped admin offers list only for an operator who may
+ * read offer drafts; `offer:read` alone does not show them. Fails closed.
+ */
+export const applyOfferDraftVisibility = async (
+  req: OfferAwareRequest,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  req.filterableFields ??= {}
+  const fields = req.filterableFields as Record<string, unknown>
+  delete fields.include_drafts
+
+  if (fields.group_by_seller !== true) {
+    return next()
+  }
+
+  if (!rbacEnabled(req)) {
+    fields.include_drafts = true
+    return next()
+  }
+
+  const roles = (req.auth_context?.app_metadata?.roles ?? []) as string[]
+  if (!roles.length) {
+    return next()
+  }
+
+  try {
+    if (
+      await hasPermission({
+        roles,
+        actions: [{ resource: "offer_draft", operation: "read" }],
+        container: req.scope,
+      })
+    ) {
+      fields.include_drafts = true
+    }
+  } catch (error) {
+    return next(error as Error)
+  }
+
+  return next()
+}
+

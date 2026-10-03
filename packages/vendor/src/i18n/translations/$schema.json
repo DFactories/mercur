@@ -4049,6 +4049,24 @@
           },
           "additionalProperties": false
         },
+        "draft": {
+          "type": "object",
+          "properties": {
+            "badge": {
+              "type": "string"
+            },
+            "wholeProduct": {
+              "type": "string"
+            },
+            "variantsCount": {
+              "type": "string"
+            },
+            "complete": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
         "stockStatus": {
           "type": "object",
           "properties": {

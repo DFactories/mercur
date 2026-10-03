@@ -516,6 +516,9 @@ export type Routes = {
         };
         notificationReadState: typeof import("../src/api/admin/notification-read-state/route");
         notificationSettings: typeof import("../src/api/admin/notification-settings/route");
+        offerDrafts: typeof import("../src/api/admin/offer-drafts/route") & {
+            $id: typeof import("../src/api/admin/offer-drafts/[id]/route");
+        };
         reviews: typeof import("../src/api/admin/reviews/route") & {
             $id: typeof import("../src/api/admin/reviews/[id]/route") & {
                 respond: typeof import("../src/api/admin/reviews/[id]/respond/route");

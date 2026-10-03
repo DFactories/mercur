@@ -13474,6 +13474,30 @@
           },
           "additionalProperties": false
         },
+        "draft": {
+          "type": "object",
+          "properties": {
+            "badge": {
+              "type": "string"
+            },
+            "variants": {
+              "type": "string"
+            },
+            "delete": {
+              "type": "string"
+            },
+            "deleteDescription": {
+              "type": "string"
+            },
+            "deletedToast": {
+              "type": "string"
+            },
+            "deleteErrorToast": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
         "bulkDeleteAll": {
           "type": "object",
           "properties": {

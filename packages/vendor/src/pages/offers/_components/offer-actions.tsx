@@ -1,4 +1,4 @@
-import { Buildings, CurrencyDollar, Trash } from "@medusajs/icons"
+import { Buildings, CurrencyDollar, PencilSquare, Trash } from "@medusajs/icons"
 import { toast, usePrompt } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 
@@ -10,6 +10,8 @@ type OfferProductActions = {
   title: string
   /** Ids of the seller's offers across this product's variants. */
   offerIds: string[]
+  /** The create form for the seller's open draft on this product, if any. */
+  completeDraftPath: string | null
 }
 
 /**
@@ -58,33 +60,52 @@ export const OfferActions = ({ product }: { product: OfferProductActions }) => {
     }
   }
 
+  const hasOffers = product.offerIds.length > 0
+  const draftGroup = product.completeDraftPath
+    ? [
+        {
+          actions: [
+            {
+              icon: <PencilSquare />,
+              label: t("offers.draft.complete"),
+              to: product.completeDraftPath,
+            },
+          ],
+        },
+      ]
+    : []
+
   return (
     <ActionMenu
       groups={[
-        {
-          actions: [
-            {
-              icon: <CurrencyDollar />,
-              label: t("offers.actions.edit_prices"),
-              to: `${product.id}/edit-price`,
-            },
-            {
-              icon: <Buildings />,
-              label: t("offers.actions.edit_stock_levels"),
-              to: `${product.id}/edit-stock`,
-            },
-          ],
-        },
-        {
-          actions: [
-            {
-              icon: <Trash />,
-              label: t("actions.delete"),
-              onClick: handleDelete,
-              disabled: product.offerIds.length === 0,
-            },
-          ],
-        },
+        ...draftGroup,
+        ...(hasOffers
+          ? [
+              {
+                actions: [
+                  {
+                    icon: <CurrencyDollar />,
+                    label: t("offers.actions.edit_prices"),
+                    to: `${product.id}/edit-price`,
+                  },
+                  {
+                    icon: <Buildings />,
+                    label: t("offers.actions.edit_stock_levels"),
+                    to: `${product.id}/edit-stock`,
+                  },
+                ],
+              },
+              {
+                actions: [
+                  {
+                    icon: <Trash />,
+                    label: t("actions.delete"),
+                    onClick: handleDelete,
+                  },
+                ],
+              },
+            ]
+          : []),
       ]}
     />
   )

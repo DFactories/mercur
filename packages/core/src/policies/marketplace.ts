@@ -47,6 +47,11 @@ const resourceOperations: [string, string[]][] = [
   ["payout", ["read", "create", "update", "delete"]],
   /** Seller offers — the price, stock and tier ladder a buyer actually sees. */
   ["offer", ["read", "create", "update", "delete"]],
+  /**
+   * Offer drafts — a store set up to sell a product before it has a price.
+   * Writing one puts work in a producer's panel; it never reaches a buyer.
+   */
+  ["offer_draft", ["read", "create", "update", "delete"]],
   /** Buyer reviews of a seller or product, and their moderation. */
   ["review", ["read", "create", "update", "delete"]],
   /** Order groups — the split of one basket across several sellers. */

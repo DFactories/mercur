@@ -22,6 +22,7 @@ export const ADMIN_RESOURCE_PREFIXES: Record<string, string | string[]> = {
   seller: "/admin/sellers",
   seller_member: "/admin/members",
   offer: "/admin/offers",
+  offer_draft: "/admin/offer-drafts",
   payout: "/admin/payouts",
   review: "/admin/reviews",
   commission_rate: "/admin/commission-rates",

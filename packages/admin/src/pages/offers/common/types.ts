@@ -9,6 +9,15 @@ export type OfferProduct = HttpTypes.AdminProduct & {
   variants?: OfferProductVariant[] | null
 }
 
+/**
+ * A row of the grouped offers list. A store that only has open drafts on the
+ * product has no `offer_ids`; its row carries the drafts instead.
+ */
+export type OfferListRow = OfferDTO & { offer_draft_ids?: string[] | null }
+
+export const isDraftRow = (row: OfferListRow) =>
+  !row.offer_ids?.length && !!row.offer_draft_ids?.length
+
 export type OfferPriceRule = {
   attribute?: string | null
   value?: string | null

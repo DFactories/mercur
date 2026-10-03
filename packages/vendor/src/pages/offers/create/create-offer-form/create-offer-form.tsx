@@ -3,6 +3,7 @@ import { Button, toast } from "@medusajs/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 
 import { RouteFocusModal, useRouteModal } from "../../../../components/modals";
 import { TabbedForm } from "../../../../components/tabbed-form/tabbed-form";
@@ -13,6 +14,7 @@ import { useStockLocations } from "../../../../hooks/api/stock-locations";
 import { CreateOfferCatalogueTab } from "./create-offer-catalogue";
 import { CreateOfferStockLevelsAndPricesTab } from "./create-offer-stock-levels-and-prices";
 import { CreateOfferFormValues, CreateOfferSchema, OfferVariantRow, variantRowHasPrice } from "./schema";
+import { includesVariant, readOfferCreatePrefill } from "./prefill";
 
 const DEFAULTS: CreateOfferFormValues = {
   selected_product_ids: [],
@@ -56,8 +58,15 @@ export const CreateOfferForm = () => {
   const { t } = useTranslation();
   const { handleSuccess } = useRouteModal();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // `?product_id=…&variant_id=…` opens the form on a known product (see
+  // ./prefill). Read once: the selection is the producer's from then on.
+  const [searchParams] = useSearchParams();
+  const [prefill] = useState(() => readOfferCreatePrefill(searchParams));
   const form = useForm<CreateOfferFormValues>({
-    defaultValues: DEFAULTS,
+    defaultValues: {
+      ...DEFAULTS,
+      selected_product_ids: prefill.productId ? [prefill.productId] : [],
+    },
     resolver: zodResolver(CreateOfferSchema),
   });
 
@@ -109,6 +118,9 @@ export const CreateOfferForm = () => {
     const next: OfferVariantRow[] = [];
     for (const product of fetchedProducts ?? []) {
       for (const variant of product.variants ?? []) {
+        if (!includesVariant(prefill, product.id ?? "", variant.id)) {
+          continue;
+        }
         const previous = existingByVariantId.get(variant.id);
         if (previous) {
           // Merge in any newly-arrived currencies / locations the row
@@ -145,6 +157,7 @@ export const CreateOfferForm = () => {
     currency_code,
     locationsKey,
     form,
+    prefill,
   ]);
 
   const handleSubmit = form.handleSubmit(async (values) => {

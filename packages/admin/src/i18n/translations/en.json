@@ -4489,6 +4489,14 @@
       "crossStoreWarning": "Select offers from one store at a time. Bulk delete is scoped per store.",
       "crossStoreTooltip": "Bulk delete only works within one store."
     },
+    "draft": {
+      "badge": "Draft — the store has not added price and stock",
+      "variants": "Draft",
+      "delete": "Delete drafts",
+      "deleteDescription": "{{count}} offer draft(s) of {{storeName}} will be deleted. A completed draft's offer is not affected; the importer can send the draft again.",
+      "deletedToast": "{{count}} draft(s) deleted",
+      "deleteErrorToast": "Deleting drafts failed: {{message}}"
+    },
     "bulkDeleteAll": {
       "description": "You are about to delete every offer for {{storeName}}. This cannot be undone.",
       "actionLabel": "Delete catalog"

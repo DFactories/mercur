@@ -4177,6 +4177,12 @@
       "proposed": "پیشنهادی",
       "rejected": "رد شده"
     },
+    "draft": {
+      "badge": "پیش‌نویس — قیمت و موجودی را کامل کنید",
+      "wholeProduct": "همه‌ی تنوع‌ها — انتخاب با شما",
+      "variantsCount": "{{count}} تنوع در پیش‌نویس",
+      "complete": "تکمیل پیش‌نویس"
+    },
     "stockStatus": {
       "in_stock": "در انبار",
       "low_stock": "موجودی کم",
