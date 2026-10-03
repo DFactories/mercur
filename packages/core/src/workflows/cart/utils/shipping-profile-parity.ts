@@ -1,49 +1,35 @@
 /**
- * Predicting Medusa's orphan-profile cull, so a marketplace cart never loses
- * carriage a buyer already chose.
+ * A shipping option must sit on a profile the goods it carries ship from — and
+ * in a marketplace the OFFER, not the master product, says which profile that
+ * is.
  *
- * `refreshCartShippingMethodsWorkflow` — which `refreshCartItemsWorkflow` runs
- * unconditionally, so EVERY cart mutation reaches it — drops a cart shipping
- * method when the shipping option's `shipping_profile_id` is not among the
- * profiles the cart's items require:
+ * Completion checks exactly this (`validateSellerCartShippingStep`, upstream
+ * #1417): every cart item that requires shipping needs its
+ * `offer.shipping_profile_id` among the profiles of the cart's shipping
+ * methods, with no fallback to the product. A carriage on a profile none of the
+ * cart's offers use therefore cannot complete — and on this marketplace
+ * completion runs in the payment gateway's callback, after the buyer has paid.
+ * This module answers the same question when the carriage is chosen, so the
+ * buyer is told before paying.
  *
- *     const shouldCleanupOrphanProfiles = shippingMethods.length > 1
- *     const requiredProfileIds = new Set(items
- *       .filter((item) => item.requires_shipping)
- *       .map((item) => item.variant?.product?.shipping_profile?.id)
- *       .filter(Boolean))
- *     …
- *     if (shouldCleanupOrphanProfiles && profileId && !requiredProfileIds.has(profileId))
- *       return false   // ⇒ the method is deleted
+ * History, because both halves of the old rule are gone:
  *
- * In single-vendor Medusa that is right: a profile with no items left has no
- * freight to carry. In a marketplace it is a trap, because the gate is
- * `shippingMethods.length > 1` — which in Mercur means EXACTLY "more than one
- * seller is shipping", since options are listed per seller. So the first
- * producer's carriage survives and the second one's arrival deletes both.
- *
- * Measured on the running backend (cart `cart_01M1H8GK26WK2RREATG2PJTVYK`):
- * «باربری» was created at 18:30:05 and survived alone; «ترابرنت» was created at
- * 18:30:07.931; at 18:30:08.075 BOTH rows were soft-deleted in the same
- * refresh, 144ms later. Every seller shipping option sat on «مرسولات
- * سنگین/حجیم» while the cart's products sat on «سنگین» — so no option was ever
- * "required", and the buyer was left with no carriage and nothing said.
- *
- * This module mirrors Medusa's predicate EXACTLY — the product's profile, not
- * the offer's, and the same `> 1` gate — because its only job is to answer
- * "would Medusa delete this?" before the buyer is told the method was added.
- * Reading the offer's profile instead would be more Mercur-ish and would let
- * through the very rows the cull then removes.
+ * - It used to read the PRODUCT's profile and only refuse once the cart held
+ *   more than one method, because its job was predicting Medusa's
+ *   orphan-profile cull in `refreshCartShippingMethodsWorkflow` (production
+ *   cart `cart_01M1H8GK26WK2RREATG2PJTVYK`, 2026-09-02: a second producer's
+ *   carriage deleted both). Mercur now disables that cull at boot (upstream
+ *   #1455, `src/patches`), so there is nothing left to predict.
+ * - Kept as it was, it refused the right carriage: the product↔profile link is
+ *   one-to-one and the FIRST offerer wins it, so on a shared master product a
+ *   second producer's correct carriage "carried nothing" by the product's
+ *   profile.
  */
 
 /** Just enough of a cart item to answer the question. */
 export type CartItemForShippingParity = {
   requires_shipping?: boolean | null
-  variant?: {
-    product?: {
-      shipping_profile?: { id?: string | null } | null
-    } | null
-  } | null
+  offer?: { shipping_profile_id?: string | null } | null
 }
 
 /** Just enough of a shipping option to answer the question. */
@@ -54,10 +40,11 @@ export type ShippingOptionForParity = {
 }
 
 /**
- * The shipping profiles this cart's items still require.
+ * The shipping profiles this cart's goods ship from: each shipping line's
+ * offer profile.
  *
- * Only items that require shipping count — a digital line keeps no carriage
- * alive, and Medusa's own filter says so first.
+ * Only items that require shipping count — completion filters on that first,
+ * so a digital line asks for no carriage.
  */
 export const cartRequiredShippingProfileIds = (
   items: CartItemForShippingParity[] | null | undefined
@@ -69,7 +56,7 @@ export const cartRequiredShippingProfileIds = (
       continue
     }
 
-    const id = item?.variant?.product?.shipping_profile?.id
+    const id = item?.offer?.shipping_profile_id
     if (id) {
       ids.add(id)
     }
@@ -80,46 +67,42 @@ export const cartRequiredShippingProfileIds = (
 
 /**
  * The rule itself, in one place: an option's profile must be a profile the
- * goods it carries actually sit on.
+ * goods it carries ship from.
  *
  * `goodsProfileIds` is whichever goods the caller is asking about — the cart's
- * items on the buyer side, the seller's own offered products in the vendor
- * panel. Both ask the same question of the same rule; only the goods differ.
+ * offers on the buyer side, the seller's own offers in the vendor panel. Both
+ * ask the same question of the same rule; only the goods differ.
  *
- * A profile-less option is never a mismatch: Medusa's `profileId &&` guard
- * skips it too, so calling it one would invent a failure Medusa never has.
+ * A profile-less option is never a mismatch here: it is not this rule's to
+ * judge, and inventing a failure for it would refuse what nothing else does.
  */
 export const isShippingProfileWithoutGoods = (
   profileId: string | null | undefined,
   goodsProfileIds: Set<string>
 ): boolean => !!profileId && !goodsProfileIds.has(profileId)
 
-export type UnkeepableShippingOption = {
+export type ShippingOptionWithoutGoods = {
   id: string
   name: string
   shipping_profile_id: string
 }
 
 /**
- * Which of `options` this cart would lose again the moment Medusa refreshes it.
+ * Which of `options` sit on a profile none of this cart's goods ship from.
  *
- * `resultingMethodCount` is what the cart will hold AFTER the add — the count
- * Medusa's own `shippingMethods.length > 1` gate will see. Below that gate
- * nothing is culled, so nothing is refused: a single-seller cart whose option
- * sits on a mismatched profile works today and must keep working. Refusing it
- * would turn a live checkout into an error for no gain.
+ * A cart with no shipping line refuses nothing: completion asks no profile of
+ * it, so any carriage is harmless there.
  */
-export const findUnkeepableShippingOptions = (args: {
+export const findShippingOptionsWithoutGoods = (args: {
   items: CartItemForShippingParity[] | null | undefined
   options: ShippingOptionForParity[] | null | undefined
-  resultingMethodCount: number
-}): UnkeepableShippingOption[] => {
-  if (args.resultingMethodCount <= 1) {
+}): ShippingOptionWithoutGoods[] => {
+  const required = cartRequiredShippingProfileIds(args.items)
+  if (!required.size) {
     return []
   }
 
-  const required = cartRequiredShippingProfileIds(args.items)
-  const unkeepable: UnkeepableShippingOption[] = []
+  const found: ShippingOptionWithoutGoods[] = []
 
   for (const option of args.options ?? []) {
     const profileId = option?.shipping_profile_id
@@ -127,29 +110,29 @@ export const findUnkeepableShippingOptions = (args: {
       continue
     }
 
-    unkeepable.push({
+    found.push({
       id: option?.id ?? "",
       name: option?.name ?? "",
       shipping_profile_id: profileId as string,
     })
   }
 
-  return unkeepable
+  return found
 }
 
 /**
  * The sentence an operator can act on.
  *
  * It names the option AND both sides of the mismatch, because the fix is
- * always one of two edits — move the option onto a profile the goods use, or
- * move the goods onto the option's profile — and neither is guessable from
- * "shipping method could not be added".
+ * always one of two edits — move the option onto the profile the seller's
+ * offers use, or move the offers onto the option's profile — and neither is
+ * guessable from "shipping method could not be added".
  */
-export const describeUnkeepableShippingOptions = (
-  unkeepable: UnkeepableShippingOption[],
+export const describeShippingOptionsWithoutGoods = (
+  options: ShippingOptionWithoutGoods[],
   requiredProfileIds: Set<string>
 ): string => {
-  const listed = unkeepable
+  const listed = options
     .map((o) => `${o.name || o.id} (shipping profile ${o.shipping_profile_id})`)
     .join(", ")
 
@@ -157,10 +140,9 @@ export const describeUnkeepableShippingOptions = (
 
   return (
     `Shipping option ${listed} is on a shipping profile none of this cart's ` +
-    `items require (the cart requires: ${required}). Medusa removes such a ` +
-    `method on the next cart refresh once the cart holds more than one, so it ` +
-    `is refused here instead of disappearing after it was accepted. Put the ` +
-    `seller's shipping option on a profile its goods use, or the goods on the ` +
-    `option's profile.`
+    `offers ship from (the cart's offers use: ${required}). The order could ` +
+    `not be completed with it, so it is refused here instead of at checkout. ` +
+    `Put the seller's shipping option on the profile its offers use, or the ` +
+    `offers on the option's profile.`
   )
 }

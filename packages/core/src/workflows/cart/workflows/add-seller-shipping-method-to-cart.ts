@@ -160,24 +160,11 @@ export const addSellerShippingMethodToCartWorkflow = createWorkflow(
                 .map(sm => sm.id)
         })
 
-        // WOULD MEDUSA DELETE WHAT WE ARE ABOUT TO WRITE? Asked before anything
-        // is removed or created, because the answer is otherwise invisible: the
-        // refresh below culls a method whose shipping profile no cart item
-        // requires, but only once the cart holds more than one — i.e. exactly
-        // when a second producer's carriage arrives, and it takes the first
-        // producer's with it. See `../utils/shipping-profile-parity`.
-        const resultingMethodCount = transform(
-            { cart, input, shippingMethodIdsToRemove },
-            ({ cart, input, shippingMethodIdsToRemove }) => {
-                const removed = new Set(shippingMethodIdsToRemove)
-                const surviving = (cart.shipping_methods ?? []).filter(
-                    (sm) => !removed.has(sm.id)
-                ).length
-
-                return surviving + (input.options ?? []).length
-            }
-        )
-
+        // WOULD COMPLETION REFUSE WHAT WE ARE ABOUT TO WRITE? Asked before
+        // anything is removed or created: completion needs every shipping
+        // line's OFFER profile among the methods' profiles, and it runs in the
+        // payment callback — after the buyer has paid. See
+        // `../utils/shipping-profile-parity`.
         const optionsBeingAdded = transform(
             { allShippingOptions, input },
             ({ allShippingOptions, input }) => {
@@ -194,19 +181,14 @@ export const addSellerShippingMethodToCartWorkflow = createWorkflow(
             }
         )
 
-        // ASKED WITH MEDUSA'S OWN QUERY API, not read off the cart above.
-        // `refreshCartShippingMethodsWorkflow` reads these two fields through
-        // `useQueryGraphStep`; the cart here comes from `useRemoteQueryStep`,
-        // which does not resolve the product→shipping_profile link the same way
-        // and hands back items with no profile at all. Predicting the cull from
-        // a DIFFERENT reading of the same data is how a guard refuses carts
-        // Medusa is perfectly happy with — measured, on a two-seller fixture
-        // whose products were correctly linked.
+        // READ THE WAY COMPLETION READS IT: `useQueryGraphStep`, the same
+        // line-item → offer link. Judging from a different reading of the same
+        // data is how a guard refuses carts completion is perfectly happy with.
         const cartForParity = useQueryGraphStep({
             entity: "cart",
             fields: [
                 "items.requires_shipping",
-                "items.variant.product.shipping_profile.id",
+                "items.offer.shipping_profile_id",
             ],
             filters: { id: input.cart_id },
             options: { isList: false },
@@ -226,7 +208,6 @@ export const addSellerShippingMethodToCartWorkflow = createWorkflow(
         validateCartShippingProfileParityStep({
             items: parityItems,
             options: optionsBeingAdded,
-            resultingMethodCount,
         })
 
         const [, createdShippingMethods] = parallelize(

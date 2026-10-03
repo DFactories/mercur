@@ -25,10 +25,11 @@ import { createVendorProduct } from "../../helpers/create-product"
  *   - a well-matched option carries no warning at all, so the signal keeps
  *     meaning something.
  *
- * The count is deliberately the PRODUCT's profile, not the offer's:
- * `create-offers` links a product to the first offer's profile and the link is
- * one-to-one, so those two can differ — and the product's is the one Medusa's
- * cart-refresh culls against.
+ * The count is deliberately the OFFER's profile, not the product's: checkout
+ * matches a carriage against each line's offer profile (upstream #1417), while
+ * the product↔profile link is one-to-one and belongs to the product's FIRST
+ * offerer — on a shared master product it says nothing about where a second
+ * seller ships from.
  */
 
 jest.setTimeout(180000)
@@ -43,6 +44,7 @@ medusaIntegrationTestRunner({
             /** A second profile of the seller's that no product uses. */
             let emptyProfile: any
             let serviceZone: any
+            let stockLocationId: string
 
             let suffixCounter = 0
 
@@ -113,6 +115,7 @@ medusaIntegrationTestRunner({
                     sellerHeaders
                 )
                 const stockLocation = locationResponse.data.stock_location
+                stockLocationId = stockLocation.id
 
                 await api.post(
                     `/vendor/stock-locations/${stockLocation.id}/fulfillment-sets`,
@@ -217,6 +220,97 @@ medusaIntegrationTestRunner({
                 )
                 expect(empty.status).toEqual(200)
                 expect(empty.data.shipping_profile.seller_product_count).toEqual(0)
+            })
+
+            it("counts a co-sold product by the seller's OFFER profile, not the product's", async () => {
+                // Another producer offers its product first, so the product's
+                // one-to-one profile link points at THAT producer's profile.
+                const first = await createSellerUser(appContainer, {
+                    email: "profile-goods-first-offerer@test.com",
+                    name: "First Offerer",
+                })
+                const sellerModule: any = appContainer.resolve(MercurModules.SELLER)
+                await sellerModule.updateSellers({
+                    id: first.seller.id,
+                    status: SellerStatus.OPEN,
+                })
+                const firstLocation = (
+                    await api.post(
+                        `/vendor/stock-locations`,
+                        { name: `First Offerer Warehouse ${Date.now()}` },
+                        first.headers
+                    )
+                ).data.stock_location
+                const firstProfile = (
+                    await api.post(
+                        `/vendor/shipping-profiles`,
+                        { name: `First Offerer Profile ${Date.now()}`, type: "default" },
+                        first.headers
+                    )
+                ).data.shipping_profile
+                const shared = await createVendorProduct(api, first.headers, {
+                    title: "Shared Master Product",
+                    sku: `SHARED-${Date.now()}`,
+                    variantTitle: "One",
+                })
+                const offerOf = (
+                    sellerHeadersFor: any,
+                    profileId: string,
+                    locationId: string,
+                    sku: string
+                ) =>
+                    api.post(
+                        `/vendor/offers`,
+                        {
+                            sku,
+                            variant_id: shared.variants[0].id,
+                            shipping_profile_id: profileId,
+                            inventory_items: [
+                                {
+                                    title: `${sku} Inventory`,
+                                    required_quantity: 1,
+                                    stock_levels: [
+                                        {
+                                            location_id: locationId,
+                                            stocked_quantity: 10,
+                                        },
+                                    ],
+                                },
+                            ],
+                            prices: [{ currency_code: "usd", amount: 1000 }],
+                        },
+                        sellerHeadersFor
+                    )
+                await offerOf(
+                    first.headers,
+                    firstProfile.id,
+                    firstLocation.id,
+                    `OF-FIRST-${Date.now()}`
+                )
+
+                // This seller sells the same product from `emptyProfile`.
+                const coOffer = await offerOf(
+                    sellerHeaders,
+                    emptyProfile.id,
+                    stockLocationId,
+                    `OF-CO-${Date.now()}`
+                )
+                expect(coOffer.status).toEqual(201)
+
+                const profile = await api.get(
+                    `/vendor/shipping-profiles/${emptyProfile.id}`,
+                    sellerHeaders
+                )
+                expect(profile.data.shipping_profile.seller_product_count).toEqual(1)
+
+                // A carriage on the profile its offer ships from is exactly
+                // right, so it must not be told it carries nothing.
+                const option = await createShippingOption({
+                    name: "Co-seller Carriage",
+                    shippingProfileId: emptyProfile.id,
+                })
+                expect(option.status).toEqual(201)
+                expect(option.data.warning).toBeUndefined()
             })
 
             it("warns — without refusing — when a created option's profile carries no goods", async () => {

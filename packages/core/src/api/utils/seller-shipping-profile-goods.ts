@@ -10,16 +10,19 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
  *    its panel can see. A vendor's product list also carries every published
  *    master product, and those never reach a cart under this seller.
  *
- * 2. The profile read is the PRODUCT's, never the offer's. `create-offers`
- *    links a product to the FIRST offer's profile and skips it forever after
- *    (the product↔profile link is one-to-one), so an offer's own
- *    `shipping_profile_id` can differ from the profile the cart is actually
- *    culled against — see `workflows/cart/utils/shipping-profile-parity`.
- *    Counting the offer's profile would report coverage the buyer never gets.
+ * 2. The profile read is the OFFER's, never the product's — the same profile
+ *    checkout matches a carriage against (`validateSellerCartShippingStep`,
+ *    upstream #1417; `workflows/cart/utils/shipping-profile-parity`). The
+ *    product↔profile link is one-to-one and the FIRST offerer wins it, so on a
+ *    shared master product the product's profile says nothing about where a
+ *    second seller ships from. (This counted the product's profile while
+ *    Medusa's orphan-profile cull read it; Mercur now disables that cull.)
  *
- * Both reads are bounded rather than paginated: offers per seller and profiles
- * per marketplace are small, and the same 10000 ceiling is what the profile
- * list route already uses.
+ * A product is counted once per profile however many of its variants the
+ * seller offers there.
+ *
+ * Bounded rather than paginated: offers per seller are small, and the same
+ * 10000 ceiling is what the profile list route already uses.
  */
 export const getSellerShippingProfileGoodsCounts = async (
   scope: MedusaContainer,
@@ -29,43 +32,33 @@ export const getSellerShippingProfileGoodsCounts = async (
 
   const { data: offers } = await query.graph({
     entity: "offer",
-    fields: ["product_id"],
+    fields: ["product_id", "shipping_profile_id"],
     filters: { seller_id: sellerId },
     pagination: { skip: 0, take: 10000 },
   })
 
-  const productIds = Array.from(
-    new Set(
-      (offers as { product_id?: string | null }[])
-        .map((offer) => offer.product_id)
-        .filter((id): id is string => !!id)
-    )
-  )
+  const productsByProfile = new Map<string, Set<string>>()
 
-  const counts = new Map<string, number>()
-
-  if (!productIds.length) {
-    return counts
-  }
-
-  const { data: products } = await query.graph({
-    entity: "product",
-    fields: ["id", "shipping_profile.id"],
-    filters: { id: productIds },
-    pagination: { skip: 0, take: productIds.length },
-  })
-
-  for (const product of products as {
-    shipping_profile?: { id?: string | null } | null
+  for (const offer of offers as {
+    product_id?: string | null
+    shipping_profile_id?: string | null
   }[]) {
-    const profileId = product.shipping_profile?.id
-    if (!profileId) {
+    if (!offer.product_id || !offer.shipping_profile_id) {
       continue
     }
-    counts.set(profileId, (counts.get(profileId) ?? 0) + 1)
+
+    const products =
+      productsByProfile.get(offer.shipping_profile_id) ?? new Set<string>()
+    products.add(offer.product_id)
+    productsByProfile.set(offer.shipping_profile_id, products)
   }
 
-  return counts
+  return new Map(
+    Array.from(productsByProfile, ([profileId, products]) => [
+      profileId,
+      products.size,
+    ])
+  )
 }
 
 export const getSellerShippingProfileGoodsCount = async (

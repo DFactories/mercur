@@ -35,18 +35,20 @@ import { createVendorProduct } from "../../helpers/create-product"
  * On production every seller shipping option sat on a profile that carried no
  * goods at all, so no option was ever "required" and both were culled.
  *
- * The fork cannot neutralise the cull (a Medusa workflow cannot be
- * re-registered with a different step definition, and the cull is reached from
- * every cart path, not just this one). So it does the next thing that makes the
- * failure impossible to miss: it REFUSES an option the cart is about to lose,
- * before anything is written. The contract these tests pin is therefore:
+ * Mercur now disables that cull at boot (upstream #1455, `src/patches`), and
+ * completion checks each line's OFFER profile against the methods' profiles
+ * (upstream #1417). The fork refuses, when the carriage is chosen, an option
+ * completion would refuse — completion runs in the payment callback, after the
+ * buyer has paid. The contract these tests pin is therefore:
  *
  *   - a well-formed two-producer cart keeps BOTH carriages;
- *   - a mismatched option is refused outright, and the carriage already chosen
- *     is still there afterwards.
+ *   - a co-selling producer's carriage on its OFFER's profile is accepted, even
+ *     when the shared product's own profile link belongs to the other seller;
+ *   - an option on a profile none of the cart's offers use is refused
+ *     outright, and the carriage already chosen is still there afterwards.
  *
- * Never the third outcome, which is what shipped: accepted, then silently
- * deleted along with its neighbour.
+ * Never the outcome that shipped: accepted, then silently deleted along with
+ * its neighbour.
  */
 
 jest.setTimeout(180000)
@@ -68,6 +70,9 @@ medusaIntegrationTestRunner({
             let option2: any
             /** Seller 2's carriage on a profile NO cart item requires. */
             let orphanOption: any
+            /** Seller 1's product — the one a co-selling seller 2 offers too. */
+            let sharedProduct: any
+            let seller2LocationId: string
 
             let prerequisiteCounter = 0
 
@@ -243,11 +248,11 @@ medusaIntegrationTestRunner({
                     [Modules.PAYMENT]: { payment_provider_id: "pp_system_default" },
                 })
 
-                const product1 = await createVendorProduct(api, seller1Headers, {
+                const product1 = (sharedProduct = await createVendorProduct(api, seller1Headers, {
                     title: "Carriage Seller 1 Product",
                     sku: "CARRIAGE-S1",
                     variantTitle: "Small",
-                })
+                }))
                 await api.post(
                     `/vendor/sales-channels/${salesChannel.id}/products`,
                     { add: [product1.id] },
@@ -273,6 +278,7 @@ medusaIntegrationTestRunner({
                     seller2Headers,
                     "carriage2"
                 )
+                seller2LocationId = prereq2.stockLocation.id
 
                 option1 = await createShippingOption(seller1Headers, {
                     name: "Seller 1 Carriage",
@@ -448,6 +454,104 @@ medusaIntegrationTestRunner({
                 )
             })
 
+            it("accepts a co-selling producer's carriage on its OFFER's profile, and completes", async () => {
+                // THE SHARED MASTER PRODUCT. Seller 1 offered it first, so the
+                // product's one-to-one shipping-profile link points at seller 1's
+                // profile; seller 2 sells the same product from its own. The
+                // offer, not the product, says which profile a seller ships from
+                // — which is what completion checks (#1417).
+                const coOffer = (
+                    await api.post(
+                        `/vendor/offers`,
+                        {
+                            sku: `OF-CARRIAGE-CO-${Date.now()}`,
+                            variant_id: sharedProduct.variants[0].id,
+                            shipping_profile_id: offer2.shipping_profile_id,
+                            inventory_items: [
+                                {
+                                    title: "Carriage Seller 2 Co-offer Inventory",
+                                    required_quantity: 1,
+                                    stock_levels: [
+                                        {
+                                            location_id: seller2LocationId,
+                                            stocked_quantity: 100,
+                                        },
+                                    ],
+                                },
+                            ],
+                            prices: [{ currency_code: "usd", amount: 900 }],
+                        },
+                        seller2Headers
+                    )
+                ).data.offer
+
+                const address = {
+                    first_name: "Carriage",
+                    last_name: "Customer",
+                    address_1: "1 Main St",
+                    city: "New York",
+                    country_code: "us",
+                    postal_code: "10001",
+                }
+                const cartId = (
+                    await api.post(
+                        `/store/carts`,
+                        {
+                            region_id: region.id,
+                            sales_channel_id: salesChannel.id,
+                            currency_code: "usd",
+                            email: "carriage-customer@test.com",
+                            shipping_address: address,
+                            billing_address: address,
+                        },
+                        storeHeaders
+                    )
+                ).data.cart.id
+                await api.post(
+                    `/store/carts/${cartId}/line-items`,
+                    { offer_id: offer1.id, quantity: 1 },
+                    storeHeaders
+                )
+                await api.post(
+                    `/store/carts/${cartId}/line-items`,
+                    { offer_id: coOffer.id, quantity: 1 },
+                    storeHeaders
+                )
+
+                // Seller 1's carriage first, so seller 2's arrives as the second
+                // method. Judged by the PRODUCT's profile it "carries nothing"
+                // — both lines are seller 1's product — and used to be refused.
+                expect((await chooseCarriage(cartId, option1.id)).status).toEqual(200)
+                const second = await chooseCarriage(cartId, option2.id)
+                expect(second.status).toEqual(200)
+
+                const methods = await methodsOf(cartId)
+                expect(methods.map((m) => m.shipping_option_id).sort()).toEqual(
+                    [option1.id, option2.id].sort()
+                )
+
+                const paymentCollection = (
+                    await api.post(
+                        `/store/payment-collections`,
+                        { cart_id: cartId },
+                        storeHeaders
+                    )
+                ).data.payment_collection
+                await api.post(
+                    `/store/payment-collections/${paymentCollection.id}/payment-sessions`,
+                    { provider_id: "pp_system_default" },
+                    storeHeaders
+                )
+
+                const completed = await api.post(
+                    `/store/carts/${cartId}/complete`,
+                    {},
+                    storeHeaders
+                )
+                expect(completed.status).toEqual(200)
+                expect(completed.data.type).toEqual("order_group")
+            })
+
             it("refuses a carriage the cart would lose, instead of swallowing both", async () => {
                 // The heart of it. `orphanOption` sits on a profile no item in
                 // this cart requires, which is exactly the production data. The
@@ -468,18 +572,18 @@ medusaIntegrationTestRunner({
                 expect(methods[0].shipping_option_id).toEqual(option1.id)
             })
 
-            it("still allows a mismatched carriage while it is the only one", async () => {
-                // Medusa's cull is gated on `length > 1`, so a single-producer
-                // cart on a mismatched profile works today. Refusing it would
-                // break a checkout that is not broken, which is why the guard
-                // counts the resulting methods rather than judging the profile
-                // alone.
+            it("refuses a mismatched carriage even as the cart's only one", async () => {
+                // The old guard let this through because Medusa's cull was gated
+                // on `length > 1`. Completion is not: it needs every shipping
+                // line's offer profile among the methods' profiles, so this cart
+                // could never complete — and would only find out after payment.
                 const cartId = await twoProducerCart()
 
                 const response = await chooseCarriage(cartId, orphanOption.id)
 
-                expect(response.status).toEqual(200)
-                expect(await methodsOf(cartId)).toHaveLength(1)
+                expect(response.status).toEqual(400)
+                expect(response.data.message).toContain("shipping profile")
+                expect(await methodsOf(cartId)).toHaveLength(0)
             })
         })
     },

@@ -131,11 +131,10 @@ export const refetchBatchRules = async (
  * The buyer-side guard (`validateCartShippingProfileParityStep`) asks the same
  * question of a cart and answers with a 400, because by then the only thing
  * left to protect is the checkout. Here the question is asked of the seller's
- * own catalogue while the option is still being written, and the answer is a
- * warning rather than a refusal: creating the option before moving goods onto
+ * own offers while the option is still being written, and the answer is a
+ * warning rather than a refusal: creating the option before moving offers onto
  * its profile is a legitimate order of work, and refusing it would close that
- * door for no gain — the option is harmless until a buyer's basket holds two
- * producers.
+ * door for no gain — the option is harmless until a buyer chooses it.
  */
 export const buildShippingProfileGoodsWarning = async (
   scope: MedusaContainer,
@@ -157,9 +156,9 @@ export const buildShippingProfileGoodsWarning = async (
     shipping_profile_id: shippingProfileId,
     seller_product_count: 0,
     message:
-      `None of your products are on shipping profile ${shippingProfileId}, so ` +
-      `this shipping option carries nothing. A buyer whose basket holds more ` +
-      `than one seller's carriage will not be able to choose it. Move the ` +
-      `option to a profile your goods use, or move the goods onto this profile.`,
+      `None of your offers ship from shipping profile ${shippingProfileId}, so ` +
+      `this shipping option carries nothing and a buyer will not be able to ` +
+      `choose it. Move the option to the profile your offers use, or move the ` +
+      `offers onto this profile.`,
   }
 }
