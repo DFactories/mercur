@@ -431,9 +431,9 @@ medusaIntegrationTestRunner({
           expect((await getProduct(productId))!.title).toBe("Shared master")
         })
 
-        it("hides another store's products, but not a shared master product", async () => {
+        it("hides another store's unpublished products, but not a published one", async () => {
           const draft = await createProduct("Private draft", "draft")
-          const own = await createPublished("Owned and live")
+          const live = await createPublished("Created and live")
           const master = await createMasterProduct("Public master")
 
           expect(
@@ -447,12 +447,12 @@ medusaIntegrationTestRunner({
               )
             ).status,
           ).toBe(404)
-          // Published but linked to its creator: listed to nobody else, so
-          // not reachable by id either.
+          // A published product is a shared master product, whoever created
+          // it: every seller sees it and may request changes to it. (Core .27
+          // linked it to its creator, which hid it from everybody else.)
           expect(
-            (await refused(api.get(`/vendor/products/${own}`, otherHeaders)))
-              .status,
-          ).toBe(404)
+            (await api.get(`/vendor/products/${live}`, otherHeaders)).status,
+          ).toBe(200)
           expect(
             (await api.get(`/vendor/products/${master}`, otherHeaders)).status,
           ).toBe(200)

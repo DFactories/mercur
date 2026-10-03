@@ -12,6 +12,7 @@ import { ProductStatus } from "@mercurjs/types"
 
 import { applyOfferedProductsFilter } from "../../utils"
 import {
+  CREATOR_VISIBLE_STATUSES,
   ensureSellerCanAccessProduct,
   getProductIdsRestrictedFromSeller,
   getSellerOwnedProductIds,
@@ -52,7 +53,12 @@ const applySellerProductLinkFilter = async (
     ...existingAnd,
     {
       $or: [
-        { id: ownProductIds },
+        // Attribution only covers unpublished submissions; a published
+        // product is shared and the allowlist alone decides (upstream #1552).
+        {
+          id: ownProductIds,
+          status: { $in: CREATOR_VISIBLE_STATUSES },
+        },
         {
           status: ProductStatus.PUBLISHED,
           id: { $nin: restrictedFromSellerIds },

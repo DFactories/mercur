@@ -89,6 +89,15 @@ medusaIntegrationTestRunner({
 
                     productId = product.id
                     variantId = product.variants[0].id
+                } else {
+                    // The product is restricted to the seller that created it
+                    // above, and an offer may only be opened by a seller on
+                    // its allowlist — so the competing seller joins it first.
+                    await assignProductsToSeller(
+                        appContainer,
+                        result.seller.id as string,
+                        [productId]
+                    )
                 }
 
                 const shippingProfile = (

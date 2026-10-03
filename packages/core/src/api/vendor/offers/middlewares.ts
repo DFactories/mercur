@@ -9,6 +9,7 @@ import {
   validateAndTransformQuery,
 } from "@medusajs/framework"
 
+import { ensureSellerCanOfferOnVariants } from "../products/helpers"
 import { vendorOfferQueryConfig } from "./query-config"
 import {
   VendorBatchOfferInventoryItems,
@@ -18,6 +19,32 @@ import {
   VendorGetOffersParams,
   VendorUpdateOffer,
 } from "./validators"
+
+/**
+ * An offer may only be opened on a product the seller can reach — the same
+ * rule `GET /vendor/products` lists by. See {@link ensureSellerCanOfferOnVariants}.
+ * Runs after body validation, so the variant ids it reads are well-formed.
+ */
+const ensureSellerCanOffer = async (
+  req: AuthenticatedMedusaRequest<
+    { variant_id?: string; offers?: { variant_id: string }[] }
+  >,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  const body = req.validatedBody
+  const variantIds = body.offers
+    ? body.offers.map((offer) => offer.variant_id)
+    : [body.variant_id as string]
+
+  await ensureSellerCanOfferOnVariants(
+    req.scope,
+    req.seller_context!.seller_id,
+    variantIds
+  )
+
+  return next()
+}
 
 const applySellerOfferFilter = (
   req: AuthenticatedMedusaRequest,
@@ -45,6 +72,7 @@ export const vendorOffersMiddlewares: MiddlewareRoute[] = [
     matcher: "/vendor/offers",
     middlewares: [
       validateAndTransformBody(VendorCreateOffer),
+      ensureSellerCanOffer,
       validateAndTransformQuery(
         VendorGetOfferParams,
         vendorOfferQueryConfig.retrieve
@@ -56,6 +84,7 @@ export const vendorOffersMiddlewares: MiddlewareRoute[] = [
     matcher: "/vendor/offers/batch",
     middlewares: [
       validateAndTransformBody(VendorCreateOffersBatch),
+      ensureSellerCanOffer,
       validateAndTransformQuery(
         VendorGetOfferParams,
         vendorOfferQueryConfig.list

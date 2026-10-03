@@ -8,6 +8,7 @@ import { validateAndTransformQuery } from "@medusajs/framework"
 import { ProductStatus } from "@mercurjs/types"
 
 import {
+  CREATOR_VISIBLE_STATUSES,
   getProductIdsRestrictedFromSeller,
   getSellerOwnedProductIds,
 } from "../products/helpers"
@@ -32,7 +33,12 @@ const applySellerProductVariantFilter = async (
     ...existingAnd,
     {
       $or: [
-        { product_id: ownProductIds },
+        // Same rule as `/vendor/products`: attribution only covers
+        // unpublished submissions (upstream #1552).
+        {
+          product_id: ownProductIds,
+          product: { status: { $in: CREATOR_VISIBLE_STATUSES } },
+        },
         {
           product: { status: ProductStatus.PUBLISHED },
           product_id: { $nin: restrictedFromSellerIds },

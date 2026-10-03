@@ -65,12 +65,14 @@ export const POST = async (
 
   const { additional_data, ...payload } = req.validatedBody
 
-  // `created_by` only feeds the audit trail; the `product_seller` owner row is
-  // written from `seller_ids`, and it must come from the session, not the body.
+  // A created product is a shared master product. No `product_seller` row is
+  // written: that link is the operator's selling allowlist, and a row naming
+  // the creator would hide the product from every other seller. The creator
+  // is recorded by `created_by` in the change history, which is what keeps an
+  // unpublished submission visible to it alone.
   const productInput = {
     ...payload,
     status: payload.status ?? ProductStatus.PROPOSED,
-    seller_ids: [sellerId],
   } as unknown as CreateProductsWorkflowInput["products"][number]
 
   const { result } = await createProductsWorkflow(req.scope).run({
