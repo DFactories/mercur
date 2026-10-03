@@ -274,7 +274,11 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
       })),
     })
 
+    // Named: a `when` whose `.then` returns a value becomes a step, and an
+    // unnamed one is given a random id per process (Medusa warns on every
+    // boot), so a persisted execution could not find its step again.
     const deletedProductOffers = when(
+      "delete-products-when",
       { buckets },
       ({ buckets }) => buckets.productsToDelete.length > 0,
     ).then(() => {
