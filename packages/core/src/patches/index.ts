@@ -97,7 +97,14 @@ function applyToCopy(
   // holds their unpatched source. Evict them and compile the patched source in
   // their place; a workflow module re-registers itself under the same id, which
   // is what makes the patch take effect on an already-loaded package.
-  if (stale.length) {
+  //
+  // Never under Jest. Jest's registry never consults the loader hook, so the
+  // reload there compiled NO patched source — it only re-evaluated the file and
+  // the modules it requires, registering second instances of their workflows
+  // and dropping every hook handler bound to the first (a host's
+  // `listShippingOptionsForCartWithPricingWorkflow` context hook stopped
+  // running). Under Jest the patch comes from `jest-transformer` instead.
+  if (stale.length && !process.env.JEST_WORKER_ID) {
     purgeFiles(stale)
     reload(copy.dir, stale)
   }
