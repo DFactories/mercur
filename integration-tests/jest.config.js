@@ -11,7 +11,9 @@ module.exports = {
     "node_modules[\\\\/].*core-flows[\\\\/]dist[\\\\/]cart[\\\\/].*\\.js$":
       "@mercurjs/core/patches/jest-transformer",
     "^.+\\.[jt]s$": [
-      "@swc/jest",
+      // Resolved here, not by name: the `unit` run is rooted at the repo, and
+      // bun's isolated linker keeps @swc/jest out of the root node_modules.
+      require.resolve("@swc/jest"),
       {
         jsc: {
           parser: { syntax: "typescript", decorators: true },

@@ -14,6 +14,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.spec.ts"],
+    // `__tests__/*.unit.spec.ts` is upstream Mercur's convention for specs run
+    // by Jest (`integration-tests`' `test:unit`, chained from the root
+    // `test:unit`). They use Jest globals, so Vitest must not collect them.
+    exclude: ["**/node_modules/**", "src/**/__tests__/**/*.unit.spec.ts"],
     // An empty run must FAIL, so a bad glob cannot turn the gate green while
     // checking nothing.
     passWithNoTests: false,
