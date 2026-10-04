@@ -10,6 +10,15 @@ import { useSeller } from "@/hooks/api";
 import { SellerStatus } from "@mercurjs/types";
 
 import { STORE_DETAIL_FIELDS } from "../loader";
+import {
+  useCanFetch,
+  usePermissions,
+} from "../../../../providers/permissions-provider";
+import {
+  resolveActiveTab,
+  StoreTab,
+  visibleStoreTabs,
+} from "./store-detail-tabs";
 import { StoreGeneralSection } from "./store-general-section";
 import { StorePaymentDetailsSection } from "./store-payment-details-section";
 import { StoreCompanyDetailsSection } from "./store-company-details-section";
@@ -27,15 +36,15 @@ import {
   StoreDetailEditButton,
 } from "./store-detail-header";
 
-const TABS = ["orders", "offers", "users", "timeOff"] as const;
-
-type Tab = (typeof TABS)[number];
+type Tab = StoreTab;
 
 const TabBar = ({
+  tabs,
   activeTab,
   onTabChange,
 }: {
-  activeTab: Tab;
+  tabs: Tab[];
+  activeTab: Tab | null;
   onTabChange: (tab: Tab) => void;
 }) => {
   const { t } = useTranslation();
@@ -54,7 +63,7 @@ const TabBar = ({
       className="mt-1 flex flex-wrap items-center gap-x-2"
       data-testid="store-detail-tabs"
     >
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const isActive = activeTab === tab;
 
         return (
@@ -83,7 +92,11 @@ const TabBar = ({
 
 const Root = ({ children }: { children?: ReactNode }) => {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState<Tab>("orders");
+  const [selectedTab, setActiveTab] = useState<Tab | null>(null);
+  const canFetch = useCanFetch();
+  const { isLoading: permissionsLoading } = usePermissions();
+  const tabs = permissionsLoading ? [] : visibleStoreTabs(canFetch);
+  const activeTab = resolveActiveTab(selectedTab, tabs);
 
   const query = useLinkQuery("seller", STORE_DETAIL_FIELDS);
   const { seller, isLoading, isError, error } = useSeller(id!, query);
@@ -114,7 +127,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
             <StoreRequestSection seller={seller} />
           )}
         <StoreGeneralSection seller={seller} />
-        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
         {activeTab === "orders" && (
           <div
             role="tabpanel"

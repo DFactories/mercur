@@ -75,3 +75,14 @@ export const usePermissions = (): PermissionsContextValue => {
 
   return context
 }
+
+/**
+ * For gating a query on a grant: true only once the grants are known and
+ * include `permission`. Unlike `hasPermission`, it does not pass while the list
+ * is loading — a query fired in that window would 403 for a role without it.
+ */
+export const useCanFetch = () => {
+  const { hasPermission, isLoading } = usePermissions()
+  return (permission: string) => !isLoading && hasPermission(permission)
+}
+

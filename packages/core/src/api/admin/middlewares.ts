@@ -36,10 +36,14 @@ import { adminShippingOptionsMiddlewares } from "./shipping-options/middlewares"
 import { adminShippingProfilesMiddlewares } from "./shipping-profiles/middlewares"
 import { adminReviewsMiddlewares } from "./reviews/middlewares"
 
-// RBAC policy declarations for the marketplace-specific admin resources.
-// See ./_policies/guard.ts — core already covers the prefixes it owns.
+// RBAC policy declarations: the marketplace resources, and the core resources on
+// the groups whose Medusa middlewares (and so Medusa's guards) this package
+// disables. See ./_policies/resources.ts.
 import { guardResources } from "./_policies/guard"
-import { ADMIN_RESOURCE_PREFIXES } from "./_policies/resources"
+import {
+  ADMIN_RESOURCE_PREFIXES,
+  CORE_RESOURCE_PREFIXES,
+} from "./_policies/resources"
 
 // Admins can scope the platform-wide products/orders lists to one seller via
 // ?seller_id=... (used by the operator panel's per-store drill-down).
@@ -80,11 +84,12 @@ const maybeApplySellerOrderFilter = (
 }
 
 export const adminMiddlewares: MiddlewareRoute[] = [
-  // RBAC declarations first: a methodless read guard per marketplace resource
-  // plus per-verb write guards, exactly as core covers its own detail routes.
-  // Before these, every admin route in this package was reachable by any
-  // authenticated admin regardless of role.
+  // RBAC declarations first: a methodless read guard per resource plus per-verb
+  // write guards, exactly as core covers its own detail routes. Before these,
+  // every admin route in this package was reachable by any authenticated admin
+  // regardless of role — the core prefixes until 2.3.1-dfactories.34.
   ...guardResources(ADMIN_RESOURCE_PREFIXES),
+  ...guardResources(CORE_RESOURCE_PREFIXES),
   ...adminOrderGroupsMiddlewares,
   {
     method: ["GET"],

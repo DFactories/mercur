@@ -5,6 +5,7 @@ import { ProductDTO, ProductStatus } from "@mercurjs/types"
 import { useDataTableDateFilters } from "../../../../../components/data-table/helpers/general/use-data-table-date-filters"
 import { useProductTypes } from "../../../../../hooks/api/product-types"
 import { useProductTags, useProductCategories, useCollections } from "../../../../../hooks/api"
+import { useCanFetch } from "../../../../../providers/permissions-provider"
 
 const filterHelper = createDataTableFilterHelper<ProductDTO>()
 
@@ -14,27 +15,27 @@ const filterHelper = createDataTableFilterHelper<ProductDTO>()
 export const useProductTableFilters = () => {
   const { t } = useTranslation()
   const dateFilters = useDataTableDateFilters()
+  const canFetch = useCanFetch()
 
-  const { product_types } = useProductTypes({
-    limit: 1000,
-    offset: 0,
-  })
+  const { product_types } = useProductTypes(
+    { limit: 1000, offset: 0 },
+    { enabled: canFetch("product_type:read") }
+  )
 
-  const { product_tags } = useProductTags({
-    limit: 1000,
-    offset: 0,
-  })
+  const { product_tags } = useProductTags(
+    { limit: 1000, offset: 0 },
+    { enabled: canFetch("product_tag:read") }
+  )
 
-  const { product_categories } = useProductCategories({
-    limit: 1000,
-    offset: 0,
-    fields: "id,name",
-  })
+  const { product_categories } = useProductCategories(
+    { limit: 1000, offset: 0, fields: "id,name" },
+    { enabled: canFetch("product_category:read") }
+  )
 
-  const { collections } = useCollections({
-    limit: 1000,
-    offset: 0,
-  })
+  const { collections } = useCollections(
+    { limit: 1000, offset: 0 },
+    { enabled: canFetch("product_collection:read") }
+  )
 
   return useMemo(() => {
     const filters = [...dateFilters]

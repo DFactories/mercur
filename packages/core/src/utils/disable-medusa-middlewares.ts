@@ -23,7 +23,7 @@ import pkgDir from "pkg-dir"
 // resolve different copies depending on caller context, so we patch every
 // copy we find.
 
-const OVERRIDES: string[] = [
+export const OVERRIDES: string[] = [
   "dist/api/admin/products/middlewares.js",
   "dist/api/admin/promotions/middlewares.js",
   "dist/api/admin/campaigns/middlewares.js",

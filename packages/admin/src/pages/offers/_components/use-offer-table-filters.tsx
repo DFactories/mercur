@@ -9,6 +9,7 @@ import {
   useProductTags,
 } from "../../../hooks/api"
 import { useProductTypes } from "../../../hooks/api/product-types"
+import { useCanFetch } from "../../../providers/permissions-provider"
 
 /**
  * Filters for the product-backed admin Offers list (SPEC-010): the
@@ -20,14 +21,27 @@ import { useProductTypes } from "../../../hooks/api/product-types"
  */
 export const useOfferTableFilters = (): Filter[] => {
   const { t } = useTranslation()
-  const { sellers } = useSellers({ limit: 1000 })
-  const { product_categories } = useProductCategories({
-    limit: 1000,
-    fields: "id,name",
-  })
-  const { collections } = useCollections({ limit: 1000 })
-  const { product_types } = useProductTypes({ limit: 1000 })
-  const { product_tags } = useProductTags({ limit: 1000 })
+  const canFetch = useCanFetch()
+  const { sellers } = useSellers(
+    { limit: 1000 },
+    { enabled: canFetch("seller:read") }
+  )
+  const { product_categories } = useProductCategories(
+    { limit: 1000, fields: "id,name" },
+    { enabled: canFetch("product_category:read") }
+  )
+  const { collections } = useCollections(
+    { limit: 1000 },
+    { enabled: canFetch("product_collection:read") }
+  )
+  const { product_types } = useProductTypes(
+    { limit: 1000 },
+    { enabled: canFetch("product_type:read") }
+  )
+  const { product_tags } = useProductTags(
+    { limit: 1000 },
+    { enabled: canFetch("product_tag:read") }
+  )
 
   const filters: Filter[] = []
 

@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next"
 import { HttpTypes } from "@medusajs/types"
 import { ActionMenu } from "../../../../../components/common/action-menu"
 import { useSalesChannels } from "../../../../../hooks/api/sales-channels"
+import { useCanFetch } from "../../../../../providers/permissions-provider"
 
 // TODO: The fetched sales channel doesn't contain all necessary info
 export const ProductSalesChannelSection = ({
@@ -11,7 +12,10 @@ export const ProductSalesChannelSection = ({
 }: {
   product: HttpTypes.AdminProduct;
 }) => {
-  const { count } = useSalesChannels()
+  const canFetch = useCanFetch()
+  const { count } = useSalesChannels(undefined, {
+    enabled: canFetch("sales_channel:read"),
+  })
   const { t } = useTranslation()
 
   const availableInSalesChannels =

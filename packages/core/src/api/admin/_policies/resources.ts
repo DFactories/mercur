@@ -1,17 +1,20 @@
 /**
- * Marketplace-specific admin resources, and the URL prefixes they live at.
+ * The admin URL prefixes this package guards, and the resource each needs.
  *
- * ## Why this list is short
+ * ## Two kinds of entry
  *
- * Most of `api/admin/**` here re-exposes a resource Medusa already registers,
- * and core already guards those prefixes with its own **methodless** wildcard
- * entries — `/admin/orders/*` with `order:read`, `/admin/products/*` with
- * `product:read`, and so on for all 14 shared prefixes (verified 2026-09-19).
- * Re-declaring them would be a duplicate that has to be kept in step with core
- * forever, and the first time it drifted it would drift silently.
+ * Marketplace resources (sellers, offers, payouts, …) exist only here, so
+ * nothing else could guard them.
  *
- * What is left is the set below: resources that exist only in this marketplace,
- * whose routes core has never heard of and therefore does not cover.
+ * The CORE prefixes below them are Medusa's own resources (`product`, `order`,
+ * …) on routes this package replaces. `utils/disable-medusa-middlewares.ts`
+ * empties Medusa's middleware arrays for exactly those groups so the
+ * replacements can take over — and Medusa's policy guards live in those same
+ * arrays, so they went with them. Until `2.3.1-dfactories.34` the comment here
+ * said core still guarded these prefixes; it did not, and any signed-in admin
+ * could read every order and edit any product whatever their role. Each prefix
+ * listed in `CORE_RESOURCE_PREFIXES` must match an entry in that OVERRIDES list
+ * (`core-prefix-coverage.spec.ts` checks it).
  *
  * ## Order matters
  *
@@ -38,3 +41,26 @@ export const ADMIN_RESOURCE_PREFIXES: Record<string, string | string[]> = {
    */
   notification: "/admin/notification-read-state",
 }
+
+/**
+ * Medusa resources on the admin groups whose Medusa middlewares this package
+ * disables (see `utils/disable-medusa-middlewares.ts`). Keys are Medusa's own
+ * policy resources, so nothing needs defining — only declaring.
+ */
+export const CORE_RESOURCE_PREFIXES: Record<string, string> = {
+  product: "/admin/products",
+  product_variant: "/admin/product-variants",
+  product_category: "/admin/product-categories",
+  product_collection: "/admin/collections",
+  promotion: "/admin/promotions",
+  campaign: "/admin/campaigns",
+  price_list: "/admin/price-lists",
+  customer_group: "/admin/customer-groups",
+  order: "/admin/orders",
+  shipping_option: "/admin/shipping-options",
+  shipping_profile: "/admin/shipping-profiles",
+  stock_location: "/admin/stock-locations",
+  reservation_item: "/admin/reservations",
+  inventory_item: "/admin/inventory-items",
+}
+

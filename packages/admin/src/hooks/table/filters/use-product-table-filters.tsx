@@ -3,6 +3,7 @@ import { ProductStatus } from "@mercurjs/types";
 import { Filter } from "../../../components/table/data-table";
 import { useProductTags, useProductCategories, useCollections } from "../../api";
 import { useProductTypes } from "../../api/product-types";
+import { useCanFetch } from "../../../providers/permissions-provider";
 
 const excludeableFields = [
   "collections",
@@ -15,6 +16,7 @@ export const useProductTableFilters = (
   exclude?: (typeof excludeableFields)[number][],
 ) => {
   const { t } = useTranslation();
+  const canFetch = useCanFetch();
 
   const isCategoryExcluded = exclude?.includes("categories");
   const isCollectionExcluded = exclude?.includes("collections");
@@ -23,22 +25,22 @@ export const useProductTableFilters = (
 
   const { product_types } = useProductTypes(
     { limit: 1000, offset: 0 },
-    { enabled: !isProductTypeExcluded },
+    { enabled: !isProductTypeExcluded && canFetch("product_type:read") },
   );
 
   const { product_tags } = useProductTags(
     { limit: 1000, offset: 0 },
-    { enabled: !isProductTagExcluded },
+    { enabled: !isProductTagExcluded && canFetch("product_tag:read") },
   );
 
   const { product_categories } = useProductCategories(
     { limit: 1000, offset: 0, fields: "id,name" },
-    { enabled: !isCategoryExcluded },
+    { enabled: !isCategoryExcluded && canFetch("product_category:read") },
   );
 
   const { collections } = useCollections(
     { limit: 1000, offset: 0 },
-    { enabled: !isCollectionExcluded },
+    { enabled: !isCollectionExcluded && canFetch("product_collection:read") },
   );
 
   let filters: Filter[] = [];
