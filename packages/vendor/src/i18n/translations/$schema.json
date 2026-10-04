@@ -3721,6 +3721,26 @@
                 }
               },
               "additionalProperties": false
+            },
+            "noStockLocation": {
+              "type": "object",
+              "properties": {
+                "header": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "header",
+                "description",
+                "action"
+              ],
+              "additionalProperties": false
             }
           },
           "additionalProperties": false

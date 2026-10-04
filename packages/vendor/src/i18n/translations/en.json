@@ -1238,6 +1238,11 @@
       "tabs": {
         "catalogue": "Products",
         "stockLevelsAndPrices": "Stock Levels & Prices"
+      },
+      "noStockLocation": {
+        "header": "No stock location yet",
+        "description": "Stock is recorded per stock location, and this store has none, so there is nowhere to enter a quantity. Create a location, then come back to this offer.",
+        "action": "Create a stock location"
       }
     },
     "detail": {

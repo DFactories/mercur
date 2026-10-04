@@ -1,7 +1,9 @@
 import { HttpTypes } from "@medusajs/types";
+import { Alert, Text } from "@medusajs/ui";
 import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import {
   createDataGridHelper,
@@ -17,6 +19,10 @@ import { useCurrentSeller } from "../../../../hooks/api/sellers";
 import { useShippingProfiles } from "../../../../hooks/api/shipping-profiles";
 import { useStockLocations } from "../../../../hooks/api/stock-locations";
 import { CreateOfferFormValues, OfferVariantRow } from "./schema";
+import {
+  needsStockLocation,
+  STOCK_LOCATION_CREATE_PATH,
+} from "./stock-location-notice";
 
 type ShippingProfileLite = { id: string; name?: string | null };
 
@@ -41,12 +47,42 @@ type GridRow = ProductGroupRow | VariantGridRow;
 const isGroup = (row: GridRow): row is ProductGroupRow =>
   (row as ProductGroupRow).__group === true;
 
+/** See ./stock-location-notice — a store with no location has no stock column. */
+const NoStockLocationNotice = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Alert
+      variant="warning"
+      className="bg-ui-bg-base m-4 mb-0"
+      data-testid="offer-create-no-stock-location"
+    >
+      <div className="flex flex-col gap-y-1">
+        <Text size="small" leading="compact" weight="plus" asChild>
+          <span>{t("offers.create.noStockLocation.header")}</span>
+        </Text>
+        <Text size="small" leading="compact" className="text-pretty">
+          {t("offers.create.noStockLocation.description")}
+        </Text>
+        <Link
+          to={STOCK_LOCATION_CREATE_PATH}
+          className="txt-compact-small-plus text-ui-fg-interactive hover:text-ui-fg-interactive-hover w-fit"
+        >
+          {t("offers.create.noStockLocation.action")}
+        </Link>
+      </div>
+    </Alert>
+  );
+};
+
 const Root = () => {
   const form = useFormContext<CreateOfferFormValues>();
   const { setCloseOnEscape } = useRouteModal();
 
   const { currency_code } = useCurrentSeller();
-  const { stock_locations } = useStockLocations({ limit: 100 });
+  const { stock_locations, isPending: isLocationsPending } = useStockLocations({
+    limit: 100,
+  });
   const { shipping_profiles } = useShippingProfiles({ limit: 100 }) as {
     shipping_profiles?: ShippingProfileLite[];
   };
@@ -88,6 +124,9 @@ const Root = () => {
       className="flex size-full flex-col overflow-hidden"
       data-testid="offer-create-tab-stockLevelsAndPrices"
     >
+      {needsStockLocation(stock_locations, isLocationsPending) && (
+        <NoStockLocationNotice />
+      )}
       <DataGrid
         columns={columns}
         data={gridData}
