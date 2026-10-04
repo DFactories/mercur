@@ -10,7 +10,7 @@ import { ProductStatus } from "@mercurjs/types"
 import {
   CREATOR_VISIBLE_STATUSES,
   getProductIdsRestrictedFromSeller,
-  getSellerOwnedProductIds,
+  getSellerUnpublishedProductIds,
 } from "../products/helpers"
 import { vendorProductVariantsQueryConfig } from "./query-config"
 import { VendorGetProductVariantsParams } from "./validators"
@@ -23,7 +23,7 @@ const applySellerProductVariantFilter = async (
   const sellerId = req.seller_context!.seller_id
 
   const [ownProductIds, restrictedFromSellerIds] = await Promise.all([
-    getSellerOwnedProductIds(req.scope, sellerId),
+    getSellerUnpublishedProductIds(req.scope, sellerId),
     getProductIdsRestrictedFromSeller(req.scope, sellerId),
   ])
 
@@ -33,8 +33,8 @@ const applySellerProductVariantFilter = async (
     ...existingAnd,
     {
       $or: [
-        // Same rule as `/vendor/products`: attribution only covers
-        // unpublished submissions (upstream #1552).
+        // Same rule as `/vendor/products`: attribution (or an operator's
+        // assignment) only covers unpublished products (upstream #1552).
         {
           product_id: ownProductIds,
           product: { status: { $in: CREATOR_VISIBLE_STATUSES } },

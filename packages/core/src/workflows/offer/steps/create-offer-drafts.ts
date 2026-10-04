@@ -1,7 +1,7 @@
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { MercurModules } from "@mercurjs/types"
+import { MercurModules, ProductStatus } from "@mercurjs/types"
 
 import OfferModuleService from "../../../modules/offer/service"
 import {
@@ -70,7 +70,7 @@ export const createOfferDraftsStep = createStep(
 
     const [sellers, products, variants] = await Promise.all([
       query.graph({ entity: "seller", fields: ["id"], filters: { id: sellerIds } }),
-      query.graph({ entity: "product", fields: ["id"], filters: { id: productIds } }),
+      query.graph({ entity: "product", fields: ["id", "status"], filters: { id: productIds } }),
       variantIds.length
         ? query.graph({
             entity: "product_variant",
@@ -81,6 +81,14 @@ export const createOfferDraftsStep = createStep(
     ])
     const knownSellers = new Set((sellers.data as { id: string }[]).map((s) => s.id))
     const knownProducts = new Set((products.data as { id: string }[]).map((p) => p.id))
+    // Checked here and not left to the seller's visibility rule: that rule also
+    // shows a store the unpublished products an operator made for it, and a
+    // draft must still be completable into an offer a buyer can reach.
+    const publishedProducts = new Set(
+      (products.data as { id: string; status: string }[])
+        .filter((p) => p.status === ProductStatus.PUBLISHED)
+        .map((p) => p.id)
+    )
     const productByVariant = new Map(
       (variants.data as { id: string; product_id: string }[]).map((v) => [
         v.id,
@@ -131,7 +139,10 @@ export const createOfferDraftsStep = createStep(
           )
         }
       }
-      if (!accessibleBySeller.get(draft.seller_id)?.has(draft.product_id)) {
+      if (
+        !publishedProducts.has(draft.product_id) ||
+        !accessibleBySeller.get(draft.seller_id)?.has(draft.product_id)
+      ) {
         return refused(
           OfferDraftRefusals.PRODUCT_NOT_OFFERABLE,
           `Seller ${draft.seller_id} cannot offer on product ${draft.product_id}: it is not published, or it is restricted to other stores`

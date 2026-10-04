@@ -222,6 +222,27 @@ medusaIntegrationTestRunner({
           expect(data.results[1].offer_draft.id).toEqual(data.results[0].offer_draft.id)
         })
 
+        it("refuses an unpublished product even when it was made for the store", async () => {
+          // The store sees an operator-made draft in its own catalogue (so it
+          // can finish it), but a draft offer must be completable into an
+          // offer a buyer can reach, so publication is checked on its own.
+          const unpublished = await makeProduct("Made for B", ["One"], "draft")
+          await api.post(
+            `/admin/products/${unpublished.id}/sellers`,
+            { add: [b.id], remove: [] },
+            adminHeaders
+          )
+          const listed = await api.get(`/vendor/products?limit=100`, b.headers)
+          expect(listed.data.products.map((p: { id: string }) => p.id)).toContain(
+            unpublished.id
+          )
+
+          const { data } = await createDrafts([
+            { seller_id: b.id, product_id: unpublished.id, external_id: key() },
+          ])
+          expect(data.results[0].error.code).toEqual("product_not_offerable")
+        })
+
         it("deletes a draft, which frees its key", async () => {
           const draft = await draftFor(b, product.variants[0].id)
           const deleted = await api.delete(`/admin/offer-drafts/${draft.id}`, adminHeaders)

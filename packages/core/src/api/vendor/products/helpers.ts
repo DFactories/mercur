@@ -26,6 +26,114 @@ export const getSellerOwnedProductIds = async (
 }
 
 /**
+ * The subset of `productIds` some STORE created — its `PRODUCT_ADD` change was
+ * filed by a seller id. The rest were made by an operator (an admin user id on
+ * the change) or by a script that filed no change at all.
+ */
+export const getProductIdsCreatedBySellers = async (
+  scope: MedusaContainer,
+  productIds: string[]
+): Promise<Set<string>> => {
+  if (!productIds.length) {
+    return new Set()
+  }
+
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const { data: actions } = await query.graph({
+    entity: "product_change_action",
+    fields: ["product_id", "product_change.created_by"],
+    filters: {
+      action: ProductChangeActionType.PRODUCT_ADD,
+      product_id: productIds,
+    },
+  })
+
+  const rows = actions as {
+    product_id?: string | null
+    product_change?: { created_by?: string | null } | null
+  }[]
+  const creators = Array.from(
+    new Set(
+      rows
+        .map((row) => row.product_change?.created_by)
+        .filter((id): id is string => !!id)
+    )
+  )
+  if (!creators.length) {
+    return new Set()
+  }
+
+  const { data: sellers } = await query.graph({
+    entity: "seller",
+    fields: ["id"],
+    filters: { id: creators },
+  })
+  const sellerIds = new Set((sellers as { id: string }[]).map((s) => s.id))
+
+  return new Set(
+    rows
+      .filter(
+        (row) =>
+          !!row.product_id &&
+          sellerIds.has(row.product_change?.created_by ?? "")
+      )
+      .map((row) => row.product_id as string)
+  )
+}
+
+/**
+ * Products whose unpublished life this seller sees: the ones it created
+ * (attribution), and the ones an operator created FOR it — an admin
+ * `POST /admin/products` with `seller_ids` names the store in `product_seller`
+ * while the attribution is the admin's own user id.
+ *
+ * Only the second half is new. Without it the supplier importer, which signs in
+ * as an admin and creates a producer's catalogue as drafts for that store, left
+ * every one of them invisible to the store it was made for: the admin saw them,
+ * the producer saw an empty list (reported from production, 2026-10-04). The
+ * caller still narrows the result to {@link CREATOR_VISIBLE_STATUSES}; once
+ * published, the allowlist alone decides, exactly as before.
+ *
+ * An assignment never reaches a product ANOTHER store created. An unpublished
+ * product is edited and deleted directly, so an operator assigning store B to
+ * store A's product (which then went back to draft, or was rejected) would
+ * otherwise hand B the power to rewrite or delete A's submission.
+ */
+export const getSellerUnpublishedProductIds = async (
+  scope: MedusaContainer,
+  sellerId: string
+): Promise<string[]> => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const [owned, { data: links }] = await promiseAll([
+    getSellerOwnedProductIds(scope, sellerId),
+    query.graph({
+      entity: "product_seller",
+      fields: ["product_id"],
+      filters: { seller_id: sellerId },
+    }),
+  ])
+
+  const assigned = Array.from(
+    new Set(
+      (links as { product_id?: string | null }[])
+        .map((link) => link.product_id)
+        .filter((id): id is string => !!id)
+    )
+  )
+  const storeMade = await getProductIdsCreatedBySellers(scope, assigned)
+
+  const ids = new Set<string>(owned)
+  for (const id of assigned) {
+    if (!storeMade.has(id)) {
+      ids.add(id)
+    }
+  }
+  return Array.from(ids)
+}
+
+/**
  * Product ids that are restricted (have at least one `product_seller` row) but
  * NOT assigned to this seller — i.e. restricted to other sellers, so they must
  * be hidden from this seller's product list.
@@ -129,12 +237,14 @@ export const ensureSellerOwnsProduct = async (
 }
 
 /**
- * The statuses in which creator attribution decides who sees a product.
+ * The statuses in which creator attribution — or an operator's assignment —
+ * decides who sees a product.
  *
  * Attribution exists so a seller sees its own not-yet-published submissions;
  * it carries no rights once the product is published, where the allowlist
  * alone decides (upstream #1552). `rejected` stays with its creator here,
  * unlike upstream, because a rejected product is edited and resubmitted.
+ * See {@link getSellerUnpublishedProductIds} for who counts as its seller.
  */
 export const CREATOR_VISIBLE_STATUSES: ProductStatus[] = [
   ProductStatus.DRAFT,
@@ -144,9 +254,10 @@ export const CREATOR_VISIBLE_STATUSES: ProductStatus[] = [
 
 /**
  * The subset of `productIds` a seller may reach — exactly what
- * `GET /vendor/products` lists to it: its own unpublished submissions, plus
- * every published product that is unrestricted or restricted to a set of
- * sellers that includes it.
+ * `GET /vendor/products` lists to it: its own unpublished submissions and the
+ * unpublished products an operator created for it, plus every published
+ * product that is unrestricted or restricted to a set of sellers that
+ * includes it.
  *
  * One rule for every vendor route that takes a product (or a variant of one),
  * so reading, editing and offering can never disagree with the list.
@@ -205,6 +316,22 @@ export const getProductIdsAccessibleToSeller = async (
     allowlists.set(link.product_id, sellers)
   }
 
+  // Unpublished products assigned to this seller that it did not create: the
+  // assignment reaches them only when no store made them (see
+  // getSellerUnpublishedProductIds).
+  const assignedUnpublished = (products as { id: string; status: string }[])
+    .filter(
+      (p) =>
+        p.status !== ProductStatus.PUBLISHED &&
+        !createdBySeller.has(p.id) &&
+        !!allowlists.get(p.id)?.has(sellerId)
+    )
+    .map((p) => p.id)
+  const storeMade = await getProductIdsCreatedBySellers(
+    scope,
+    assignedUnpublished
+  )
+
   for (const product of products as { id: string; status: string }[]) {
     if (product.status === ProductStatus.PUBLISHED) {
       const allowlist = allowlists.get(product.id)
@@ -214,8 +341,10 @@ export const getProductIdsAccessibleToSeller = async (
       continue
     }
 
+    const madeForSeller =
+      !!allowlists.get(product.id)?.has(sellerId) && !storeMade.has(product.id)
     if (
-      createdBySeller.has(product.id) &&
+      (createdBySeller.has(product.id) || madeForSeller) &&
       CREATOR_VISIBLE_STATUSES.includes(product.status as ProductStatus)
     ) {
       accessible.add(product.id)

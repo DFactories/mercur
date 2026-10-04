@@ -15,7 +15,7 @@ import {
   CREATOR_VISIBLE_STATUSES,
   ensureSellerCanAccessProduct,
   getProductIdsRestrictedFromSeller,
-  getSellerOwnedProductIds,
+  getSellerUnpublishedProductIds,
 } from "./helpers"
 import {
   vendorProductQueryConfig,
@@ -43,7 +43,7 @@ const applySellerProductLinkFilter = async (
   const sellerId = req.seller_context!.seller_id
 
   const [ownProductIds, restrictedFromSellerIds] = await promiseAll([
-    getSellerOwnedProductIds(req.scope, sellerId),
+    getSellerUnpublishedProductIds(req.scope, sellerId),
     getProductIdsRestrictedFromSeller(req.scope, sellerId),
   ])
 
@@ -53,8 +53,9 @@ const applySellerProductLinkFilter = async (
     ...existingAnd,
     {
       $or: [
-        // Attribution only covers unpublished submissions; a published
-        // product is shared and the allowlist alone decides (upstream #1552).
+        // Attribution (or an operator's assignment) only covers unpublished
+        // products; a published product is shared and the allowlist alone
+        // decides (upstream #1552).
         {
           id: ownProductIds,
           status: { $in: CREATOR_VISIBLE_STATUSES },
