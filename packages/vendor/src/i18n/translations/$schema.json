@@ -3735,11 +3735,6 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "header",
-                "description",
-                "action"
-              ],
               "additionalProperties": false
             }
           },
