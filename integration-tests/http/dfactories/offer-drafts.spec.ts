@@ -243,17 +243,20 @@ medusaIntegrationTestRunner({
           const draft = await draftFor(b, product.variants[0].id)
           const operator = await restrictedAdmin("offers-only@test.com", ["offer:read"])
 
+          // Thunks: a request created before the previous one is awaited would
+          // reject with no handler attached yet.
           for (const call of [
-            api.get(`/admin/offer-drafts`, operator),
-            api.get(`/admin/offer-drafts/${draft.id}`, operator),
-            api.post(
-              `/admin/offer-drafts`,
-              { offer_drafts: [{ seller_id: b.id, product_id: product.id, external_id: key() }] },
-              operator
-            ),
-            api.delete(`/admin/offer-drafts/${draft.id}`, operator),
+            () => api.get(`/admin/offer-drafts`, operator),
+            () => api.get(`/admin/offer-drafts/${draft.id}`, operator),
+            () =>
+              api.post(
+                `/admin/offer-drafts`,
+                { offer_drafts: [{ seller_id: b.id, product_id: product.id, external_id: key() }] },
+                operator
+              ),
+            () => api.delete(`/admin/offer-drafts/${draft.id}`, operator),
           ]) {
-            expect((await call.catch((e: { response: any }) => e.response)).status).toEqual(403)
+            expect((await call().catch((e: { response: any }) => e.response)).status).toEqual(403)
           }
 
           const listed = await api.get(`/admin/offers?group_by_seller=true`, operator)
