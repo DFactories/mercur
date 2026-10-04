@@ -44,8 +44,12 @@ const loadInviteStep = createStep(
       )
     }
 
+    // Both identities. Phone is the one every invite form sends; carrying
+    // only the email turned a resent phone invite into one addressed to
+    // nobody, which no sign-in can ever match — it sat "pending" for good.
     return new StepResponse({
       email: invite.email,
+      phone: invite.phone,
       role_id: invite.role_id,
       seller_id: invite.seller_id,
     })
@@ -65,6 +69,7 @@ export const resendMemberInviteWorkflow = createWorkflow(
       {
         seller_id: existing.seller_id,
         email: existing.email,
+        phone: existing.phone,
         role_id: existing.role_id,
       },
     ])

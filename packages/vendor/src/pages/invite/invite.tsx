@@ -26,6 +26,8 @@ import { AuthHero } from "@components/layout/auth-hero";
 import { useSelectSeller } from "@hooks/api";
 import { isFetchError } from "@lib/is-fetch-error";
 import { sdk } from "@lib/client";
+import { PhoneAuthForm } from "@components/common/phone-auth-form/phone-auth-form";
+import { inviteView } from "./invite-view";
 
 const CreateAccountSchema = z
   .object({
@@ -70,6 +72,7 @@ type DecodedInvite = {
   exp: string;
   iat: number;
   email: string;
+  phone?: string | null;
   seller_name: string;
   existing_member: boolean;
 };
@@ -80,7 +83,7 @@ export const Invite = () => {
 
   const token = searchParams.get("token");
   const invite: DecodedInvite | null = token ? decodeToken(token) : null;
-  const isValidInvite = invite && validateDecodedInvite(invite);
+  const view = inviteView(invite);
 
   return (
     <div className="flex h-dvh w-dvw overflow-hidden">
@@ -105,12 +108,19 @@ export const Invite = () => {
             >
               <AvatarBox />
               <div className="mt-8 w-full">
-                {isValidInvite ? (
+                {view === "phone" && invite ? (
+                  <PhoneView
+                    invite={invite}
+                    onSuccess={() => setSuccess(true)}
+                  />
+                ) : view === "email" && invite ? (
                   <CreateView
                     token={token!}
                     invite={invite}
                     onSuccess={() => setSuccess(true)}
                   />
+                ) : view === "expired" ? (
+                  <ExpiredView />
                 ) : (
                   <InvalidView />
                 )}
@@ -200,6 +210,52 @@ const InvalidView = () => {
       <Heading>{t("invite.invalidTokenTitle")}</Heading>
       <Text size="small" className="text-ui-fg-subtle mt-1">
         {t("invite.invalidTokenHint")}
+      </Text>
+      <LoginLink />
+    </div>
+  );
+};
+
+/**
+ * A phone invite is accepted by signing in with the invited number: the server
+ * accepts every pending invite for a phone the moment it verifies a code, so
+ * there is nothing to post here but the OTP itself. The number is filled in
+ * and still editable — signing in with another one opens that account and
+ * leaves this invite where it is, which the server enforces, not this form.
+ */
+const PhoneView = ({
+  invite,
+  onSuccess,
+}: {
+  invite: DecodedInvite;
+  onSuccess: () => void;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex w-full flex-col">
+      <Heading>{t("invite.title", { name: invite.seller_name })}</Heading>
+      <Text size="small" className="text-ui-fg-subtle mt-1 mb-6">
+        {t("invite.phoneHint")}
+      </Text>
+      <PhoneAuthForm
+        mode="login"
+        initialPhone={invite.phone ?? ""}
+        submitLabel={t("invite.signIn")}
+        onVerified={() => onSuccess()}
+      />
+    </div>
+  );
+};
+
+const ExpiredView = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-col">
+      <Heading>{t("invite.expiredTitle")}</Heading>
+      <Text size="small" className="text-ui-fg-subtle mt-1">
+        {t("invite.expiredHint")}
       </Text>
       <LoginLink />
     </div>
@@ -417,15 +473,4 @@ const CreateView = ({
       <LoginLink />
     </div>
   );
-};
-
-const InviteSchema = z.object({
-  id: z.string(),
-  jti: z.string(),
-  exp: z.number(),
-  iat: z.number(),
-});
-
-const validateDecodedInvite = (decoded: any): decoded is DecodedInvite => {
-  return InviteSchema.safeParse(decoded).success;
 };

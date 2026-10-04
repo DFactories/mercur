@@ -25,6 +25,8 @@ type PhoneAuthFormProps = {
   extraFields?: ReactNode
   /** Gate run before requesting a code; return false to abort (extra-field validation). */
   beforeRequest?: () => boolean
+  /** Number to start with — the invite page fills in the number invited. */
+  initialPhone?: string
 }
 
 /**
@@ -53,11 +55,12 @@ export const PhoneAuthForm = ({
   mode,
   extraFields,
   beforeRequest,
+  initialPhone,
 }: PhoneAuthFormProps) => {
   const { t } = useTranslation()
 
   const [step, setStep] = useState<"phone" | "code">("phone")
-  const [phone, setPhone] = useState("")
+  const [phone, setPhone] = useState(initialPhone ?? "")
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [resendIn, setResendIn] = useState(0)

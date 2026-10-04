@@ -4152,9 +4152,9 @@
       "addUser": {
         "header": "Add User",
         "action": "Add",
-        "hint": "Add new user to manage this store. You can select existing user or invite new one.",
+        "hint": "Enter the user's mobile number. If it already has a vendor panel account it is added right away; otherwise it gets an SMS invite and becomes active when it signs in to the vendor panel with that number. Invites are valid for a limited time.",
         "addedToast": "User was successfully added.",
-        "invitedToast": "User was successfully invited.",
+        "invitedToast": "Invite sent. The user becomes active once they sign in to the vendor panel with this number.",
         "validation": {
           "roleRequired": "Please select a role",
           "phoneInvalid": "Enter a valid mobile number (09 + 11 digits)"

@@ -12315,6 +12315,15 @@
             }
           },
           "additionalProperties": false
+        },
+        "phoneHint": {
+          "type": "string"
+        },
+        "expiredTitle": {
+          "type": "string"
+        },
+        "expiredHint": {
+          "type": "string"
         }
       },
       "additionalProperties": false

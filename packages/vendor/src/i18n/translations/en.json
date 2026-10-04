@@ -4102,7 +4102,10 @@
     "passwordMismatch": "Passwords do not match",
     "toast": {
       "accepted": "Invite successfully accepted"
-    }
+    },
+    "phoneHint": "Sign in with the number this invite was sent to. You join the store as soon as the code is confirmed.",
+    "expiredTitle": "This invite has expired",
+    "expiredHint": "Invites are only valid for a limited time. Ask the store to send you a new one, then sign in with the same number."
   },
   "resetPassword": {
     "title": "Reset password",

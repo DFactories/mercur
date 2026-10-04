@@ -20,6 +20,8 @@ import { useMemberTableQuery } from "../../../../../hooks/table/query";
 import { useDataTable } from "../../../../../hooks/use-data-table";
 import { MemberInviteDTO, SellerMemberDTO, SellerRole } from "@mercurjs/types";
 
+import { inviteContact, inviteState, InviteState } from "./invite-row";
+
 const PAGE_SIZE = 20;
 
 const ROLE_TRANSLATION_MAP: Record<string, string> = {
@@ -51,6 +53,8 @@ type InviteRow = {
   role_id: string;
   token: string;
   is_owner: boolean;
+  state: InviteState;
+  contact: string;
   created_at: Date;
   updated_at: Date;
 };
@@ -138,6 +142,8 @@ export const StoreMembersDataTable = ({
       role_id: invite.role_id,
       token: invite.token,
       is_owner: inviteIsFutureOwner,
+      state: inviteState(invite.expires_at),
+      contact: inviteContact(invite),
       created_at: invite.created_at,
       updated_at: invite.updated_at,
     }));
@@ -242,12 +248,22 @@ const useColumns = (sellerId: string) => {
           </div>
         ),
         cell: ({ row }) => {
-          const isPending = row.original.kind === "invite";
-          return (
-            <DataTableStatusCell color={isPending ? "orange" : "green"}>
-              {isPending
-                ? t("users.status.pending")
-                : t("users.status.active")}
+          if (row.original.kind === "member") {
+            return (
+              <DataTableStatusCell color="green">
+                {t("users.status.active")}
+              </DataTableStatusCell>
+            );
+          }
+          // A lapsed invite can no longer be accepted; "pending" read as
+          // "waiting for them to sign up", which would never finish it.
+          return row.original.state === "expired" ? (
+            <DataTableStatusCell color="red">
+              {t("users.inviteStatus.expired")}
+            </DataTableStatusCell>
+          ) : (
+            <DataTableStatusCell color="orange">
+              {t("users.status.pending")}
             </DataTableStatusCell>
           );
         },
@@ -291,7 +307,9 @@ const InviteActions = ({
     try {
       await resend({ invite_id: invite.id });
       toast.success(
-        t("stores.members.invite.resendSuccess", { email: invite.email }),
+        t("stores.members.invite.resendSuccess", {
+          email: invite.contact,
+        }),
       );
     } catch (e) {
       toast.error((e as Error).message);
@@ -324,7 +342,9 @@ const InviteActions = ({
     try {
       await deleteInvite({ invite_id: invite.id });
       toast.success(
-        t("stores.members.invite.deleteSuccess", { email: invite.email }),
+        t("stores.members.invite.deleteSuccess", {
+          email: invite.contact,
+        }),
       );
     } catch (e) {
       toast.error((e as Error).message);
