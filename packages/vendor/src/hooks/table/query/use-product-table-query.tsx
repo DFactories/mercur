@@ -5,6 +5,8 @@ import { useQueryParams } from "../../use-query-params";
 type UseProductTableQueryProps = {
   prefix?: string;
   pageSize?: number;
+  /** Honour the «my products» filter, which is on unless `mine=false`. */
+  mine?: boolean;
 };
 
 export const DEFAULT_FIELDS =
@@ -14,6 +16,7 @@ export const DEFAULT_FIELDS =
 export const useProductTableQuery = ({
   prefix,
   pageSize = 20,
+  mine: withMine = false,
 }: UseProductTableQueryProps) => {
   const linkQuery = useLinkQuery("product", DEFAULT_FIELDS);
   const queryObject = useQueryParams(
@@ -31,6 +34,7 @@ export const useProductTableQuery = ({
       "type_id",
       "status",
       "has_pending_change",
+      "mine",
       "id",
     ],
     prefix,
@@ -48,12 +52,14 @@ export const useProductTableQuery = ({
     is_giftcard,
     status,
     has_pending_change,
+    mine,
     order,
     q,
   } = queryObject;
 
   const searchParams: HttpTypes.AdminProductListParams & {
     has_pending_change?: boolean;
+    mine?: boolean;
   } = {
     limit: pageSize,
     offset: offset ? Number(offset) : 0,
@@ -68,6 +74,7 @@ export const useProductTableQuery = ({
     type_id: type_id?.split(","),
     status: status?.split(",") as HttpTypes.AdminProductStatus[],
     has_pending_change: has_pending_change === "true" ? true : undefined,
+    mine: withMine && mine !== "false" ? true : undefined,
     q,
     fields: linkQuery.fields,
   };

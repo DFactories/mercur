@@ -1391,6 +1391,27 @@
           },
           "additionalProperties": false
         },
+        "filters": {
+          "type": "object",
+          "properties": {
+            "mine": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "only": {
+                  "type": "string"
+                },
+                "all": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
         "edit": {
           "type": "object",
           "properties": {

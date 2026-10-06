@@ -24,6 +24,13 @@ export type Filter = {
       options: Option[]
       multiple?: boolean
       searchable?: boolean
+      /**
+       * A filter that is ON until the user turns it off: shown as active with
+       * this value while its param is absent from the URL.
+       */
+      defaultValue?: string
+      /** Written to the URL when a defaulted filter's chip is removed. */
+      clearedValue?: string
     }
   | {
       type: "date"
@@ -136,6 +143,8 @@ export const DataTableFilter = ({
                   options={filter.options}
                   multiple={filter.multiple}
                   searchable={filter.searchable}
+                  defaultValue={filter.defaultValue}
+                  clearedValue={filter.clearedValue}
                   openOnMount={filter.openOnMount}
                 />
               )
@@ -241,7 +250,12 @@ const ClearAllFilters = ({ filters, prefix }: ClearAllFiltersProps) => {
       const newValues = new URLSearchParams(prev)
 
       filters.forEach((filter) => {
-        newValues.delete(prefix ? `${prefix}_${filter.key}` : filter.key)
+        const key = prefix ? `${prefix}_${filter.key}` : filter.key
+        if (filter.type === "select" && filter.clearedValue !== undefined) {
+          newValues.set(key, filter.clearedValue)
+        } else {
+          newValues.delete(key)
+        }
       })
 
       return newValues
@@ -280,7 +294,11 @@ const getInitialFilters = ({
   filters.forEach((filter) => {
     const key = prefix ? `${prefix}_${filter.key}` : filter.key
     const value = params.get(key)
-    if (value) {
+    const defaulted =
+      filter.type === "select" &&
+      filter.defaultValue !== undefined &&
+      value === null
+    if (value || defaulted) {
       if (filter.type === "select") {
         activeFilters.push({
           ...filter,

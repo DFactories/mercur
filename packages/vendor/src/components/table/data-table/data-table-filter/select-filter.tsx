@@ -15,6 +15,10 @@ interface SelectFilterProps extends IFilter {
   readonly?: boolean
   multiple?: boolean
   searchable?: boolean
+  /** Shown as selected while the param is absent from the URL. */
+  defaultValue?: string
+  /** Written to the URL, instead of deleting the param, when the chip is removed. */
+  clearedValue?: string
 }
 
 export const SelectFilter = ({
@@ -24,6 +28,8 @@ export const SelectFilter = ({
   multiple,
   searchable,
   options,
+  defaultValue,
+  clearedValue,
   openOnMount,
 }: SelectFilterProps) => {
   const [open, setOpen] = useState(openOnMount)
@@ -35,7 +41,9 @@ export const SelectFilter = ({
 
   const { key, label } = filter
   const selectedParams = useSelectedParams({ param: key, prefix, multiple })
-  const currentValue = selectedParams.get()
+  const fromUrl = selectedParams.get()
+  const currentValue =
+    fromUrl.length || defaultValue === undefined ? fromUrl : [defaultValue]
 
   const labelValues = currentValue
     .map((v) => options.find((o) => o.value === v)?.label)
@@ -46,7 +54,11 @@ export const SelectFilter = ({
   >(labelValues)
 
   const handleRemove = () => {
-    selectedParams.delete()
+    if (clearedValue !== undefined) {
+      selectedParams.add(clearedValue)
+    } else {
+      selectedParams.delete()
+    }
     removeFilter(key)
   }
 
@@ -77,7 +89,7 @@ export const SelectFilter = ({
   }
 
   const handleSelect = (value: unknown) => {
-    const isSelected = selectedParams.get().includes(String(value))
+    const isSelected = currentValue.includes(String(value))
 
     if (isSelected) {
       selectedParams.delete(String(value))
@@ -164,9 +176,7 @@ export const SelectFilter = ({
               </Command.Empty>
               <Command.List className="h-full max-h-[163px] min-h-[0] overflow-auto p-1 outline-none">
                 {options.map((option) => {
-                  const isSelected = selectedParams
-                    .get()
-                    .includes(String(option.value))
+                  const isSelected = currentValue.includes(String(option.value))
 
                   return (
                     <Command.Item

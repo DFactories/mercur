@@ -5,6 +5,7 @@ import {
   createSelectParams,
 } from "@medusajs/medusa/api/utils/validators"
 import { booleanString } from "@medusajs/medusa/api/utils/common-validators/common"
+import { matchText } from "../../utils/match-text"
 
 export type VendorGetInventoryItemParamsType = z.infer<
   typeof VendorGetInventoryItemParams
@@ -14,7 +15,7 @@ export const VendorGetInventoryItemParams = createSelectParams()
 export const VendorGetInventoryItemsParamsFields = z.object({
   q: z.string().optional(),
   id: z.union([z.string(), z.array(z.string())]).optional(),
-  sku: z.union([z.string(), z.array(z.string())]).optional(),
+  sku: z.union([matchText(), z.array(matchText())]).optional(),
   origin_country: z.union([z.string(), z.array(z.string())]).optional(),
   mid_code: z.union([z.string(), z.array(z.string())]).optional(),
   hs_code: z.union([z.string(), z.array(z.string())]).optional(),
@@ -125,7 +126,7 @@ export type VendorCreateInventoryItemType = z.infer<
 >
 export const VendorCreateInventoryItem = z
   .object({
-    sku: z.string().nullish(),
+    sku: matchText().nullish(),
     hs_code: z.string().nullish(),
     weight: z.number().nullish(),
     length: z.number().nullish(),
@@ -148,7 +149,7 @@ export type VendorUpdateInventoryItemType = z.infer<
 >
 export const VendorUpdateInventoryItem = z
   .object({
-    sku: z.string().nullish(),
+    sku: matchText().nullish(),
     hs_code: z.string().nullish(),
     weight: z.number().nullish(),
     length: z.number().nullish(),

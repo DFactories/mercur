@@ -13,6 +13,7 @@ import {
 } from "@medusajs/framework/utils"
 import { AttributeType } from "@mercurjs/types"
 
+import { normalizeMatchText } from "../../utils/normalize-match-text"
 import { joinerConfig } from "./joiner-config"
 import { ProductAttribute, ProductAttributeValue } from "./models"
 
@@ -31,6 +32,11 @@ class ProductAttributeModuleService extends MedusaService({
     sharedContext?: Context,
   ): Promise<T extends any[] ? any[] : any> {
     const input = (Array.isArray(data) ? data : [data]).map((attribute) => {
+      // Names and values are matched on (variant options, filters), so they
+      // are stored in one spelling — see `normalizeMatchText`.
+      if (typeof attribute.name === "string") {
+        attribute.name = normalizeMatchText(attribute.name)
+      }
       if (!attribute.handle && !attribute.product_id && attribute.name) {
         attribute.handle = toHandle(attribute.name)
       }
@@ -63,6 +69,12 @@ class ProductAttributeModuleService extends MedusaService({
     sharedContext?: Context,
   ): Promise<T extends any[] ? any[] : any> {
     const updates = Array.isArray(data) ? data : [data]
+
+    for (const update of updates) {
+      if (typeof update.name === "string") {
+        update.name = normalizeMatchText(update.name)
+      }
+    }
 
     const idsWithType = updates
       .filter((u) => u.id && u.type !== undefined)
@@ -271,6 +283,9 @@ class ProductAttributeModuleService extends MedusaService({
     ])
 
     const input = values.map((value) => {
+      if (typeof value.name === "string") {
+        value.name = normalizeMatchText(value.name)
+      }
       const attribute = attributeById.get(value.attribute_id)
       const isProductScoped = !!attribute?.product_id
       const isSelectType = !!attribute && selectTypes.has(attribute.type)
@@ -287,6 +302,24 @@ class ProductAttributeModuleService extends MedusaService({
       sharedContext,
     )
     return (Array.isArray(data) ? result : result[0]) as any
+  }
+
+  @InjectTransactionManager()
+  // @ts-ignore
+  async updateProductAttributeValues<T extends any | any[]>(
+    data: T,
+    sharedContext?: Context,
+  ): Promise<T extends any[] ? any[] : any> {
+    for (const entry of Array.isArray(data) ? data : [data]) {
+      // `{ selector, data }` as well as `{ id, ...fields }`.
+      const value = entry?.selector && entry?.data ? entry.data : entry
+      if (typeof value?.name === "string") {
+        value.name = normalizeMatchText(value.name)
+      }
+    }
+
+    // @ts-ignore
+    return super.updateProductAttributeValues(data, sharedContext) as any
   }
 }
 

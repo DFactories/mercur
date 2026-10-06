@@ -7,6 +7,7 @@ import {
 import { createLinkBody } from "@medusajs/medusa/api/utils/validators"
 
 import {
+  applyDigitInsensitiveSearch,
   applyOfferedProductsFilter,
   applyPendingChangeFilter,
 } from "../../utils"
@@ -41,6 +42,7 @@ export const adminProductsMiddlewares: MiddlewareRoute[] = [
       ),
       applyOfferedProductsFilter,
       applyPendingChangeFilter,
+      applyDigitInsensitiveSearch,
     ],
   },
   {

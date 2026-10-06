@@ -7,6 +7,7 @@ import {
 } from "@medusajs/medusa/api/utils/validators"
 import { booleanString } from "@medusajs/medusa/api/utils/common-validators/common"
 import { AdditionalData } from "@medusajs/framework/types"
+import { matchText, normalizeMatchText } from "../../utils/match-text"
 
 export type AdminGetOfferParamsType = z.infer<typeof AdminGetOfferParams>
 export const AdminGetOfferParams = createSelectParams()
@@ -24,7 +25,7 @@ export const AdminGetOffersParams = createFindParams({
     shipping_profile_id: z
       .union([z.string(), z.array(z.string())])
       .optional(),
-    sku: z.union([z.string(), z.array(z.string())]).optional(),
+    sku: z.union([matchText(), z.array(matchText())]).optional(),
     ean: z.union([z.string(), z.array(z.string())]).optional(),
     upc: z.union([z.string(), z.array(z.string())]).optional(),
     group_by_seller: booleanString().optional(),
@@ -67,7 +68,7 @@ const AdminOfferStockLevel = z
 const AdminOfferInventoryItem = z
   .object({
     title: z.string().min(1).optional(),
-    sku: z.string().min(1).optional(),
+    sku: z.string().min(1).transform(normalizeMatchText).optional(),
     required_quantity: z.number().int().positive().default(1),
     stock_levels: z.array(AdminOfferStockLevel).optional(),
   })
@@ -75,13 +76,13 @@ const AdminOfferInventoryItem = z
 
 const AdminCreateOffersBatchItem = z
   .object({
-    sku: z.string().min(1),
+    sku: z.string().min(1).transform(normalizeMatchText),
     variant_id: z.string(),
     shipping_profile_id: z.string(),
     prices: z.array(AdminOfferPrice).min(1),
     inventory_items: z.array(AdminOfferInventoryItem).min(1),
-    ean: z.string().min(1).nullish(),
-    upc: z.string().min(1).nullish(),
+    ean: z.string().min(1).transform(normalizeMatchText).nullish(),
+    upc: z.string().min(1).transform(normalizeMatchText).nullish(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
   })
   .strict()

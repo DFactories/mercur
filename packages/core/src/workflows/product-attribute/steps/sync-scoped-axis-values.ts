@@ -4,6 +4,7 @@ import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { MercurModules } from "@mercurjs/types"
 
 import type ProductAttributeModuleService from "../../../modules/product-attribute/service"
+import { normalizeMatchText } from "../../../utils/normalize-match-text"
 
 export type ScopedAxisValuesPlan = {
   attribute_id: string
@@ -112,8 +113,13 @@ export const syncScopedAxisValuesStep = createStep(
       }
 
       const kept = previousNames.filter((name) => !removedNames.has(name))
+      // Compared in one spelling: «کارتن ۵۰۰ عددی» already on the option is
+      // the «کارتن 500 عددی» being added, not a second value.
+      const keptKeys = new Set(kept.map(normalizeMatchText))
       const added = Array.from(
-        new Set(plan.add_names.filter((name) => !kept.includes(name))),
+        new Set(
+          plan.add_names.filter((name) => !keptKeys.has(normalizeMatchText(name))),
+        ),
       )
       const nextNames = [...kept, ...added]
 

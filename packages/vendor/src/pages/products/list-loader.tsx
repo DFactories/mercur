@@ -12,9 +12,12 @@ import { PAGE_SIZE } from "./_components/product-list-table/product-list-data-ta
 export const productListLoader = async () => {
   const { fields } = getLinkQuery("product", DEFAULT_FIELDS);
 
+  // `mine` is the list's default (see `useProductTableFilters`), so the
+  // prefetch is the request the pristine list makes.
   return sdk.vendor.products.query({
     limit: PAGE_SIZE,
     offset: 0,
+    mine: true,
     fields,
   } as Parameters<typeof sdk.vendor.products.query>[0]);
 };

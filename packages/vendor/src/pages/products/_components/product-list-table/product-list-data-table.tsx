@@ -29,6 +29,7 @@ export const ProductListDataTable = () => {
 
   const { searchParams, raw } = useProductTableQuery({
     pageSize: PAGE_SIZE,
+    mine: true,
   });
 
   const loaderData = useLoaderData() as
@@ -48,7 +49,7 @@ export const ProductListDataTable = () => {
     },
   );
 
-  const baseFilters = useProductTableFilters();
+  const baseFilters = useProductTableFilters(undefined, { mine: true });
   const { columns, filters: extFilters } = useColumns();
   const filters = useMemo(
     () => [...baseFilters, ...(extFilters as typeof baseFilters)],

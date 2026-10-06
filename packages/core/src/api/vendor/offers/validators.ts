@@ -6,6 +6,7 @@ import {
   WithAdditionalData,
 } from "@medusajs/medusa/api/utils/validators"
 import { AdditionalData } from "@medusajs/framework/types"
+import { matchText, normalizeMatchText } from "../../utils/match-text"
 
 export type VendorGetOfferParamsType = z.infer<typeof VendorGetOfferParams>
 export const VendorGetOfferParams = createSelectParams()
@@ -18,7 +19,7 @@ export const VendorGetOffersParamsFields = z
     shipping_profile_id: z
       .union([z.string(), z.array(z.string())])
       .optional(),
-    sku: z.union([z.string(), z.array(z.string())]).optional(),
+    sku: z.union([matchText(), z.array(matchText())]).optional(),
     ean: z.union([z.string(), z.array(z.string())]).optional(),
     upc: z.union([z.string(), z.array(z.string())]).optional(),
     created_at: createOperatorMap().optional(),
@@ -42,7 +43,7 @@ const VendorOfferStockLevel = z
 const VendorOfferInventoryItem = z
   .object({
     title: z.string().min(1).optional(),
-    sku: z.string().min(1).optional(),
+    sku: z.string().min(1).transform(normalizeMatchText).optional(),
     required_quantity: z.number().int().positive().default(1),
     stock_levels: z.array(VendorOfferStockLevel).optional(),
   })
@@ -76,13 +77,13 @@ const VendorOfferUpsertPrice = z
 
 const CreateOffer = z
   .object({
-    sku: z.string().min(1),
+    sku: z.string().min(1).transform(normalizeMatchText),
     variant_id: z.string(),
     shipping_profile_id: z.string().min(1),
     inventory_items: z.array(VendorOfferInventoryItem).min(1),
     prices: z.array(VendorOfferPrice).min(1),
-    ean: z.string().min(1).nullish(),
-    upc: z.string().min(1).nullish(),
+    ean: z.string().min(1).transform(normalizeMatchText).nullish(),
+    upc: z.string().min(1).transform(normalizeMatchText).nullish(),
     manage_inventory: z.boolean().optional(),
     allow_backorder: z.boolean().optional(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
@@ -94,7 +95,7 @@ export const VendorCreateOffer = WithAdditionalData(CreateOffer)
 
 const UpdateOffer = z
   .object({
-    sku: z.string().min(1).optional(),
+    sku: z.string().min(1).transform(normalizeMatchText).optional(),
     shipping_profile_id: z.string().min(1).optional(),
     manage_inventory: z.boolean().optional(),
     allow_backorder: z.boolean().optional(),
@@ -138,13 +139,13 @@ export const VendorBatchOfferInventoryItems = WithAdditionalData(
 
 const VendorCreateOffersBatchItem = z
   .object({
-    sku: z.string().min(1),
+    sku: z.string().min(1).transform(normalizeMatchText),
     variant_id: z.string(),
     shipping_profile_id: z.string().min(1),
     prices: z.array(VendorOfferPrice).min(1),
     inventory_items: z.array(VendorOfferInventoryItem).min(1),
-    ean: z.string().min(1).nullish(),
-    upc: z.string().min(1).nullish(),
+    ean: z.string().min(1).transform(normalizeMatchText).nullish(),
+    upc: z.string().min(1).transform(normalizeMatchText).nullish(),
     manage_inventory: z.boolean().optional(),
     allow_backorder: z.boolean().optional(),
     metadata: z.record(z.string(), z.unknown()).nullish(),

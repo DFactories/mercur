@@ -2,6 +2,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 
 import { loadProductAxisState } from "../../product-attribute/utils/load-product-axis-state"
+import { normalizeMatchText } from "../../../utils/normalize-match-text"
 import {
   type AxisOption,
   DEFAULT_OPTION_TITLE,
@@ -38,7 +39,23 @@ export const normalizeVariantOptions = (
   options: AxisOption[],
   given: Record<string, string>,
 ): Record<string, string> => {
-  const normalized = { ...given }
+  // Matched in one spelling and written back in the product's own: an option
+  // saved as «کارتن ۵۰۰ عددی» before input was normalized is the
+  // «کارتن 500 عددی» a store types now, and Medusa compares exact strings.
+  const optionByKey = new Map(
+    options.map((o) => [normalizeMatchText(o.title), o] as const),
+  )
+  const normalized: Record<string, string> = {}
+  const unknown: string[] = []
+  for (const [title, value] of Object.entries(given)) {
+    const option = optionByKey.get(normalizeMatchText(title))
+    if (!option) {
+      unknown.push(title)
+      continue
+    }
+    normalized[option.title] = value
+  }
+
   if (
     options.some((o) => o.title === DEFAULT_OPTION_TITLE) &&
     normalized[DEFAULT_OPTION_TITLE] === undefined
@@ -46,9 +63,7 @@ export const normalizeVariantOptions = (
     normalized[DEFAULT_OPTION_TITLE] = DEFAULT_OPTION_VALUE
   }
 
-  const titles = new Set(options.map((o) => o.title))
   const missing = options.filter((o) => normalized[o.title] === undefined)
-  const unknown = Object.keys(normalized).filter((t) => !titles.has(t))
 
   if (missing.length || unknown.length) {
     throw new MedusaError(
@@ -61,12 +76,15 @@ export const normalizeVariantOptions = (
     const allowed = option.allowed_value_ids?.length
       ? option.values.filter((v) => option.allowed_value_ids!.includes(v.id))
       : option.values
-    if (!allowed.some((v) => v.value === normalized[option.title])) {
+    const wanted = normalizeMatchText(normalized[option.title])
+    const match = allowed.find((v) => normalizeMatchText(v.value) === wanted)
+    if (!match) {
       throw new MedusaError(
         MedusaError.Types.NOT_ALLOWED,
         OPTION_VALUE_MISSING_MESSAGE,
       )
     }
+    normalized[option.title] = match.value
   }
 
   return normalized

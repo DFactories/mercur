@@ -14,7 +14,16 @@ const excludeableFields = [
 ] as const
 
 export const useProductTableFilters = (
-  exclude?: (typeof excludeableFields)[number][]
+  exclude?: (typeof excludeableFields)[number][],
+  options: {
+    /**
+     * «My products»: what this store registered or sells. On by default on the
+     * products page (decided 2026-10-07) — every store sees the whole shared
+     * catalogue there, and its own work was lost in it. Pages that pick from
+     * the catalogue (offers, collections, categories) leave it off.
+     */
+    mine?: boolean
+  } = {}
 ) => {
   const { t } = useTranslation()
 
@@ -175,7 +184,25 @@ export const useProductTableFilters = (
     type: "date",
   }))
 
-  filters = [...filters, statusFilter, pendingChangeFilter, ...dateFilters]
+  const mineFilter: Filter = {
+    key: "mine",
+    label: t("products.filters.mine.label"),
+    type: "select",
+    options: [
+      { label: t("products.filters.mine.only"), value: "true" },
+      { label: t("products.filters.mine.all"), value: "false" },
+    ],
+    defaultValue: "true",
+    clearedValue: "false",
+  }
+
+  filters = [
+    ...(options.mine ? [mineFilter] : []),
+    ...filters,
+    statusFilter,
+    pendingChangeFilter,
+    ...dateFilters,
+  ]
 
   return filters
 }

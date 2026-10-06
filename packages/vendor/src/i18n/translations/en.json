@@ -462,6 +462,13 @@
       "noRecordsTitle": "No products yet",
       "noRecordsMessage": "Create products to start selling on the marketplace"
     },
+    "filters": {
+      "mine": {
+        "label": "Products",
+        "only": "Registered by me",
+        "all": "All DFactories products"
+      }
+    },
     "edit": {
       "header": "Edit Product",
       "description": "Edit the product details.",

@@ -12,6 +12,12 @@ import {
 } from "@medusajs/medusa/api/utils/common-validators/common"
 import { AdditionalData, OperatorMap } from "@medusajs/framework/types"
 import { FeatureFlag, isPresent } from "@medusajs/framework/utils"
+import {
+  matchScalar,
+  matchText,
+  matchTextRecord,
+  normalizeMatchText,
+} from "../../utils/match-text"
 
 const statusEnum = z.nativeEnum(ProductStatus)
 
@@ -25,15 +31,16 @@ const VendorGetProductsParamsFields = z.object({
   type_id: z.union([z.string(), z.array(z.string())]).optional(),
   category_id: z.union([z.string(), z.array(z.string())]).optional(),
   tag_id: z.union([z.string(), z.array(z.string())]).optional(),
-  sku: z.string().optional(),
-  ean: z.string().optional(),
-  upc: z.string().optional(),
-  barcode: z.string().optional(),
+  sku: matchText().optional(),
+  ean: matchText().optional(),
+  upc: matchText().optional(),
+  barcode: matchText().optional(),
   created_at: createOperatorMap().optional(),
   updated_at: createOperatorMap().optional(),
   deleted_at: createOperatorMap().optional(),
   has_offer: booleanString().optional(),
   has_pending_change: booleanString().optional(),
+  mine: booleanString().optional(),
 })
 
 export type VendorGetProductsParamsType = z.infer<typeof VendorGetProductsParams>
@@ -67,13 +74,13 @@ const IdAssociation = z.object({ id: z.string() })
 const CreateProductVariant = z
   .object({
     title: z.string(),
-    sku: z.string().optional(),
-    ean: z.string().optional(),
-    upc: z.string().optional(),
-    isbn: z.string().optional(),
-    asin: z.string().optional(),
-    gtin: z.string().optional(),
-    barcode: z.string().optional(),
+    sku: matchText().optional(),
+    ean: matchText().optional(),
+    upc: matchText().optional(),
+    isbn: matchText().optional(),
+    asin: matchText().optional(),
+    gtin: matchText().optional(),
+    barcode: matchText().optional(),
     hs_code: z.string().optional(),
     mid_code: z.string().optional(),
     variant_rank: z.number().optional(),
@@ -84,7 +91,7 @@ const CreateProductVariant = z
     origin_country: z.string().optional(),
     material: z.string().optional(),
     metadata: z.record(z.string(), z.unknown()).optional(),
-    options: z.record(z.string(), z.string()).optional(),
+    options: matchTextRecord().optional(),
   })
   .strict()
 
@@ -92,13 +99,13 @@ const UpdateProductVariant = z
   .object({
     id: z.string().optional(),
     title: z.string().optional(),
-    sku: z.string().nullish(),
-    ean: z.string().nullish(),
-    upc: z.string().nullish(),
-    isbn: z.string().nullish(),
-    asin: z.string().nullish(),
-    gtin: z.string().nullish(),
-    barcode: z.string().nullish(),
+    sku: matchText().nullish(),
+    ean: matchText().nullish(),
+    upc: matchText().nullish(),
+    isbn: matchText().nullish(),
+    asin: matchText().nullish(),
+    gtin: matchText().nullish(),
+    barcode: matchText().nullish(),
     hs_code: z.string().nullish(),
     mid_code: z.string().nullish(),
     thumbnail: z.string().nullish(),
@@ -110,7 +117,7 @@ const UpdateProductVariant = z
     origin_country: z.string().nullish(),
     material: z.string().nullish(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
-    options: z.record(z.string(), z.string()).optional(),
+    options: matchTextRecord().optional(),
   })
   .strict()
 
@@ -122,7 +129,7 @@ const AttributeTypeEnum = z.enum([
   "unit",
 ])
 
-const AttributeScalar = z.union([z.string(), z.number(), z.boolean()])
+const AttributeScalar = matchScalar()
 const UnifiedProductAttributeInput = z.union([
   z
     .object({
@@ -133,9 +140,9 @@ const UnifiedProductAttributeInput = z.union([
     .strict(),
   z
     .object({
-      title: z.string().min(1),
+      title: z.string().min(1).transform(normalizeMatchText),
       type: AttributeTypeEnum.optional(),
-      values: z.array(z.string()).optional(),
+      values: z.array(matchText()).optional(),
       value: AttributeScalar.optional(),
       is_variant_axis: z.boolean().optional(),
       is_filterable: z.boolean().optional(),
@@ -165,7 +172,7 @@ const CreateProduct = z
     categories: z.array(IdAssociation).optional(),
     tags: z.array(IdAssociation).optional(),
     options: z
-      .array(z.object({ title: z.string(), values: z.array(z.string()) }))
+      .array(z.object({ title: matchText(), values: z.array(matchText()) }))
       .optional(),
     attributes: z.array(UnifiedProductAttributeInput).optional(),
     variants: z.array(CreateProductVariant).optional(),
@@ -221,7 +228,7 @@ const UpdateProduct = z
     categories: z.array(IdAssociation).optional(),
     tags: z.array(IdAssociation).optional(),
     options: z
-      .array(z.object({ title: z.string(), values: z.array(z.string()) }))
+      .array(z.object({ title: matchText(), values: z.array(matchText()) }))
       .optional(),
     variants: z.array(UpdateProductVariant).optional(),
     weight: z.number().nullish(),
@@ -264,13 +271,13 @@ export type VendorAddProductVariantType = z.infer<typeof VendorAddProductVariant
 export const VendorAddProductVariant = z
   .object({
     title: z.string(),
-    sku: z.string().optional(),
-    ean: z.string().optional(),
-    upc: z.string().optional(),
-    isbn: z.string().optional(),
-    asin: z.string().optional(),
-    gtin: z.string().optional(),
-    barcode: z.string().optional(),
+    sku: matchText().optional(),
+    ean: matchText().optional(),
+    upc: matchText().optional(),
+    isbn: matchText().optional(),
+    asin: matchText().optional(),
+    gtin: matchText().optional(),
+    barcode: matchText().optional(),
     hs_code: z.string().optional(),
     mid_code: z.string().optional(),
     variant_rank: z.number().optional(),
@@ -284,7 +291,7 @@ export const VendorAddProductVariant = z
     manage_inventory: z.boolean().optional(),
     thumbnail: z.string().optional(),
     metadata: z.record(z.string(), z.unknown()).optional(),
-    options: z.record(z.string(), z.string()).optional(),
+    options: matchTextRecord().optional(),
   })
   .strict()
 
@@ -294,13 +301,13 @@ export type VendorUpdateProductVariantType = z.infer<
 export const VendorUpdateProductVariant = z
   .object({
     title: z.string().optional(),
-    sku: z.string().nullish(),
-    ean: z.string().nullish(),
-    upc: z.string().nullish(),
-    isbn: z.string().nullish(),
-    asin: z.string().nullish(),
-    gtin: z.string().nullish(),
-    barcode: z.string().nullish(),
+    sku: matchText().nullish(),
+    ean: matchText().nullish(),
+    upc: matchText().nullish(),
+    isbn: matchText().nullish(),
+    asin: matchText().nullish(),
+    gtin: matchText().nullish(),
+    barcode: matchText().nullish(),
     hs_code: z.string().nullish(),
     mid_code: z.string().nullish(),
     thumbnail: z.string().nullish(),
@@ -314,7 +321,7 @@ export const VendorUpdateProductVariant = z
     allow_backorder: z.boolean().optional(),
     manage_inventory: z.boolean().optional(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
-    options: z.record(z.string(), z.string()).optional(),
+    options: matchTextRecord().optional(),
     images: z
       .object({
         add: z.array(z.string()).optional(),
@@ -336,11 +343,7 @@ export type VendorCancelProductChangeType = z.infer<
   AdditionalData
 export const VendorCancelProductChange = WithAdditionalData(CancelProductChange)
 
-const VendorBatchAttributeScalar = z.union([
-  z.string(),
-  z.number(),
-  z.boolean(),
-])
+const VendorBatchAttributeScalar = matchScalar()
 const VendorBatchAttributeAdd = z.union([
   z
     .object({
@@ -351,9 +354,9 @@ const VendorBatchAttributeAdd = z.union([
     .strict(),
   z
     .object({
-      title: z.string().min(1),
+      title: z.string().min(1).transform(normalizeMatchText),
       type: AttributeTypeEnum.optional(),
-      values: z.array(z.string()).optional(),
+      values: z.array(matchText()).optional(),
       value: VendorBatchAttributeScalar.optional(),
       is_variant_axis: z.boolean().optional(),
       is_filterable: z.boolean().optional(),
@@ -383,9 +386,9 @@ const VendorBatchAttributeAdd = z.union([
 const VendorBatchAttributeUpdate = z
   .object({
     id: z.string(),
-    title: z.string().optional(),
+    title: matchText().optional(),
     add: z
-      .array(z.union([z.string(), z.object({ value: z.string() }).strict()]))
+      .array(z.union([matchText(), z.object({ value: matchText() }).strict()]))
       .optional(),
     remove: z.array(z.string()).optional(),
     value: VendorBatchAttributeScalar.optional(),

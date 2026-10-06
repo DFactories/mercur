@@ -11,6 +11,7 @@ import {
 import { ProductStatus } from "@mercurjs/types"
 
 import {
+  applyDigitInsensitiveSearch,
   applyOfferedProductsFilter,
   applyPendingChangeFilter,
 } from "../../utils"
@@ -36,7 +37,7 @@ import {
   VendorUpdateProduct,
   VendorUpdateProductVariant,
 } from "./validators"
-import { promiseAll } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, promiseAll } from "@medusajs/framework/utils"
 
 const applySellerProductLinkFilter = async (
   req: AuthenticatedMedusaRequest,
@@ -74,6 +75,70 @@ const applySellerProductLinkFilter = async (
   return next()
 }
 
+/**
+ * `mine=true`: the products this store registered — created by it, or created
+ * for it by an operator — and the ones it sells, through an offer or an open
+ * offer draft. The panel turns it on by default (decided 2026-10-07): every
+ * store sees the whole shared catalogue, and its own work was lost in it.
+ */
+const applyMineProductsFilter = async (
+  req: AuthenticatedMedusaRequest,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  req.filterableFields ??= {}
+  const mine = req.filterableFields.mine
+  delete req.filterableFields.mine
+
+  if (mine !== true) {
+    return next()
+  }
+
+  const sellerId = req.seller_context!.seller_id
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const [registered, { data: offers }, { data: drafts }] = await promiseAll([
+    getSellerUnpublishedProductIds(req.scope, sellerId),
+    query.graph({
+      entity: "offer",
+      fields: ["variant_id"],
+      filters: { seller_id: sellerId },
+    }),
+    query.graph({
+      entity: "offer_draft",
+      fields: ["product_id"],
+      filters: { seller_id: sellerId, status: "open" },
+    }),
+  ])
+
+  const variantIds = Array.from(
+    new Set(
+      (offers as { variant_id: string | null }[])
+        .map((offer) => offer.variant_id)
+        .filter((id): id is string => !!id)
+    )
+  )
+  const productIds = Array.from(
+    new Set([
+      ...registered,
+      ...(drafts as { product_id: string }[]).map((d) => d.product_id),
+    ])
+  )
+
+  const existingAnd = (req.filterableFields.$and as object[] | undefined) ?? []
+  req.filterableFields.$and = [
+    ...existingAnd,
+    {
+      $or: [
+        { id: productIds.length ? productIds : ["__none__"] },
+        { variants: { id: variantIds.length ? variantIds : ["__none__"] } },
+      ],
+    },
+  ]
+
+  return next()
+}
+
 /** See {@link ensureSellerCanAccessProduct}. */
 const ensureSellerCanAccess = async (
   req: AuthenticatedMedusaRequest,
@@ -99,8 +164,10 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
         vendorProductQueryConfig.list
       ),
       applySellerProductLinkFilter,
+      applyMineProductsFilter,
       applyOfferedProductsFilter,
       applyPendingChangeFilter,
+      applyDigitInsensitiveSearch,
     ],
   },
   {
