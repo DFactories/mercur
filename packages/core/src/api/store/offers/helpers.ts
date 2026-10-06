@@ -74,64 +74,36 @@ export const wrapOffersWithCalculatedPrices = async (
     return
   }
 
-  const singletons: { priceSetId: string; offer: EnrichableOffer }[] = []
-  const siblings: { priceSetId: string; offer: EnrichableOffer }[] = []
+  // Sibling offers share their variant's price set and `calculatePrices`
+  // answers one price per set, so a call can carry at most one offer of each
+  // set: round k holds the k-th offer of every set. That is one call when no
+  // offers are siblings, and never one call per offer.
+  const rounds: { priceSetId: string; offer: EnrichableOffer }[][] = []
   for (const [priceSetId, group] of byPriceSet) {
-    if (group.length === 1) {
-      singletons.push({ priceSetId, offer: group[0] })
-    } else {
-      for (const offer of group) {
-        siblings.push({ priceSetId, offer })
+    group.forEach((offer, k) => {
+      ;(rounds[k] ??= []).push({ priceSetId, offer })
+    })
+  }
+
+  await promiseAll(
+    rounds.map(async (round) => {
+      const context: Record<string, unknown> = {
+        ...baseContext,
+        offer_id: round.map((r) => r.offer.id),
       }
-    }
-  }
+      const calculated = await pricingModule.calculatePrices(
+        { id: round.map((r) => r.priceSetId) },
+        { context: context as Record<string, string | number> }
+      )
 
-  const tasks: Promise<void>[] = []
-
-  if (singletons.length) {
-    tasks.push(
-      (async () => {
-        const context: Record<string, unknown> = {
-          ...baseContext,
-          offer_id: singletons.map((s) => s.offer.id),
-        }
-        const calculated = await pricingModule.calculatePrices(
-          { id: singletons.map((s) => s.priceSetId) },
-          { context: context as Record<string, string | number> }
-        )
-
-        const byPriceSetId = new Map(
-          calculated.map((c) => [
-            c.id,
-            c as unknown as Record<string, unknown>,
-          ])
-        )
-        for (const { priceSetId, offer } of singletons) {
-          offer.calculated_price = byPriceSetId.get(priceSetId) ?? null
-        }
-      })()
-    )
-  }
-
-  for (const { priceSetId, offer } of siblings) {
-    tasks.push(
-      (async () => {
-        const context: Record<string, unknown> = {
-          ...baseContext,
-          offer_id: offer.id,
-        }
-        const [calculated] = await pricingModule.calculatePrices(
-          { id: [priceSetId] },
-          { context: context as Record<string, string | number> }
-        )
-
-        offer.calculated_price =
-          (calculated as unknown as Record<string, unknown>) ?? null
-      })()
-    )
-  }
-
-  await promiseAll(tasks)
+      const byPriceSetId = new Map(
+        calculated.map((c) => [c.id, c as unknown as Record<string, unknown>])
+      )
+      for (const { priceSetId, offer } of round) {
+        offer.calculated_price = byPriceSetId.get(priceSetId) ?? null
+      }
+    })
+  )
 }
 
 export const wrapOffersWithTaxPrices = async (

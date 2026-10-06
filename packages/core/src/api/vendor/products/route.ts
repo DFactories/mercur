@@ -13,6 +13,7 @@ import {
 import {
   annotatePendingChanges,
   enrichProductAttributes,
+  withoutLinkedAttributeValues,
   wrapProductVariantsWithOffers,
 } from "../../utils"
 import { VendorCreateProductType, VendorGetProductsParamsType } from "./validators"
@@ -34,7 +35,7 @@ export const GET = async (
 
   const { data: products, metadata } = await query.graph({
     entity: "product",
-    fields: req.queryConfig.fields,
+    fields: withoutLinkedAttributeValues(req.queryConfig.fields),
     filters: req.filterableFields,
     pagination: req.queryConfig.pagination,
   })
@@ -95,7 +96,7 @@ export const POST = async (
     data: [product],
   } = await query.graph({
     entity: "product",
-    fields: req.queryConfig.fields,
+    fields: withoutLinkedAttributeValues(req.queryConfig.fields),
     filters: { id: createdId },
   })
 

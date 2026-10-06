@@ -13,6 +13,7 @@ import { HttpTypes } from "@mercurjs/types"
 import { updateProductsWorkflow } from "@medusajs/medusa/core-flows"
 import {
   enrichProductAttributes,
+  withoutLinkedAttributeValues,
   wrapProductVariantsWithOffers,
 } from "../../../utils"
 import { productEditDeleteProductWorkflow } from "../../../../workflows/product-edit/workflows/product-edit-delete-product"
@@ -37,7 +38,7 @@ export const GET = async (
     data: [product],
   } = await query.graph({
     entity: "product",
-    fields: req.queryConfig.fields,
+    fields: withoutLinkedAttributeValues(req.queryConfig.fields),
     filters: { id: req.params.id },
   })
 
@@ -81,7 +82,7 @@ export const POST = async (
     data: [product],
   } = await query.graph({
     entity: "product",
-    fields: req.queryConfig.fields,
+    fields: withoutLinkedAttributeValues(req.queryConfig.fields),
     filters: { id: req.params.id },
   })
 

@@ -104,11 +104,21 @@ export function wrapProductWithProductAttributes(products: any[]): void {
   }
 }
 
+const LINKED_ATTRIBUTE_VALUES = "product_attribute_values.attribute.values"
+
 /**
- * A global (non-scoped) attribute can only reach its full value set through
- * `product_attribute_values.attribute.values` — a cross-link 2-hop chained
- * populate that resolves empty on the remote joiner — so it is resolved
- * directly with a single in-module `product_attribute → values` read.
+ * Drops `product_attribute_values.attribute.values*` from a product read.
+ *
+ * The remote joiner fetches that cross-link 2-hop populate and then returns it
+ * empty, so it cost a `product_attribute_value` scan on every product read for
+ * nothing; `enrichProductAttributes` resolves those values instead.
+ */
+export const withoutLinkedAttributeValues = (fields: string[]): string[] =>
+  fields.filter((field) => !field.includes(LINKED_ATTRIBUTE_VALUES))
+
+/**
+ * A global (non-scoped) attribute's full value set is resolved here, for every
+ * product in the page at once, with one `product_attribute_value` read.
  */
 export async function enrichProductAttributes(
   scope: MedusaContainer,
@@ -130,17 +140,21 @@ export async function enrichProductAttributes(
 
   const query = scope.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
-    entity: "product_attribute",
-    fields: ["id", "values.id", "values.name", "values.rank"],
-    filters: { id: Array.from(missingIds) },
+    entity: "product_attribute_value",
+    fields: ["id", "name", "rank", "attribute_id"],
+    filters: { attribute_id: Array.from(missingIds) },
   })
 
-  const valuesById = new Map<string, WrappedProductAttributeValueDTO[]>(
-    ((data ?? []) as ProductAttributeDTO[]).map((a) => [
-      a.id,
-      (a.values ?? []).map(toValue).sort(byRank),
-    ]),
-  )
+  const valuesById = new Map<string, WrappedProductAttributeValueDTO[]>()
+  for (const value of (data ?? []) as ProductAttributeValueDTO[]) {
+    if (!value.attribute_id) continue
+    const list = valuesById.get(value.attribute_id) ?? []
+    list.push(toValue(value))
+    valuesById.set(value.attribute_id, list)
+  }
+  for (const list of valuesById.values()) {
+    list.sort(byRank)
+  }
 
   for (const product of products) {
     for (const attr of (product?.attributes ??

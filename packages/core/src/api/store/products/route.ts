@@ -6,6 +6,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import {
   enrichProductAttributes,
+  withoutLinkedAttributeValues,
   wrapProductVariantsWithOfferPrice,
 } from "../../utils"
 import { splitComputedVariantFields } from "./helpers"
@@ -32,7 +33,7 @@ export const GET = async (req: MedusaStoreRequest, res: MedusaResponse) => {
 
   const { data: products, metadata } = await query.graph({
     entity: "product",
-    fields: req.queryConfig.fields,
+    fields: withoutLinkedAttributeValues(req.queryConfig.fields),
     filters: productFilters,
     pagination: req.queryConfig.pagination,
   })

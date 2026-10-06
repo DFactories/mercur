@@ -9,6 +9,7 @@ import {
 
 import {
   enrichProductAttributes,
+  withoutLinkedAttributeValues,
   wrapProductVariantsWithOfferPrice,
 } from "../../../utils"
 import { splitComputedVariantFields } from "../helpers"
@@ -44,7 +45,7 @@ export const GET = async (req: MedusaStoreRequest, res: MedusaResponse) => {
     data: [product],
   } = await query.graph({
     entity: "product",
-    fields: req.queryConfig.fields,
+    fields: withoutLinkedAttributeValues(req.queryConfig.fields),
     filters: { ...productFilters, id: req.params.id },
   })
 

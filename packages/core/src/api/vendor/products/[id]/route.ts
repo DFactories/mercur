@@ -13,6 +13,7 @@ import { productEditDeleteProductWorkflow } from "../../../../workflows/product-
 import { productEditUpdateProductWorkflow } from "../../../../workflows/product-edit/workflows/product-edit-update-product"
 import {
   enrichProductAttributes,
+  withoutLinkedAttributeValues,
   wrapProductVariantsWithOffers,
 } from "../../../utils"
 import { VendorUpdateProductType } from "../validators"
@@ -36,7 +37,7 @@ export const GET = async (
     data: [product],
   } = await query.graph({
     entity: "product",
-    fields: req.queryConfig.fields,
+    fields: withoutLinkedAttributeValues(req.queryConfig.fields),
     filters: { id: req.params.id },
   })
 
