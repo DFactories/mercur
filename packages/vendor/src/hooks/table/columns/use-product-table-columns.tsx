@@ -58,7 +58,9 @@ export const useProductTableColumns = () => {
         cell: ({ row }) => (
           <div className="flex items-center gap-x-2">
             <ProductStatusCell status={row.original.status} />
-            {row.original.pending_change ? (
+            {(row.original as HttpTypes.VendorProduct & {
+              pending_change?: { id: string } | null;
+            }).pending_change ? (
               <Badge size="2xsmall" color="orange">
                 {t("products.edits.pendingBadge")}
               </Badge>
