@@ -6,7 +6,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { HttpTypes } from "@mercurjs/types"
 
 import { createSellerPriceListsWorkflow } from "../../../workflows/price-list"
-import { transformPriceList } from "./helpers"
+import { scopePricesToSellerOffers, transformPriceList } from "./helpers"
 import { VendorCreatePriceListType } from "./validators"
 
 export const GET = async (
@@ -37,9 +37,15 @@ export const POST = async (
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const sellerId = req.seller_context!.seller_id
 
+  const prices = await scopePricesToSellerOffers(
+    req.scope,
+    sellerId,
+    req.validatedBody.prices ?? []
+  )
+
   const { result } = await createSellerPriceListsWorkflow(req.scope).run({
     input: {
-      price_lists_data: [req.validatedBody],
+      price_lists_data: [{ ...req.validatedBody, prices }],
       seller_id: sellerId,
     },
   })

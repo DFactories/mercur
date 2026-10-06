@@ -14,6 +14,49 @@ medusaIntegrationTestRunner({
             let _seller2: any
             let seller2Headers: any
 
+            // A price-list price applies to one of the seller's offers, so a
+            // seller can only price a variant it sells.
+            const createOwnOffer = async (headers: any, variantId: string) => {
+                const location = (
+                    await api.post(
+                        `/vendor/stock-locations`,
+                        { name: `WH ${variantId}` },
+                        headers
+                    )
+                ).data.stock_location
+                const profile = (
+                    await api.post(
+                        `/vendor/shipping-profiles`,
+                        { name: `Profile ${variantId}`, type: "default" },
+                        headers
+                    )
+                ).data.shipping_profile
+
+                return (
+                    await api.post(
+                        `/vendor/offers`,
+                        {
+                            sku: `OFFER-${variantId}`,
+                            variant_id: variantId,
+                            shipping_profile_id: profile.id,
+                            inventory_items: [
+                                {
+                                    title: `Inventory ${variantId}`,
+                                    stock_levels: [
+                                        {
+                                            location_id: location.id,
+                                            stocked_quantity: 5,
+                                        },
+                                    ],
+                                },
+                            ],
+                            prices: [{ amount: 1000, currency_code: "usd" }],
+                        },
+                        headers
+                    )
+                ).data.offer
+            }
+
             beforeAll(async () => {
                 appContainer = getContainer()
             })
@@ -349,6 +392,7 @@ medusaIntegrationTestRunner({
 
                     const productId = product.id
                     const variantId = product.variants[0].id
+                    await createOwnOffer(seller1Headers, variantId)
 
                     const priceListResponse = await api.post(
                         `/vendor/price-lists`,
@@ -412,6 +456,7 @@ medusaIntegrationTestRunner({
 
                     const productId = product.id
                     const variantId = product.variants[0].id
+                    await createOwnOffer(seller1Headers, variantId)
 
                     const priceListResponse = await api.post(
                         `/vendor/price-lists`,
