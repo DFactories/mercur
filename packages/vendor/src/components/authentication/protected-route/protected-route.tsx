@@ -5,7 +5,14 @@ import { SearchProvider } from "../../../providers/search-provider";
 import { SidebarProvider } from "../../../providers/sidebar-provider";
 
 export const ProtectedRoute = () => {
-  const { seller_member, isLoading } = useMe();
+  /**
+   * The route's loader has already asked, and every loader below waited for
+   * the answer. A failure is that answer; refetching it on mount was the
+   * second 401 a signed-out deep link logged.
+   */
+  const { seller_member, isLoading } = useMe(undefined, {
+    retryOnMount: false,
+  });
   const location = useLocation();
 
   if (isLoading) {

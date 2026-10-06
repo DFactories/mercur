@@ -4,12 +4,16 @@ import type { AdminReviewResponse } from "@mercurjs/types";
 import { t } from "i18next";
 import { Outlet, type RouteObject, type UIMatch } from "react-router-dom";
 
-import { ProtectedRoute } from "@components/authentication/protected-route";
+import {
+  hasSession,
+  ProtectedRoute,
+} from "@components/authentication/protected-route";
 import { RoutePermissionGuard } from "@components/authentication/route-permission-guard";
 import { MainLayout } from "@components/layout/main-layout";
 import { PublicLayout } from "@components/layout/public-layout";
 import { SettingsLayout } from "@components/layout/settings-layout";
 import { ErrorBoundary } from "@components/utilities/error-boundary";
+import { requireSession } from "@lib/require-session";
 
 import { TaxRegionDetailBreadcrumb } from "./pages/tax-regions/tax-region-detail/breadcrumb";
 import { taxRegionLoader } from "./pages/tax-regions/tax-region-detail/loader";
@@ -72,6 +76,7 @@ export function getRouteMap({
     {
       element: <ProtectedRoute />,
       errorElement: <ErrorBoundary />,
+      loader: hasSession,
       /**
        * React Router asks for this the moment a data router hydrates into a
        * `lazy` route — which is every route here. Without it the console
@@ -84,7 +89,7 @@ export function getRouteMap({
        * flash on every navigation and read as slower, not faster.
        */
       hydrateFallbackElement: <div />,
-      children: [
+      children: requireSession([
         {
           element: <MainLayout />,
           children: guarded(mergeRoutes(
@@ -1190,11 +1195,12 @@ export function getRouteMap({
             customMainRoutes,
           )),
         },
-      ],
+      ], hasSession),
     },
     {
       element: <ProtectedRoute />,
       errorElement: <ErrorBoundary />,
+      loader: hasSession,
       /**
        * React Router asks for this the moment a data router hydrates into a
        * `lazy` route — which is every route here. Without it the console
@@ -1207,7 +1213,7 @@ export function getRouteMap({
        * flash on every navigation and read as slower, not faster.
        */
       hydrateFallbackElement: <div />,
-      children: [
+      children: requireSession([
         {
           path: "/settings",
           handle: {
@@ -2233,7 +2239,7 @@ export function getRouteMap({
             customSettingsRoutes?.[0]?.children || [],
           )),
         },
-      ],
+      ], hasSession),
     },
     {
       element: <PublicLayout />,

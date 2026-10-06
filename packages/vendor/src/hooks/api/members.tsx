@@ -6,10 +6,12 @@ import {
 import {
   UseMutationOptions,
   UseQueryOptions,
+  queryOptions,
   useMutation,
   useQuery,
 } from "@tanstack/react-query";
 import { sdk } from "../../lib/client";
+import { isClientError } from "../../lib/is-fetch-error";
 import { queryClient } from "../../lib/query-client";
 import { queryKeysFactory } from "../../lib/query-key-factory";
 
@@ -19,20 +21,36 @@ export const membersQueryKeys = {
   me: () => [MEMBERS_QUERY_KEY, "me"],
 };
 
-export const useMe = (
-  query?: Record<string, unknown>,
-  options?: UseQueryOptions<
-    any,
-    ClientError,
-    InferClientOutput<typeof sdk.vendor.members.me.query>
-  >,
-) => {
-  const { data, ...rest } = useQuery({
+/**
+ * Shared by `useMe` and the router's session check so both fill one cache
+ * entry. A 401 is not retried: a missing session does not come back on a
+ * second try, and the retry only doubled the console error and held the
+ * redirect to /login for a second.
+ */
+export const meQueryOptions = (query?: Record<string, unknown>) =>
+  queryOptions({
     queryFn: () =>
       sdk.vendor.members.me.query(
         query as Parameters<typeof sdk.vendor.members.me.query>[0],
       ),
     queryKey: query ? [...membersQueryKeys.me(), query] : membersQueryKeys.me(),
+    retry: (failureCount, error) =>
+      !(isClientError(error) && error.status === 401) && failureCount < 1,
+  });
+
+export const useMe = (
+  query?: Record<string, unknown>,
+  options?: Omit<
+    UseQueryOptions<
+      any,
+      ClientError,
+      InferClientOutput<typeof sdk.vendor.members.me.query>
+    >,
+    "queryKey" | "queryFn"
+  >,
+) => {
+  const { data, ...rest } = useQuery({
+    ...meQueryOptions(query),
     ...options,
   });
 

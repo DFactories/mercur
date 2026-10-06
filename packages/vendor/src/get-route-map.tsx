@@ -1,10 +1,14 @@
 import { t } from "i18next";
 import { Outlet, RouteObject, UIMatch } from "react-router-dom";
-import { ProtectedRoute } from "./components/authentication/protected-route";
+import {
+  hasSession,
+  ProtectedRoute,
+} from "./components/authentication/protected-route";
 import { MainLayout } from "./components/layout/main-layout";
 import { PublicLayout } from "./components/layout/public-layout";
 import { SettingsLayout } from "./components/layout/settings-layout";
 import { ErrorBoundary } from "./components/utilities/error-boundary";
+import { requireSession } from "./lib/require-session";
 
 /**
  * Merges custom routes into base routes. Custom routes with a matching path
@@ -55,6 +59,7 @@ export function getRouteMap({
     {
       element: <ProtectedRoute />,
       errorElement: <ErrorBoundary />,
+      loader: hasSession,
       /**
        * React Router asks for this the moment a data router hydrates into a
        * `lazy` route — which is every route here. Without it the console
@@ -67,7 +72,7 @@ export function getRouteMap({
        * flash on every navigation and read as slower, not faster.
        */
       hydrateFallbackElement: <div />,
-      children: [
+      children: requireSession([
         {
           element: <MainLayout />,
           children: mergeRoutes(
@@ -1168,13 +1173,14 @@ export function getRouteMap({
             customMainRoutes,
           ),
         },
-      ],
+      ], hasSession),
     },
 
     // PROTECTED - SETTINGS LAYOUT
     {
       element: <ProtectedRoute />,
       errorElement: <ErrorBoundary />,
+      loader: hasSession,
       /**
        * React Router asks for this the moment a data router hydrates into a
        * `lazy` route — which is every route here. Without it the console
@@ -1187,7 +1193,7 @@ export function getRouteMap({
        * flash on every navigation and read as slower, not faster.
        */
       hydrateFallbackElement: <div />,
-      children: [
+      children: requireSession([
         {
           path: "/settings",
           element: <SettingsLayout />,
@@ -1713,7 +1719,7 @@ export function getRouteMap({
             customSettingsRoutes?.[0]?.children || [],
           ),
         },
-      ],
+      ], hasSession),
     },
 
     // PUBLIC LAYOUT
