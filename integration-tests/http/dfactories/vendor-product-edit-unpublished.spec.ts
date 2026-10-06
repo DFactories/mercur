@@ -22,9 +22,6 @@ import { createSellerUser } from "../../helpers/create-seller-user"
 
 jest.setTimeout(120_000)
 
-const PENDING_MESSAGE =
-  "There is already an active update request for this product. Only one request can be active at a time."
-
 /**
  * REGRESSION — production, 2026-09-23.
  *
@@ -304,7 +301,7 @@ medusaIntegrationTestRunner({
       })
 
       describe("a published product still goes through approval", () => {
-        it("queues the edit, and refuses the next one until it is resolved", async () => {
+        it("queues the edit, and adds the next ones to the same request", async () => {
           const productId = await createPublished("Live")
 
           const first = await api.post(
@@ -316,37 +313,41 @@ medusaIntegrationTestRunner({
             ProductChangeStatus.PENDING,
           )
           expect((await getProduct(productId))!.title).toBe("Live")
+          const changeId = first.data.product_change.id
 
-          const responses = await allRefused([
-            () =>
-              api.post(
-                `/vendor/products/${productId}`,
-                { title: "Live v3" },
-                sellerHeaders,
-              ),
-            () =>
-              api.post(
-                `/vendor/products/${productId}/attributes/batch`,
-                { add: [{ title: "Finish", type: "text", value: "Matte" }] },
-                sellerHeaders,
-              ),
-            () => api.delete(`/vendor/products/${productId}`, sellerHeaders),
-          ])
-          for (const res of responses) {
-            expect(res.status).toBe(400)
-            expect(res.data.message).toBe(PENDING_MESSAGE)
+          const later = [
+            await api.post(
+              `/vendor/products/${productId}`,
+              { title: "Live v3" },
+              sellerHeaders,
+            ),
+            await api.post(
+              `/vendor/products/${productId}/attributes/batch`,
+              { add: [{ title: "Finish", type: "text", value: "Matte" }] },
+              sellerHeaders,
+            ),
+          ]
+          for (const res of later) {
+            expect(res.status).toBe(202)
+            expect(res.data.product_change.id).toBe(changeId)
+            expect(res.data.product_change.status).toBe(
+              ProductChangeStatus.PENDING,
+            )
           }
+          expect((await getProduct(productId))!.title).toBe("Live")
 
-          // Canceling the open request frees the product again.
+          // Canceling the open request withdraws all of it; the next edit
+          // opens a new one.
           await api.post(`/vendor/products/${productId}/cancel`, {}, sellerHeaders)
           const again = await api.post(
             `/vendor/products/${productId}`,
-            { title: "Live v3" },
+            { title: "Live v4" },
             sellerHeaders,
           )
           expect(again.data.product_change.status).toBe(
             ProductChangeStatus.PENDING,
           )
+          expect(again.data.product_change.id).not.toBe(changeId)
         })
 
         it("is not blocked by a request pending on a different product", async () => {

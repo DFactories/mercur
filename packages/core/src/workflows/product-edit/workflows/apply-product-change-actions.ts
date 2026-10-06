@@ -25,6 +25,10 @@ import {
   type VariantImageLinks,
 } from "../steps"
 import { deleteOffersWorkflow } from "../../offer/workflows/delete-offers"
+import {
+  collapseProductChangeActions,
+  type CollapsibleProductChangeAction,
+} from "../utils/collapse-product-change-actions"
 import { applyProductAttributeChangeActionsWorkflow } from "./apply-product-attribute-change-actions"
 
 export type ApplyProductChangeActionsWorkflowInput = {
@@ -71,7 +75,15 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
   function (input: ApplyProductChangeActionsWorkflowInput) {
     const { data: actions } = useQueryGraphStep({
       entity: "product_change_action",
-      fields: ["id", "product_id", "action", "details", "applied"],
+      fields: [
+        "id",
+        "product_id",
+        "action",
+        "details",
+        "applied",
+        "ordering",
+        "created_at",
+      ],
       filters: {
         product_change_id: input.change_ids,
         applied: false,
@@ -102,12 +114,18 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
       const productsToDelete = new Set<string>()
       const pendingActionIds: string[] = []
 
-      for (const action of actions ?? []) {
-        if (!action || action.applied) continue
-        // Types this workflow cannot act on keep `applied: false` — stamping
-        // them would assert an application that never happened.
-        if (!HANDLED_ACTION_TYPES.has(action.action as string)) continue
-        pendingActionIds.push(action.id as string)
+      const unapplied = (actions ?? []).filter(
+        (action) =>
+          !!action &&
+          !action.applied &&
+          // Types this workflow cannot act on keep `applied: false` — stamping
+          // them would assert an application that never happened.
+          HANDLED_ACTION_TYPES.has(action.action as string),
+      ) as CollapsibleProductChangeAction[]
+
+      pendingActionIds.push(...unapplied.map((action) => action.id))
+
+      for (const action of collapseProductChangeActions(unapplied)) {
 
         const productId = action.product_id as string
         const details = (action.details ?? {}) as Record<string, unknown>

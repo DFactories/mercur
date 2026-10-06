@@ -8,6 +8,7 @@ import { HttpTypes } from "@mercurjs/types"
 
 import { createProductsWorkflow } from "../../../workflows/product/workflows/create-products"
 import {
+  annotatePendingChanges,
   enrichProductAttributes,
   wrapProductVariantsWithOffers,
 } from "../../utils"
@@ -36,6 +37,7 @@ export const GET = async (
   })
 
   await enrichProductAttributes(req.scope, products as any[])
+  await annotatePendingChanges(req.scope, products as { id: string }[])
 
   if (withOffers) {
     await wrapProductVariantsWithOffers(

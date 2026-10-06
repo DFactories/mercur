@@ -1,6 +1,9 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { ensureSellerMiddleware } from "./ensure-seller-middleware"
+import {
+  ensureSellerMiddleware,
+  resetSellerDefaultRolesMemo,
+} from "./ensure-seller-middleware"
 
 /**
  * An owner is never role-restricted.
@@ -24,10 +27,21 @@ import { ensureSellerMiddleware } from "./ensure-seller-middleware"
  * have turned the inconsistency into a lockout.
  */
 
-const invoke = async (sellerMember: {
-  role_id: string | null
-  is_owner: boolean
-}) => {
+const stubRbac = () => ({
+  listRbacRoles: vi.fn(async () => []),
+  createRbacRoles: vi.fn(async (r: unknown[]) => r),
+  listRbacPolicies: vi.fn(async () => []),
+  listRbacRolePolicies: vi.fn(async () => []),
+  createRbacRolePolicies: vi.fn(async () => []),
+})
+
+const invoke = async (
+  sellerMember: {
+    role_id: string | null
+    is_owner: boolean
+  },
+  rbac: ReturnType<typeof stubRbac> = stubRbac()
+) => {
   // The selection the middleware asks for, captured so a test cannot pass by
   // asserting on a field the real query never requests. That is exactly how
   // the owner bypass shipped broken: the mock handed back `is_owner`, the real
@@ -63,13 +77,7 @@ const invoke = async (sellerMember: {
           }
         }
         if (key === "rbac") {
-          return {
-            listRbacRoles: async () => [],
-            createRbacRoles: async (r: unknown[]) => r,
-            listRbacPolicies: async () => [],
-            listRbacRolePolicies: async () => [],
-            createRbacRolePolicies: async () => [],
-          }
+          return rbac
         }
         throw new Error(`unexpected resolve(${key})`)
       },
@@ -88,6 +96,37 @@ const invoke = async (sellerMember: {
 }
 
 describe("ensureSellerMiddleware", () => {
+  beforeEach(() => {
+    resetSellerDefaultRolesMemo()
+  })
+
+  it("reconciles the default roles once per process, not on every request", async () => {
+    const rbac = stubRbac()
+    const member = { role_id: "role_seller_inventory_management", is_owner: false }
+
+    await invoke(member, rbac)
+    await invoke(member, rbac)
+    await invoke(member, rbac)
+
+    expect(rbac.listRbacRoles).toHaveBeenCalledTimes(1)
+    expect(rbac.listRbacPolicies).toHaveBeenCalledTimes(1)
+    expect(rbac.listRbacRolePolicies).toHaveBeenCalledTimes(1)
+  })
+
+  it("retries the reconcile on the next request after a failure", async () => {
+    const rbac = stubRbac()
+    rbac.listRbacRoles.mockRejectedValueOnce(new Error("db down"))
+    const member = { role_id: "role_seller_inventory_management", is_owner: false }
+
+    await expect(invoke(member, rbac)).rejects.toThrow("db down")
+
+    const { next, roles } = await invoke(member, rbac)
+
+    expect(rbac.listRbacRoles).toHaveBeenCalledTimes(2)
+    expect(next).toHaveBeenCalledWith()
+    expect(roles).toEqual(["role_seller_inventory_management"])
+  })
+
   it("gives an owner administration policies whatever their role says", async () => {
     // The regression: an owner invited as Inventory Management. Before the fix
     // this produced ["role_seller_inventory_management"], which is bound to no

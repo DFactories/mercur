@@ -10,7 +10,10 @@ import {
 } from "@medusajs/framework"
 import { ProductStatus } from "@mercurjs/types"
 
-import { applyOfferedProductsFilter } from "../../utils"
+import {
+  applyOfferedProductsFilter,
+  applyPendingChangeFilter,
+} from "../../utils"
 import {
   CREATOR_VISIBLE_STATUSES,
   ensureSellerCanAccessProduct,
@@ -97,6 +100,7 @@ export const vendorProductsMiddlewares: MiddlewareRoute[] = [
       ),
       applySellerProductLinkFilter,
       applyOfferedProductsFilter,
+      applyPendingChangeFilter,
     ],
   },
   {

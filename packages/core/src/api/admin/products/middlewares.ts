@@ -6,7 +6,10 @@ import {
 
 import { createLinkBody } from "@medusajs/medusa/api/utils/validators"
 
-import { applyOfferedProductsFilter } from "../../utils"
+import {
+  applyOfferedProductsFilter,
+  applyPendingChangeFilter,
+} from "../../utils"
 import {
   adminProductQueryConfig,
   adminProductVariantQueryConfig,
@@ -37,6 +40,7 @@ export const adminProductsMiddlewares: MiddlewareRoute[] = [
         adminProductQueryConfig.list
       ),
       applyOfferedProductsFilter,
+      applyPendingChangeFilter,
     ],
   },
   {

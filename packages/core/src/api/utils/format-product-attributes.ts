@@ -22,6 +22,19 @@ const toValue = (
   v: ProductAttributeValueDTO,
 ): WrappedProductAttributeValueDTO => ({ id: v.id, name: v.name, rank: v.rank })
 
+/**
+ * Only a `multi_select` attribute is mirrored onto a ProductOption, so only that
+ * kind can define variants. A dictionary entry such as a `unit` "capacity" may
+ * carry `is_variant_axis` as a descriptive hint; reporting it as an axis made
+ * the variant forms send it as an option the product does not have, and Medusa
+ * refused every save.
+ */
+const definesVariants = (attribute?: {
+  type?: AttributeType | string | null
+  is_variant_axis?: boolean | null
+}) =>
+  !!attribute?.is_variant_axis && attribute?.type === AttributeType.MULTI_SELECT
+
 export function wrapProductWithProductAttributes(products: any[]): void {
   if (!products?.length) return
 
@@ -39,7 +52,7 @@ export function wrapProductWithProductAttributes(products: any[]): void {
         name: scoped.name,
         handle: scoped.handle ?? null,
         type: scoped.type,
-        is_variant_axis: !!scoped.is_variant_axis,
+        is_variant_axis: definesVariants(scoped),
         is_required: !!scoped.is_required,
         rank: scoped.rank,
         is_scoped: true,
@@ -63,7 +76,7 @@ export function wrapProductWithProductAttributes(products: any[]): void {
           name: attribute?.name,
           handle: attribute?.handle ?? null,
           type: attribute?.type,
-          is_variant_axis: !!attribute?.is_variant_axis,
+          is_variant_axis: definesVariants(attribute),
           is_required: !!attribute?.is_required,
           rank: attribute?.rank,
           is_scoped: false,

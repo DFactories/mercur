@@ -173,7 +173,7 @@ medusaIntegrationTestRunner({
           expect(editChange!.status).toBe(ProductChangeStatus.CONFIRMED)
         })
 
-        it("rejects a second pending edit while one is already open", async () => {
+        it("adds a second edit to the request that is still open", async () => {
           // Only a PUBLISHED product's edits queue; an unpublished one is
           // edited directly (see product-edit-unpublished.spec.ts).
           const {
@@ -185,25 +185,39 @@ medusaIntegrationTestRunner({
             { title: "Title", status: "published" },
             sellerHeaders,
           )
-          await seedPendingChange(productId, sellerId, [
+          const pendingId = await seedPendingChange(productId, sellerId, [
             {
               action: ProductChangeActionType.UPDATE,
               details: { field: "title", value: "Pending" },
             },
           ])
 
-          const res = await api
-            .post(
-              `/vendor/products/${productId}`,
-              { title: "Another" },
-              sellerHeaders,
-            )
-            .catch((e) => e.response)
-
-          expect(res.status).toBeGreaterThanOrEqual(400)
-          expect(res.data.message).toBe(
-            "There is already an active update request for this product. Only one request can be active at a time.",
+          const res = await api.post(
+            `/vendor/products/${productId}`,
+            { title: "Another" },
+            sellerHeaders,
           )
+
+          expect(res.status).toBe(202)
+          expect(res.data.product_change.id).toBe(pendingId)
+          expect(res.data.product_change.actions).toHaveLength(2)
+
+          // With the flag off the joined request is applied at once, and the
+          // later save wins.
+          const edits = (await listChanges(productId)).filter((c) =>
+            c.actions.some((a) => a.action === ProductChangeActionType.UPDATE),
+          )
+          expect(edits).toHaveLength(1)
+          expect(edits[0].status).toBe(ProductChangeStatus.CONFIRMED)
+          const query = container.resolve(ContainerRegistrationKeys.QUERY)
+          const {
+            data: [product],
+          } = await query.graph({
+            entity: "product",
+            fields: ["title"],
+            filters: { id: productId },
+          })
+          expect(product.title).toBe("Another")
         })
 
         it("allows an edit while another seller holds a pending change on the same product", async () => {

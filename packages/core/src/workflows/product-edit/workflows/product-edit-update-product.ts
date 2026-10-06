@@ -183,6 +183,7 @@ export const productEditUpdateProductWorkflow: ReturnWorkflow<
           created_by: input.created_by,
           actions,
           auto_confirm: editMode.direct,
+          existing_change_id: editMode.existing_change_id,
         }),
       ),
     })

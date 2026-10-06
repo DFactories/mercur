@@ -10,6 +10,7 @@ import {
 } from "@medusajs/framework/workflows-sdk"
 import { ProductAttributeBatchInput } from "@mercurjs/types"
 
+import { reconcileProductVariantAxesStep } from "../steps"
 import { addProductAttributesToProductWorkflow } from "./add-product-attributes-to-product"
 import { removeProductAttributesFromProductWorkflow } from "./remove-product-attributes-from-product"
 import { updateProductAttributesOnProductWorkflow } from "./update-product-attributes-on-product"
@@ -75,6 +76,8 @@ export const createAndLinkProductAttributesToProductWorkflow: ReturnWorkflow<
         input: { product_id: input.product_id, update: input.update ?? [] },
       }),
     )
+
+    reconcileProductVariantAxesStep({ product_id: input.product_id })
 
     const productAttributesLinked = createHook("productAttributesLinked", {
       product_id: input.product_id,

@@ -252,7 +252,7 @@ medusaIntegrationTestRunner({
         ).toBe(text.id)
       })
 
-      it("rejects a second batch while a pending change is open", async () => {
+      it("adds a second batch to the request that is still open", async () => {
         const attr = await createAttr({ name: "PendingAttr", type: "text" })
         const productId = await createOwnedProduct()
 
@@ -275,11 +275,28 @@ medusaIntegrationTestRunner({
           },
         ])
 
-        const err = await batch(productId, {
+        const res = await batch(productId, {
           add: [{ id: attr.id, value: "another" }],
-        }).catch((e) => e)
+        })
 
-        expect(err.response.status).toBeGreaterThanOrEqual(400)
+        expect(res.status).toEqual(202)
+        expect(res.data.product_change.id).toBe(change.id)
+        expect(
+          (res.data.product_change.actions ?? []).filter(
+            (a: { action: string }) =>
+              a.action === ProductChangeActionType.ATTRIBUTE_ADD,
+          ),
+        ).toHaveLength(2)
+
+        // The flag is off here, so the combined request is applied at once and
+        // the later save wins for the attribute both saves touched.
+        const product = await getProduct(productId)
+        const pending = (product.attributes ?? []).find(
+          (a: { name: string }) => a.name === "PendingAttr",
+        )
+        expect((pending?.values ?? []).map((v: { name: string }) => v.name)).toEqual([
+          "another",
+        ])
       })
 
     })

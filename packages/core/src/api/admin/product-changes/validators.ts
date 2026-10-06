@@ -23,3 +23,14 @@ export type AdminCancelProductChangeType = z.infer<
 > &
   AdditionalData
 export const AdminCancelProductChange = WithAdditionalData(CancelProductChange)
+
+const RejectProductChange = z
+  .object({
+    reason: z.string().optional(),
+  })
+  .strict()
+export type AdminRejectProductChangeType = z.infer<
+  typeof RejectProductChange
+> &
+  AdditionalData
+export const AdminRejectProductChange = WithAdditionalData(RejectProductChange)

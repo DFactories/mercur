@@ -15,6 +15,32 @@ import { SellerContext } from "../../types/seller-context"
 
 const SELLER_ID_HEADER = "x-seller-id"
 
+/**
+ * The default roles and their bindings only ever need to be reconciled once per
+ * process: policies are registered and synced at boot, and nothing removes a
+ * role or a binding at runtime. Doing it on every vendor request cost three
+ * queries and ~760 hydrated rows each time, and a page load fires a dozen
+ * requests at once. A failed attempt is forgotten so the next request retries.
+ */
+let sellerDefaultRolesReady: Promise<unknown> | null = null
+
+const ensureSellerDefaultRolesOnce = (rbacService: IRbacModuleService) => {
+  if (!sellerDefaultRolesReady) {
+    sellerDefaultRolesReady = ensureSellerDefaultRoles(rbacService).catch(
+      (error) => {
+        sellerDefaultRolesReady = null
+        throw error
+      }
+    )
+  }
+
+  return sellerDefaultRolesReady
+}
+
+export const resetSellerDefaultRolesMemo = () => {
+  sellerDefaultRolesReady = null
+}
+
 export async function ensureSellerMiddleware(
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse,
@@ -107,7 +133,7 @@ export async function ensureSellerMiddleware(
   if (effectiveRole) {
     const rbacService: IRbacModuleService = req.scope.resolve(Modules.RBAC)
 
-    await ensureSellerDefaultRoles(rbacService)
+    await ensureSellerDefaultRolesOnce(rbacService)
 
     req.auth_context.app_metadata = {
       ...req.auth_context.app_metadata,

@@ -31,6 +31,7 @@ const AdminGetProductsParamsFields = z.object({
   upc: z.string().optional(),
   barcode: z.string().optional(),
   has_offer: booleanString().optional(),
+  has_pending_change: booleanString().optional(),
   created_at: createOperatorMap().optional(),
   updated_at: createOperatorMap().optional(),
   deleted_at: createOperatorMap().optional(),

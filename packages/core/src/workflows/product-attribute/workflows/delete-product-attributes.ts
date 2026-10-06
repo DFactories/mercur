@@ -58,12 +58,26 @@ export const deleteProductAttributesWorkflow: ReturnWorkflow<
 
     deleteProductAttributesStep(input.ids)
 
-    const optionIdsToDelete = transform(
+    const mirroredOptionIds = transform(
       { attributesQuery },
       ({ attributesQuery }) =>
         (attributesQuery.data ?? [])
           .map((a: { product_option_id: string | null }) => a.product_option_id)
           .filter((id: string | null): id is string => !!id),
+    )
+
+    // Detaching an axis from its product already soft-deletes an orphaned
+    // exclusive option; deleting it again would fail on a missing row.
+    const { data: liveOptions } = useQueryGraphStep({
+      entity: "product_option",
+      fields: ["id"],
+      filters: { id: mirroredOptionIds },
+    }).config({ name: "delete-pa-live-options" })
+
+    const optionIdsToDelete = transform(
+      { liveOptions },
+      ({ liveOptions }) =>
+        (liveOptions ?? []).map((o: { id: string }) => o.id),
     )
 
     when(

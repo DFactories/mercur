@@ -265,6 +265,7 @@ export type Routes = {
             $id: {
                 cancel: typeof import("../src/api/admin/product-changes/[id]/cancel/route");
                 confirm: typeof import("../src/api/admin/product-changes/[id]/confirm/route");
+                reject: typeof import("../src/api/admin/product-changes/[id]/reject/route");
             };
         };
         productOptions: typeof import("@medusajs/medusa/api/admin/product-options/route") & {

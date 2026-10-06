@@ -33,6 +33,7 @@ const VendorGetProductsParamsFields = z.object({
   updated_at: createOperatorMap().optional(),
   deleted_at: createOperatorMap().optional(),
   has_offer: booleanString().optional(),
+  has_pending_change: booleanString().optional(),
 })
 
 export type VendorGetProductsParamsType = z.infer<typeof VendorGetProductsParams>

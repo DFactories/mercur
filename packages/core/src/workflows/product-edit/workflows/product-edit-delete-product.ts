@@ -45,6 +45,9 @@ export const productEditDeleteProductWorkflow: ReturnWorkflow<
         product_id: input.product_id,
         created_by: input.created_by,
         auto_confirm: input.auto_confirm ?? editMode.direct,
+        existing_change_id: input.auto_confirm
+          ? null
+          : editMode.existing_change_id,
         actions: [
           {
             product_id: input.product_id,

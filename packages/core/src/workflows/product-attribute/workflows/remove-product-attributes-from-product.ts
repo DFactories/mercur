@@ -8,12 +8,14 @@ import {
 } from "@medusajs/framework/workflows-sdk"
 import {
   dismissRemoteLinkStep,
-  removeProductOptionsFromProductStep,
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
 import { AttributeType, MercurModules } from "@mercurjs/types"
 
-import { validateProductAttributesNotRequiredStep } from "../steps"
+import {
+  detachVariantAxesFromProductStep,
+  validateProductAttributesNotRequiredStep,
+} from "../steps"
 import { deleteProductAttributesWorkflow } from "./delete-product-attributes"
 
 export type RemoveProductAttributesFromProductWorkflowInput = {
@@ -69,8 +71,7 @@ export const removeProductAttributesFromProductWorkflow = createWorkflow(
       { attributesQuery, productQuery, input },
       ({ attributesQuery, productQuery, input }) => {
         const product_id = input.product_id
-        const optionPairs: { product_option_id: string; product_id: string }[] =
-          []
+        const axisOptionIds: string[] = []
         const scopedAttrIds: string[] = []
         // The formatter reads the selected axis subset from the pivot, so axis
         // links must be cleaned up alongside non-axis ones.
@@ -91,12 +92,10 @@ export const removeProductAttributesFromProductWorkflow = createWorkflow(
 
           dismissAttrIds.add(a.id)
 
-          if (isAxis && !isScoped) {
-            optionPairs.push({
-              product_option_id: a.product_option_id as string,
-              product_id,
-            })
-          } else if (isScoped) {
+          if (isAxis) {
+            axisOptionIds.push(a.product_option_id as string)
+          }
+          if (isScoped) {
             scopedAttrIds.push(a.id)
           }
         }
@@ -115,12 +114,15 @@ export const removeProductAttributesFromProductWorkflow = createWorkflow(
             },
           }))
 
-        return { optionPairs, scopedAttrIds, dismissLinks }
+        return { axisOptionIds, scopedAttrIds, dismissLinks }
       },
     )
 
-    when({ plan }, ({ plan }) => plan.optionPairs.length > 0).then(() =>
-      removeProductOptionsFromProductStep(plan.optionPairs),
+    when({ plan }, ({ plan }) => plan.axisOptionIds.length > 0).then(() =>
+      detachVariantAxesFromProductStep({
+        product_id: input.product_id,
+        product_option_ids: plan.axisOptionIds,
+      }),
     )
 
     when({ plan }, ({ plan }) => plan.dismissLinks.length > 0).then(() =>

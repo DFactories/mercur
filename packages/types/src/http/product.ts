@@ -68,4 +68,9 @@ export interface VendorDeleteResponse {
 
 export interface VendorProduct extends ProductDTO {
   sales_channels?: SalesChannelDTO[];
+  /**
+   * The open edit request awaiting review, on list responses; null when there
+   * is none.
+   */
+  pending_change?: { id: string } | null;
 }

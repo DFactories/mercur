@@ -3,7 +3,13 @@ import {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { ProductChangeDTO, ProductChangeStatus } from "@mercurjs/types"
+import {
+  ProductChangeActionDTO,
+  ProductChangeDTO,
+  ProductChangeStatus,
+} from "@mercurjs/types"
+
+import { withCollapsedActions } from "../../../../../workflows/product-edit/utils/collapse-product-change-actions"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -23,5 +29,9 @@ export const GET = async (
     },
   })
 
-  res.json({ product_change: changes[0] ?? null })
+  const change = changes[0] as
+    | (ProductChangeDTO & { actions?: ProductChangeActionDTO[] })
+    | undefined
+
+  res.json({ product_change: change ? withCollapsedActions(change) : null })
 }

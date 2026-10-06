@@ -8,7 +8,9 @@ import {
   type ReturnWorkflow,
 } from "@medusajs/framework/workflows-sdk"
 import {
+  acquireLockStep,
   emitEventStep,
+  releaseLockStep,
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
 
@@ -17,6 +19,7 @@ import {
   confirmProductChangeValidationStep,
   confirmProductChangesStep,
 } from "../steps"
+import { productChangeLockKey } from "../utils/product-change-lock"
 import { applyProductChangeActionsWorkflow } from "./apply-product-change-actions"
 
 export type ConfirmProductChangeWorkflowInput = {
@@ -49,6 +52,14 @@ export const confirmProductChangeWorkflow: ReturnWorkflow<
   function (input: ConfirmProductChangeWorkflowInput) {
     const validate = createHook("validate", { input })
 
+    const lockKeys = transform({ input }, ({ input }) =>
+      input.ids.map(productChangeLockKey),
+    )
+
+    acquireLockStep({ key: lockKeys, timeout: 10, ttl: 60 }).config({
+      name: "pc-confirm-acquire-lock",
+    })
+
     const { data: changes } = useQueryGraphStep({
       entity: "product_change",
       fields: ["id", "status"],
@@ -74,6 +85,10 @@ export const confirmProductChangeWorkflow: ReturnWorkflow<
 
     applyProductChangeActionsWorkflow.runAsStep({
       input: { change_ids: input.ids },
+    })
+
+    releaseLockStep({ key: lockKeys }).config({
+      name: "pc-confirm-release-lock",
     })
 
     emitEventStep({

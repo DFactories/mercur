@@ -47,6 +47,11 @@ export type PrepareProductEditStepOutput = {
   direct: boolean
   /** Pending changes this edit superseded (and canceled). */
   superseded_change_ids: string[]
+  /**
+   * The actor's request that is still open on this published product. The
+   * edit is added to it, so the operator reviews one combined change.
+   */
+  existing_change_id: string | null
 }
 
 type PrevChangeScalar = {
@@ -56,13 +61,17 @@ type PrevChangeScalar = {
   canceled_at: Date | null
 }
 
-type PendingChange = PrevChangeScalar & { created_by?: string | null }
+type PendingChange = PrevChangeScalar & {
+  created_by?: string | null
+  created_at?: Date | string | null
+}
 
 /**
  * Decides how a vendor edit to one product is recorded, before it is staged:
  *
- * - **published** — queued for approval, and refused while the same actor's
- *   earlier request is still open.
+ * - **published** — queued for approval. While the same actor's earlier
+ *   request is still open the edit joins it instead of being refused, so a
+ *   store can keep editing a product that awaits review.
  * - **unpublished** — applied directly. Any request still pending from before
  *   (the queue used to catch these too) is canceled first: left open, an
  *   operator approving it later would write its stale values over this edit.
@@ -92,7 +101,14 @@ export const prepareProductEditStep = createStep(
 
     const { data: pending } = (await query.graph({
       entity: "product_change",
-      fields: ["id", "status", "canceled_by", "canceled_at", "created_by"],
+      fields: [
+        "id",
+        "status",
+        "canceled_by",
+        "canceled_at",
+        "created_by",
+        "created_at",
+      ],
       filters: {
         product_id: input.product_id,
         status: ProductChangeStatus.PENDING,
@@ -100,23 +116,33 @@ export const prepareProductEditStep = createStep(
     })) as { data: PendingChange[] }
 
     if (!isUnpublishedProductStatus(product.status as string)) {
-      const blocking = isDefined(input.created_by)
-        ? pending.filter((change) => change.created_by === input.created_by)
-        : pending
-
-      if (blocking.length) {
+      if (!isDefined(input.created_by) && pending.length) {
         throw pendingProductChangeError()
       }
 
+      const own = isDefined(input.created_by)
+        ? pending
+            .filter((change) => change.created_by === input.created_by)
+            .sort(
+              (a, b) =>
+                new Date(a.created_at ?? 0).getTime() -
+                new Date(b.created_at ?? 0).getTime(),
+            )
+        : []
+
       return new StepResponse<PrepareProductEditStepOutput, PrevChangeScalar[]>(
-        { direct: false, superseded_change_ids: [] },
+        {
+          direct: false,
+          superseded_change_ids: [],
+          existing_change_id: own[0]?.id ?? null,
+        },
         [],
       )
     }
 
     if (!pending.length) {
       return new StepResponse<PrepareProductEditStepOutput, PrevChangeScalar[]>(
-        { direct: true, superseded_change_ids: [] },
+        { direct: true, superseded_change_ids: [], existing_change_id: null },
         [],
       )
     }
@@ -139,6 +165,7 @@ export const prepareProductEditStep = createStep(
       {
         direct: true,
         superseded_change_ids: pending.map((change) => change.id),
+        existing_change_id: null,
       },
       pending.map((change) => ({
         id: change.id,

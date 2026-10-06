@@ -13,6 +13,7 @@ import {
 import {
   createRemoteLinkStep,
   dismissRemoteLinkStep,
+  emitEventStep,
   updateProductOptionValuesOnProductStep,
   useQueryGraphStep,
 } from "@medusajs/medusa/core-flows"
@@ -25,13 +26,16 @@ import {
 } from "@mercurjs/types"
 
 import {
+  ProductAttributeValueWorkflowEvents,
+  ProductAttributeWorkflowEvents,
+} from "../events"
+import {
   createProductAttributeValuesStep,
-  detachProductOptionValuesFromProductStep,
+  renameScopedAttributesStep,
+  type ScopedAxisValuesPlan,
+  syncScopedAxisValuesStep,
   updateProductAttributeValuesStep,
 } from "../steps"
-import { createProductAttributeValuesWorkflow } from "./create-product-attribute-values"
-import { deleteProductAttributeValuesWorkflow } from "./delete-product-attribute-values"
-import { updateProductAttributesWorkflow } from "./update-product-attributes"
 
 export type UpdateProductAttributesOnProductWorkflowInput = {
   product_id: string
@@ -288,7 +292,7 @@ export const updateProductAttributesOnProductWorkflow = createWorkflow(
       createRemoteLinkStep(swapLinks).config({ name: "upd-pa-value-links" }),
     )
 
-    const exclusivePlan = transform(
+    const scopedPlans = transform(
       { input, attributesQuery },
       ({ input, attributesQuery }) => {
         const attrsById = new Map(
@@ -297,125 +301,78 @@ export const updateProductAttributesOnProductWorkflow = createWorkflow(
             a,
           ]),
         )
-        const exclusive = input.update.filter((ref) => {
+        const plans: ScopedAxisValuesPlan[] = []
+        for (const ref of input.update) {
           const attr = attrsById.get(ref.id)
-          return !!attr && isAxis(attr) && !!attr.product_id
-        })
-        const target = exclusive.length === 1 ? exclusive[0] : undefined
-        if (!target) {
-          return {
-            shouldAdd: false,
-            shouldRemove: false,
-            attribute_id: "",
-            product_option_id: "",
-            addValues: [] as CreateProductAttributeValueDTO[],
-            removeIds: [] as string[],
-            removeOptvalIds: [] as string[],
+          if (!attr || !isAxis(attr) || !attr.product_id) {
+            continue
           }
+          const valueIds = new Set((attr.values ?? []).map((v) => v.id))
+          plans.push({
+            attribute_id: ref.id,
+            product_option_id: attr.product_option_id as string,
+            add_names: (ref.add ?? [])
+              .filter((a): a is { value: string } => typeof a !== "string")
+              .map((a) => a.value),
+            remove_value_ids: (ref.remove ?? []).filter((id) =>
+              valueIds.has(id),
+            ),
+          })
         }
-        const attr = attrsById.get(target.id) as ProductAttributeDTO
-        const addValues = (target.add ?? [])
-          .filter((a): a is { value: string } => typeof a !== "string")
-          .map((a) => ({ name: a.value }))
-        const valueById = new Map((attr.values ?? []).map((v) => [v.id, v]))
-        const removeIds = (target.remove ?? []).filter((id) =>
-          valueById.has(id),
-        )
-        // Medusa won't delete option values still associated with a product, so
-        // these mirrored option values must be detached first.
-        const removeOptvalIds = removeIds
-          .map((id) => valueById.get(id)?.product_option_value_id)
-          .filter((id): id is string => !!id)
-        return {
-          shouldAdd: addValues.length > 0,
-          shouldRemove: removeIds.length > 0,
-          attribute_id: target.id,
-          product_option_id: attr.product_option_id as string,
-          addValues,
-          removeIds,
-          removeOptvalIds,
-        }
+        return plans
       },
     )
 
-    const detached = when(
-      { exclusivePlan },
-      ({ exclusivePlan }) => exclusivePlan.shouldRemove,
-    ).then(() =>
-      detachProductOptionValuesFromProductStep({
-        product_id: input.product_id,
-        product_option_id: exclusivePlan.product_option_id,
-        value_ids: exclusivePlan.removeOptvalIds,
-      }),
-    )
+    const scopedSync = syncScopedAxisValuesStep({
+      product_id: input.product_id,
+      plans: scopedPlans,
+    })
 
-    const removeValueInput = transform(
-      { exclusivePlan, detached },
-      ({ exclusivePlan }) => ({ ids: exclusivePlan.removeIds }),
-    )
-
-    when(
-      { exclusivePlan },
-      ({ exclusivePlan }) => exclusivePlan.shouldRemove,
-    ).then(() =>
-      deleteProductAttributeValuesWorkflow.runAsStep({
-        input: removeValueInput,
-      }),
-    )
-
-    const exclusiveDismissLinks = transform(
-      { input, exclusivePlan },
-      ({ input, exclusivePlan }) =>
-        exclusivePlan.removeIds.map((vid) => ({
+    const scopedLinks = transform(
+      { input, scopedSync },
+      ({ input, scopedSync }) => {
+        const link = (vid: string): LinkDefinition => ({
           [Modules.PRODUCT]: { product_id: input.product_id },
           [MercurModules.PRODUCT_ATTRIBUTE]: {
             product_attribute_value_id: vid,
           },
-        })),
+        })
+        return {
+          add: scopedSync.created_value_ids.map(link),
+          dismiss: scopedSync.removed_value_ids.map(link),
+          created: scopedSync.created_value_ids.map((id) => ({ id })),
+          deleted: scopedSync.removed_value_ids.map((id) => ({ id })),
+        }
+      },
     )
 
     when(
-      { exclusiveDismissLinks },
-      ({ exclusiveDismissLinks }) => exclusiveDismissLinks.length > 0,
-    ).then(() =>
-      dismissRemoteLinkStep(exclusiveDismissLinks).config({
+      { scopedLinks },
+      ({ scopedLinks }) => scopedLinks.dismiss.length > 0,
+    ).then(() => {
+      dismissRemoteLinkStep(scopedLinks.dismiss).config({
         name: "upd-pa-exclusive-dismiss-links",
-      }),
-    )
-
-    const createdExclusiveValues = when(
-      { exclusivePlan },
-      ({ exclusivePlan }) => exclusivePlan.shouldAdd,
-    ).then(() =>
-      createProductAttributeValuesWorkflow.runAsStep({
-        input: {
-          attribute_id: exclusivePlan.attribute_id,
-          values: exclusivePlan.addValues,
-        },
-      }),
-    )
-
-    const exclusiveAddLinks = transform(
-      { input, createdExclusiveValues },
-      ({ input, createdExclusiveValues }) =>
-        ((createdExclusiveValues ?? []) as { id: string }[]).map((v) => ({
-          [Modules.PRODUCT]: { product_id: input.product_id },
-          [MercurModules.PRODUCT_ATTRIBUTE]: {
-            product_attribute_value_id: v.id,
-          },
-        })),
-    )
+      })
+      emitEventStep({
+        eventName: ProductAttributeValueWorkflowEvents.DELETED,
+        data: scopedLinks.deleted,
+      }).config({ name: "upd-pa-exclusive-values-deleted" })
+    })
 
     when(
-      { exclusiveAddLinks },
-      ({ exclusiveAddLinks }) => exclusiveAddLinks.length > 0,
-    ).then(() =>
-      createRemoteLinkStep(exclusiveAddLinks).config({
+      { scopedLinks },
+      ({ scopedLinks }) => scopedLinks.add.length > 0,
+    ).then(() => {
+      createRemoteLinkStep(scopedLinks.add).config({
         name: "upd-pa-exclusive-add-links",
-      }),
-    )
+      })
+      emitEventStep({
+        eventName: ProductAttributeValueWorkflowEvents.CREATED,
+        data: scopedLinks.created,
+      }).config({ name: "upd-pa-exclusive-values-created" })
+    })
 
-    const renamePlan = transform(
+    const renames = transform(
       { input, attributesQuery },
       ({ input, attributesQuery }) => {
         const attrsById = new Map(
@@ -424,31 +381,33 @@ export const updateProductAttributesOnProductWorkflow = createWorkflow(
             a,
           ]),
         )
-        const renames = input.update.filter((ref) => {
-          const attr = attrsById.get(ref.id)
-          return (
-            ref.title !== undefined &&
-            ref.title.trim().length > 0 &&
-            !!attr?.product_id
-          )
-        })
-        const target = renames.length === 1 ? renames[0] : undefined
-        return {
-          should: !!target,
-          id: target?.id ?? "",
-          name: target?.title ?? "",
-        }
+        return input.update
+          .filter((ref) => {
+            const attr = attrsById.get(ref.id)
+            return (
+              ref.title !== undefined &&
+              ref.title.trim().length > 0 &&
+              !!attr?.product_id
+            )
+          })
+          .map((ref) => ({
+            id: ref.id,
+            name: (ref.title as string).trim(),
+            product_option_id:
+              attrsById.get(ref.id)?.product_option_id ?? null,
+          }))
       },
     )
 
-    when({ renamePlan }, ({ renamePlan }) => renamePlan.should).then(() =>
-      updateProductAttributesWorkflow.runAsStep({
-        input: {
-          selector: { id: renamePlan.id },
-          update: { name: renamePlan.name },
-        },
-      }),
-    )
+    when({ renames }, ({ renames }) => renames.length > 0).then(() => {
+      renameScopedAttributesStep(renames)
+      emitEventStep({
+        eventName: ProductAttributeWorkflowEvents.UPDATED,
+        data: transform({ renames }, ({ renames }) =>
+          renames.map((r) => ({ id: r.id })),
+        ),
+      }).config({ name: "upd-pa-scoped-renamed" })
+    })
 
     return new WorkflowResponse(void 0)
   },

@@ -12,7 +12,10 @@ import {
   ProductChangeDTO,
 } from "@mercurjs/types"
 
-import { validateProductVariantsStep } from "../steps"
+import {
+  normalizeVariantOptionsStep,
+  validateProductVariantsStep,
+} from "../steps"
 import { prepareProductEditWorkflow } from "./prepare-product-edit"
 import { stageProductChangeWorkflow } from "./stage-product-change"
 
@@ -121,9 +124,14 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
       variants: currentVariants,
     })
 
+    const operations = normalizeVariantOptionsStep({
+      product_id: input.product_id,
+      operations: input.operations,
+    })
+
     const actions = transform(
-      { input, currentVariants },
-      ({ input, currentVariants }) => {
+      { input, operations, currentVariants },
+      ({ input, operations, currentVariants }) => {
         const acts: Array<
           Omit<CreateProductChangeActionDTO, "product_change_id">
         > = []
@@ -193,7 +201,7 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
           return stable(a) === stable(b)
         }
 
-        for (const op of input.operations ?? []) {
+        for (const op of (operations ?? []) as ProductEditVariantOperation[]) {
           switch (op.type) {
             case "add":
               acts.push({
@@ -269,6 +277,7 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
           created_by: input.created_by,
           actions,
           auto_confirm: editMode.direct,
+          existing_change_id: editMode.existing_change_id,
         }),
       ),
     })
