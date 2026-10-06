@@ -7,6 +7,16 @@ export function isReturnOption(shippingOption: HttpTypes.AdminShippingOption) {
   )
 }
 
+/**
+ * An option minted for one cart — a negotiated or quoted freight price — rather
+ * than one the store set up. It belongs to that buyer's checkout only.
+ */
+export function isCartScopedOption(
+  shippingOption: Pick<HttpTypes.AdminShippingOption, "rules">
+) {
+  return !!shippingOption.rules?.some((r) => r.attribute === "cart_id")
+}
+
 export function isOptionEnabledInStore(
   shippingOption: HttpTypes.AdminShippingOption
 ) {

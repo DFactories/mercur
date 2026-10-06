@@ -30,6 +30,7 @@ export const useProductTableQuery = ({
       "tag_id",
       "type_id",
       "status",
+      "has_pending_change",
       "id",
     ],
     prefix,
@@ -46,11 +47,14 @@ export const useProductTableQuery = ({
     type_id,
     is_giftcard,
     status,
+    has_pending_change,
     order,
     q,
   } = queryObject;
 
-  const searchParams: HttpTypes.AdminProductListParams = {
+  const searchParams: HttpTypes.AdminProductListParams & {
+    has_pending_change?: boolean;
+  } = {
     limit: pageSize,
     offset: offset ? Number(offset) : 0,
     sales_channel_id: sales_channel_id?.split(","),
@@ -63,6 +67,7 @@ export const useProductTableQuery = ({
     tag_id: tag_id ? tag_id.split(",") : undefined,
     type_id: type_id?.split(","),
     status: status?.split(",") as HttpTypes.AdminProductStatus[],
+    has_pending_change: has_pending_change === "true" ? true : undefined,
     q,
     fields: linkQuery.fields,
   };

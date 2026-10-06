@@ -2050,6 +2050,12 @@
                 }
               },
               "additionalProperties": false
+            },
+            "pendingBadge": {
+              "type": "string"
+            },
+            "pendingFilter": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -13658,6 +13664,39 @@
       "type": "object",
       "properties": {
         "toman": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "apiErrors": {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "object",
+          "properties": {
+            "axisInUse": {
+              "type": "string"
+            },
+            "optionValueMissing": {
+              "type": "string"
+            },
+            "variantOptionsMismatch": {
+              "type": "string"
+            },
+            "optionInUse": {
+              "type": "string"
+            },
+            "optionValueInUse": {
+              "type": "string"
+            },
+            "requestJustReviewed": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "shippingProviderNotEnabled": {
           "type": "string"
         }
       },

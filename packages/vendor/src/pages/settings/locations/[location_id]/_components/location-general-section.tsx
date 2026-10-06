@@ -44,6 +44,7 @@ import {
 import { formatProvider } from "@lib/format-provider"
 import {
   getShippingProfileName,
+  isCartScopedOption,
   isReturnOption,
 } from "@lib/shipping-options"
 import {
@@ -198,11 +199,13 @@ function ServiceZoneOptions({
 }: ServiceZoneOptionsProps) {
   const { t } = useTranslation()
 
-  const shippingOptions = zone.shipping_options.filter(
-    (o) => !isReturnOption(o)
+  const storeOptions = zone.shipping_options.filter(
+    (o) => !isCartScopedOption(o)
   )
 
-  const returnOptions = zone.shipping_options.filter((o) => isReturnOption(o))
+  const shippingOptions = storeOptions.filter((o) => !isReturnOption(o))
+
+  const returnOptions = storeOptions.filter((o) => isReturnOption(o))
 
   return (
     <div>
@@ -339,7 +342,9 @@ function ServiceZone({
   }, [zone.geo_zones])
 
   const [shippingOptionsCount, returnOptionsCount] = useMemo(() => {
-    const options = zone.shipping_options
+    const options = zone.shipping_options.filter(
+      (o) => !isCartScopedOption(o)
+    )
 
     const optionsCount = options.filter((o) => !isReturnOption(o))?.length
 

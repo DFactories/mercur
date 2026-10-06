@@ -160,6 +160,7 @@
   "/admin/product-categories/:id/sellers": "typeof import(\"@mercurjs/core/api/admin/product-categories/[id]/sellers/route\")",
   "/admin/product-changes/:id/cancel": "typeof import(\"@mercurjs/core/api/admin/product-changes/[id]/cancel/route\")",
   "/admin/product-changes/:id/confirm": "typeof import(\"@mercurjs/core/api/admin/product-changes/[id]/confirm/route\")",
+  "/admin/product-changes/:id/reject": "typeof import(\"@mercurjs/core/api/admin/product-changes/[id]/reject/route\")",
   "/admin/product-options": "typeof import(\"@medusajs/medusa/api/admin/product-options/route\")",
   "/admin/product-options/:id": "typeof import(\"@medusajs/medusa/api/admin/product-options/[id]/route\")",
   "/admin/product-options/:id/values": "typeof import(\"@medusajs/medusa/api/admin/product-options/[id]/values/route\")",

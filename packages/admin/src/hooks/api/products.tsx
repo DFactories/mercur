@@ -330,6 +330,36 @@ export const useCancelProductChange = (
   });
 };
 
+export const useRejectProductChange = (
+  productChangeId: string,
+  productId: string,
+  options?: UseMutationOptions<
+    ProductChangeResponse,
+    ClientError,
+    { reason?: string } | void
+  >,
+) => {
+  return useMutation({
+    ...options,
+    mutationFn: (payload) =>
+      sdk.admin.productChanges.$id.reject.mutate({
+        $id: productChangeId,
+        ...(payload ?? {}),
+      }) as Promise<ProductChangeResponse>,
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({
+        queryKey: productChangeQueryKeys.detail(productId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: productsQueryKeys.detail(productId),
+      });
+      queryClient.invalidateQueries({ queryKey: productsQueryKeys.lists() });
+
+      options?.onSuccess?.(data, variables, context);
+    },
+  });
+};
+
 export const useProductVariant = (
   productId: string,
   variantId: string,

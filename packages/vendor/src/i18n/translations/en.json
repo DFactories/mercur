@@ -495,14 +495,16 @@
         "deleteRequested": "Product deletion is pending approval.",
         "cancelTitle": "Cancel update request",
         "cancelDescription": "Are you sure you want to cancel this product update request? This action cannot be undone.",
-        "description": "An operator reviews these changes before they appear in the store. Until then no other change to this product can be saved; cancel the request to edit it again."
+        "description": "An operator reviews these changes before they appear in the store. Further edits you save are added to this same request; cancel it to withdraw all of them."
       },
       "toast": {
         "canceledSuccessfully": "Product update request was successfully canceled."
       },
       "errors": {
-        "pendingRequest": "This product already has an update request awaiting review. No other change can be saved until it is approved or canceled — you can cancel it at the top of the product page."
-      }
+        "pendingRequest": "This product already has an update request awaiting review from another source. Wait for it to be reviewed, or ask support."
+      },
+      "pendingBadge": "Edit pending review",
+      "pendingFilter": "Pending edit"
     },
     "create": {
       "title": "Create Product",
@@ -4573,7 +4575,16 @@
     "entityNotFound": "Not found: {{detail}}",
     "fileTooLarge": "The file is too large (maximum {{detail}} MB).",
     "imageUnprocessable": "This image could not be processed — the file may be damaged or in an unsupported format. Please upload it as JPG or PNG.",
-    "imageTooLarge": "This image is too large to process (maximum {{detail}} megapixels). Please upload a smaller photo."
+    "imageTooLarge": "This image is too large to process (maximum {{detail}} megapixels). Please upload a smaller photo.",
+    "product": {
+      "axisInUse": "This attribute is used by variants with different values. Make those variants the same for it, or remove them, first.",
+      "optionValueMissing": "This value is not defined for the variant attribute on this product. Add it to the attribute first.",
+      "variantOptionsMismatch": "Choose a value for every variant-defining attribute of this product.",
+      "optionInUse": "This attribute is still used by the product's variants.",
+      "optionValueInUse": "This value is used by variant \"{{detail}}\".",
+      "requestJustReviewed": "The previous request on this product was just reviewed. Save your change again."
+    },
+    "shippingProviderNotEnabled": "No shipping provider is enabled for this location. Enable one under the location's fulfillment providers."
   },
   "authHero": {
     "login": {

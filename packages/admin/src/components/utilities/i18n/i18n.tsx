@@ -3,6 +3,8 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
 import { defaultI18nOptions } from "../../../i18n/config";
+import { installApiErrorKeyTranslator } from "../../../i18n/api-error-keys";
+import { createLazyTranslationsBackend } from "../../../i18n/lazy-translations-backend";
 import translations from "../../../i18n/translations";
 import customI18nResources from "virtual:mercur/i18n";
 import config from "virtual:mercur/config";
@@ -45,14 +47,21 @@ export const I18n = () => {
         lookupLocalStorage: "lng",
       }),
     )
+    .use(createLazyTranslationsBackend(customI18nResources, deepMerge))
     .use(initReactI18next)
     .init({
       ...defaultI18nOptions,
+      partialBundledLanguages: true,
+      // A language that is not bundled arrives a moment later; render the
+      // fallback meanwhile instead of suspending a tree with no boundary.
+      react: { useSuspense: false },
       ...(config.i18n?.defaultLanguage && {
         lng: config.i18n.defaultLanguage,
       }),
       resources: mergedTranslations,
     });
+
+  installApiErrorKeyTranslator();
 
   return null;
 };

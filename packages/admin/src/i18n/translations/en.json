@@ -681,7 +681,9 @@
       "toast": {
         "confirmedSuccessfully": "Product update request confirmed",
         "rejectedSuccessfully": "Product update request rejected"
-      }
+      },
+      "pendingBadge": "Edit pending review",
+      "pendingFilter": "Pending edit"
     },
     "columns": {
       "product_display": "Product",
@@ -4551,5 +4553,16 @@
   },
   "currencies": {
     "toman": "toman"
+  },
+  "apiErrors": {
+    "product": {
+      "axisInUse": "This attribute is used by variants with different values. Make those variants the same for it, or remove them, first.",
+      "optionValueMissing": "This value is not defined for the variant attribute on this product. Add it to the attribute first.",
+      "variantOptionsMismatch": "Choose a value for every variant-defining attribute of this product.",
+      "optionInUse": "This attribute is still used by the product's variants.",
+      "optionValueInUse": "This value is used by variant \"{{detail}}\".",
+      "requestJustReviewed": "The previous request on this product was just reviewed. Save your change again."
+    },
+    "shippingProviderNotEnabled": "No shipping provider is enabled for this location. Enable one under the location's fulfillment providers."
   }
 }

@@ -69,6 +69,10 @@ export interface DataTableRootProps<TData> {
    * The layout of the table
    */
   layout?: "fill" | "fit"
+  /**
+   * Extra classes for a row, e.g. to mark the rows that need attention
+   */
+  getRowClassName?: (row: Row<TData>) => string | undefined
 }
 
 /**
@@ -97,6 +101,7 @@ export const DataTableRoot = <TData,>({
   noResultsProps,
   noHeader = false,
   layout = "fit",
+  getRowClassName,
 }: DataTableRootProps<TData>) => {
   const { t } = useTranslation()
   const [showStickyBorder, setShowStickyBorder] = useState(false)
@@ -235,7 +240,8 @@ export const DataTableRoot = <TData,>({
                           row.getIsSelected(),
                         "!bg-ui-bg-disabled !hover:bg-ui-bg-disabled":
                           isRowDisabled,
-                      }
+                      },
+                      getRowClassName?.(row)
                     )}
                   >
                     {cells.map((cell, index) => {

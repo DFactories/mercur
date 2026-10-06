@@ -3,6 +3,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
 import { defaultI18nOptions } from "../../../i18n/config";
+import { createLazyTranslationsBackend } from "../../../i18n/lazy-translations-backend";
 import { installPersianLocale } from "../../../i18n/persian-locale";
 import translations from "../../../i18n/translations";
 import customI18nResources from "virtual:mercur/i18n";
@@ -55,9 +56,14 @@ export const I18n = () => {
         caches: ["localStorage"],
       }),
     )
+    .use(createLazyTranslationsBackend(customI18nResources, deepMerge))
     .use(initReactI18next)
     .init({
       ...defaultI18nOptions,
+      partialBundledLanguages: true,
+      // A language that is not bundled arrives a moment later; render the
+      // fallback meanwhile instead of suspending a tree with no boundary.
+      react: { useSuspense: false },
       detection: {
         order: ["localStorage", "navigator"],
         lookupLocalStorage: VENDOR_LNG_KEY,

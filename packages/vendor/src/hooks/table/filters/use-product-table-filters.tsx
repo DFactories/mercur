@@ -154,6 +154,18 @@ export const useProductTableFilters = (
     ],
   }
 
+  const pendingChangeFilter: Filter = {
+    key: "has_pending_change",
+    label: t("products.edits.pendingFilter"),
+    type: "select",
+    options: [
+      {
+        label: t("products.edits.pendingBadge"),
+        value: "true",
+      },
+    ],
+  }
+
   const dateFilters: Filter[] = [
     { label: t("fields.createdAt"), key: "created_at" },
     { label: t("fields.updatedAt"), key: "updated_at" },
@@ -163,7 +175,7 @@ export const useProductTableFilters = (
     type: "date",
   }))
 
-  filters = [...filters, statusFilter, ...dateFilters]
+  filters = [...filters, statusFilter, pendingChangeFilter, ...dateFilters]
 
   return filters
 }

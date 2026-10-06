@@ -27,6 +27,7 @@ export const useProductTableQuery = ({
       "tag_id",
       "type_id",
       "status",
+      "has_pending_change",
       "id",
     ],
     prefix,
@@ -41,6 +42,7 @@ export const useProductTableQuery = ({
     tag_id,
     type_id,
     status,
+    has_pending_change,
     order,
     q,
   } = queryObject;
@@ -56,6 +58,7 @@ export const useProductTableQuery = ({
     tag_id: tag_id ? tag_id.split(",") : undefined,
     type_id: type_id?.split(","),
     status: status?.split(",") as ProductStatus[],
+    has_pending_change: has_pending_change === "true" ? true : undefined,
     q,
     fields: linkQuery.fields,
   };

@@ -21,6 +21,9 @@ import { loaderInitialData } from "@hooks/table/use-loader-initial-data";
 
 export const PAGE_SIZE = 10;
 
+const PENDING_CHANGE_ROW =
+  "[&>td]:!bg-ui-tag-orange-bg [&:hover>td]:!bg-ui-tag-orange-bg-hover";
+
 export const ProductListDataTable = () => {
   const { t } = useTranslation();
 
@@ -77,6 +80,12 @@ export const ProductListDataTable = () => {
       isLoading={isLoading}
       queryObject={raw}
       navigateTo={(row) => `${row.original.id}`}
+      getRowClassName={(row) =>
+        (row.original as { pending_change?: { id: string } | null })
+          .pending_change
+          ? PENDING_CHANGE_ROW
+          : undefined
+      }
       orderBy={[
         { key: "title", label: t("fields.title") },
         {

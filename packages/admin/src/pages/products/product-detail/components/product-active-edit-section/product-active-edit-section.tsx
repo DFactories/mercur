@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next"
 
 import { ConfirmPrompt } from "../../../../../components/common/confirm-prompt"
 import {
-  useCancelProductChange,
+  useRejectProductChange,
   useConfirmProductChange,
   useProductChange,
 } from "../../../../../hooks/api/products"
@@ -92,8 +92,8 @@ export const ProductActiveEditSection = ({
 
   const { mutateAsync: confirmChange, isPending: isConfirming } =
     useConfirmProductChange(product_change?.id ?? "", product.id)
-  const { mutateAsync: cancelChange, isPending: isRejecting } =
-    useCancelProductChange(product_change?.id ?? "", product.id)
+  const { mutateAsync: rejectChange, isPending: isRejecting } =
+    useRejectProductChange(product_change?.id ?? "", product.id)
 
   if (isError || !product_change) {
     return null
@@ -115,7 +115,7 @@ export const ProductActiveEditSection = ({
 
   const handleReject = async (note: string | undefined) => {
     try {
-      await cancelChange({ internal_note: note })
+      await rejectChange({ reason: note })
       toast.success(t("products.edits.toast.rejectedSuccessfully"))
       setRejectOpen(false)
     } catch (e) {

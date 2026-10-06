@@ -143,7 +143,19 @@ export const useProductTableFilters = (
     type: "date",
   }));
 
-  filters = [...filters, statusFilter, ...dateFilters];
+  const pendingChangeFilter: Filter = {
+    key: "has_pending_change",
+    label: t("products.edits.pendingFilter"),
+    type: "select",
+    options: [
+      {
+        label: t("products.edits.pendingBadge"),
+        value: "true",
+      },
+    ],
+  };
+
+  filters = [...filters, statusFilter, pendingChangeFilter, ...dateFilters];
 
   return filters;
 };

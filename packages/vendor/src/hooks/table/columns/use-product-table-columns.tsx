@@ -1,5 +1,7 @@
+import { Badge } from "@medusajs/ui";
 import { createColumnHelper } from "@tanstack/react-table";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   CategoryCell,
@@ -26,6 +28,8 @@ import { HttpTypes } from "@mercurjs/types";
 const columnHelper = createColumnHelper<HttpTypes.VendorProduct>();
 
 export const useProductTableColumns = () => {
+  const { t } = useTranslation();
+
   return useMemo(
     () => [
       columnHelper.display({
@@ -51,9 +55,18 @@ export const useProductTableColumns = () => {
       }),
       columnHelper.accessor("status", {
         header: () => <ProductStatusHeader />,
-        cell: ({ row }) => <ProductStatusCell status={row.original.status} />,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-x-2">
+            <ProductStatusCell status={row.original.status} />
+            {row.original.pending_change ? (
+              <Badge size="2xsmall" color="orange">
+                {t("products.edits.pendingBadge")}
+              </Badge>
+            ) : null}
+          </div>
+        ),
       }),
     ],
-    [],
+    [t],
   );
 };

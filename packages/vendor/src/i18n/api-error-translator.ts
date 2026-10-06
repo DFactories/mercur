@@ -17,8 +17,10 @@ import {
  * every `ClientError` through one transformer, so that is where the language
  * boundary belongs.
  *
- * Three tiers, most specific first:
+ * Four tiers, most specific first:
  *
+ * 0. A message that IS an `apiErrors.*` key — the backend's way to name a
+ *    refusal without choosing its words.
  * 1. `EXACT` — whole backend strings that never vary.
  * 2. `PATTERNS` — backend strings carrying an id or a name. The captured group
  *    is passed to the key so the vendor keeps the detail (which SKU, which
@@ -88,6 +90,29 @@ const EXACT: Record<string, string> = {
  * name — and is interpolated into the key.
  */
 const PATTERNS: { test: RegExp; key: string }[] = [
+  // variant axes — Medusa's own wording when a variant's options do not match
+  // the product's
+  {
+    test: /^Option value (.+) does not exist for option (.+)$/i,
+    key: "apiErrors.product.optionValueMissing",
+  },
+  {
+    test: /^Product has (\d+) option values but there were (\d+) provided/i,
+    key: "apiErrors.product.variantOptionsMismatch",
+  },
+  {
+    test: /^Cannot (?:delete product options that are associated|unassign product option)/i,
+    key: "apiErrors.product.optionInUse",
+  },
+  {
+    test: /^Cannot unassign option values .* using it: (.+)$/i,
+    key: "apiErrors.product.optionValueInUse",
+  },
+  // shipping — a stock location with no fulfillment provider enabled
+  {
+    test: /^Providers \((.+)\) are not enabled for the service location$/i,
+    key: "apiErrors.shippingProviderNotEnabled",
+  },
   // offers
   { test: /^Offer (.+) was not found$/i, key: "apiErrors.offerNotFound" },
   { test: /^Variant (.+) has no PriceSet$/i, key: "apiErrors.variantNoPriceSet" },
@@ -175,6 +200,11 @@ export const localizeApiMessage = (
   const raw = (message ?? "").trim()
 
   if (raw) {
+    if (/^apiErrors\.[\w.]+$/.test(raw)) {
+      const hit = resolve(raw)
+      if (hit) return hit
+    }
+
     const exact = EXACT[raw]
     if (exact) {
       const hit = resolve(exact)
@@ -184,7 +214,10 @@ export const localizeApiMessage = (
     for (const { test, key } of PATTERNS) {
       const match = raw.match(test)
       if (!match) continue
-      const hit = resolve(key, { detail: match[1] ?? "" })
+      const hit = resolve(key, {
+        detail: match[1] ?? "",
+        detail2: match[2] ?? "",
+      })
       if (hit) return hit
     }
   }

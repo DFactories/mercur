@@ -31,6 +31,7 @@ export const _DataTable = <TData,>({
   columns,
   pagination,
   navigateTo,
+  getRowClassName,
   onRowClick,
   commands,
   count = 0,
@@ -97,6 +98,7 @@ export const _DataTable = <TData,>({
         columns={columns}
         pagination
         navigateTo={navigateTo}
+        getRowClassName={getRowClassName}
         onRowClick={onRowClick}
         commands={commands}
         noResults={showNoResults}

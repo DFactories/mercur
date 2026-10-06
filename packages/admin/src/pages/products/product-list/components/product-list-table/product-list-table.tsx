@@ -35,6 +35,9 @@ import { ProductDTO } from "@mercurjs/types";
 
 const PAGE_SIZE = 20;
 
+const PENDING_CHANGE_ROW =
+  "[&>td]:!bg-ui-tag-orange-bg [&:hover>td]:!bg-ui-tag-orange-bg-hover";
+
 export const ProductListTitle = () => {
   const { t } = useTranslation();
 
@@ -159,6 +162,12 @@ export const ProductListDataTable = () => {
         isLoading={isLoading}
         queryObject={raw}
         navigateTo={(row) => `${row.original.id}`}
+        getRowClassName={(row) =>
+          (row.original as { pending_change?: { id: string } | null })
+            .pending_change
+            ? PENDING_CHANGE_ROW
+            : undefined
+        }
         orderBy={[
           { key: "title", label: t("fields.title") },
           { key: "created_at", label: t("fields.createdAt") },

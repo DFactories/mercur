@@ -29,6 +29,37 @@ beforeAll(async () => {
 const isPersian = (value: string) => /[؀-ۿ]/.test(value)
 
 describe("localizeApiMessage", () => {
+  it("translates a message that is itself an apiErrors key", () => {
+    expect(localizeApiMessage("apiErrors.product.axisInUse")).toBe(
+      fa.apiErrors.product.axisInUse,
+    )
+  })
+
+  it("translates Medusa's variant option refusals", () => {
+    expect(
+      localizeApiMessage("Option value 300 does not exist for option حجم"),
+    ).toBe(fa.apiErrors.product.optionValueMissing)
+    expect(
+      localizeApiMessage(
+        "Product has 5 option values but there were 4 provided option values for the variant: undefined.",
+      ),
+    ).toBe(fa.apiErrors.product.variantOptionsMismatch)
+    expect(
+      localizeApiMessage(
+        "Cannot delete product options that are associated with products.",
+      ),
+    ).toBe(fa.apiErrors.product.optionInUse)
+  })
+
+  it("translates a location with no fulfillment provider", () => {
+    expect(
+      localizeApiMessage(
+        "Providers (manual_manual) are not enabled for the service location",
+      ),
+    ).toBe(fa.apiErrors.shippingProviderNotEnabled)
+  })
+
+
   it("translates the standard HTTP statusText strings", () => {
     expect(isPersian(localizeApiMessage("Unauthorized"))).toBe(true)
     expect(isPersian(localizeApiMessage("Not Found"))).toBe(true)

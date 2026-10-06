@@ -1,129 +1,55 @@
-import bg from "./bg.json"
-import de from "./de.json"
-import el from "./el.json"
 import en from "./en.json"
-import es from "./es.json"
-import fr from "./fr.json"
-import he from "./he.json"
-import hu from "./hu.json"
-import it from "./it.json"
-import ja from "./ja.json"
-import pl from "./pl.json"
-import ptBR from "./ptBR.json"
-import ptPT from "./ptPT.json"
-import th from "./th.json"
-import tr from "./tr.json"
-import uk from "./uk.json"
-import ro from "./ro.json"
-import mk from "./mk.json"
-import mn from "./mn.json"
-import ar from "./ar.json"
-import zhCN from "./zhCN.json"
 import fa from "./fa.json"
-import cs from "./cs.json"
-import ru from "./ru.json"
-import lt from "./lt.json"
-import vi from "./vi.json"
-import ko from "./ko.json"
-import nl from "./nl.json"
-import bs from "./bs.json"
-import id from "./id.json"
-import zhTW from "./zhTW.json"
 
-const translations: Record<string, { translation: Record<string, any> }> = {
-  bs: {
-    translation: bs,
-  },
-  bg: {
-    translation: bg,
-  },
-  de: {
-    translation: de,
-  },
-  el: {
-    translation: el,
-  },
+export type TranslationResource = Record<string, unknown>
+
+/**
+ * Bundled with the panel: the fallback language and the one the panel opens in.
+ * Every other language is fetched when it is selected — eagerly importing all
+ * of them put ~8 MB of JSON into the entry chunk every visitor downloads.
+ */
+const translations: Record<string, { translation: TranslationResource }> = {
   en: {
     translation: en,
-  },
-  es: {
-    translation: es,
-  },
-  fr: {
-    translation: fr,
-  },
-  he: {
-    translation: he,
-  },
-  hu: {
-    translation: hu,
-  },
-  it: {
-    translation: it,
-  },
-  ja: {
-    translation: ja,
-  },
-  pl: {
-    translation: pl,
-  },
-  ptBR: {
-    translation: ptBR,
-  },
-  ptPT: {
-    translation: ptPT,
-  },
-  th: {
-    translation: th,
-  },
-  tr: {
-    translation: tr,
-  },
-  uk: {
-    translation: uk,
-  },
-  ro: {
-    translation: ro,
-  },
-  mk: {
-    translation: mk,
-  },
-  mn: {
-    translation: mn,
-  },
-  ar: {
-    translation: ar,
-  },
-  zhCN: {
-    translation: zhCN,
   },
   fa: {
     translation: fa,
   },
-  cs: {
-    translation: cs,
-  },
-  ru: {
-    translation: ru,
-  },
-  lt: {
-    translation: lt,
-  },
-  vi: {
-    translation: vi,
-  },
-  ko: {
-    translation: ko,
-  },
-  nl: {
-    translation: nl,
-  },
-  id: {
-    translation: id,
-  },
-  zhTW: {
-    translation: zhTW,
-  },
+}
+
+export const lazyTranslations: Record<
+  string,
+  () => Promise<{ default: TranslationResource }>
+> = {
+  bs: () => import("./bs.json"),
+  bg: () => import("./bg.json"),
+  de: () => import("./de.json"),
+  el: () => import("./el.json"),
+  es: () => import("./es.json"),
+  fr: () => import("./fr.json"),
+  he: () => import("./he.json"),
+  hu: () => import("./hu.json"),
+  it: () => import("./it.json"),
+  ja: () => import("./ja.json"),
+  pl: () => import("./pl.json"),
+  ptBR: () => import("./ptBR.json"),
+  ptPT: () => import("./ptPT.json"),
+  th: () => import("./th.json"),
+  tr: () => import("./tr.json"),
+  uk: () => import("./uk.json"),
+  ro: () => import("./ro.json"),
+  mk: () => import("./mk.json"),
+  mn: () => import("./mn.json"),
+  ar: () => import("./ar.json"),
+  zhCN: () => import("./zhCN.json"),
+  cs: () => import("./cs.json"),
+  ru: () => import("./ru.json"),
+  lt: () => import("./lt.json"),
+  vi: () => import("./vi.json"),
+  ko: () => import("./ko.json"),
+  nl: () => import("./nl.json"),
+  id: () => import("./id.json"),
+  zhTW: () => import("./zhTW.json"),
 }
 
 export default translations;
