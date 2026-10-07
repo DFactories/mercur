@@ -1540,6 +1540,12 @@
             },
             "pendingFilter": {
               "type": "string"
+            },
+            "pendingShort": {
+              "type": "string"
+            },
+            "pendingTooltip": {
+              "type": "string"
             }
           },
           "additionalProperties": false

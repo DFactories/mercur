@@ -683,7 +683,9 @@
         "rejectedSuccessfully": "Product update request rejected"
       },
       "pendingBadge": "Edit pending review",
-      "pendingFilter": "Pending edit"
+      "pendingFilter": "Pending edit",
+      "pendingShort": "Edit pending",
+      "pendingTooltip": "Changes submitted for this product have not been approved yet; buyers see the current version until they are."
     },
     "columns": {
       "product_display": "Product",

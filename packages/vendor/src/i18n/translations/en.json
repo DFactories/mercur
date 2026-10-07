@@ -511,7 +511,9 @@
         "pendingRequest": "This product already has an update request awaiting review from another source. Wait for it to be reviewed, or ask support."
       },
       "pendingBadge": "Edit pending review",
-      "pendingFilter": "Pending edit"
+      "pendingFilter": "Pending edit",
+      "pendingShort": "Edit pending",
+      "pendingTooltip": "Changes submitted for this product have not been approved yet; buyers see the current version until they are."
     },
     "create": {
       "title": "Create Product",
