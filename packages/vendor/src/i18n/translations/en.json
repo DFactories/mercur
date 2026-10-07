@@ -2358,6 +2358,10 @@
         "type": "Shipping option type",
         "fulfillmentOption": "Fulfillment option",
         "typeHint": "The standard shipping method. Its delivery time (shown in parentheses) is set by the marketplace and starts the order return window.",
+        "noPrice": {
+          "freightCollect": "The buyer pays the carrier on delivery, so this option has no price here and the pricing step is skipped.",
+          "freightQuote": "You price each basket when the buyer asks, so this option has no fixed price and the pricing step is skipped."
+        },
         "profileGoods": {
           "header": "None of your products are on this shipping profile",
           "description": "{{productCount}} of your products use this shipping profile, so this shipping option carries nothing. A buyer whose basket holds more than one producer will get an error when choosing this carriage. Either move this option to a profile your goods use, or move the goods onto this profile."
@@ -4593,7 +4597,10 @@
       "optionValueInUse": "This value is used by variant \"{{detail}}\".",
       "requestJustReviewed": "The previous request on this product was just reviewed. Save your change again."
     },
-    "shippingProviderNotEnabled": "No shipping provider is enabled for this location. Enable one under the location's fulfillment providers."
+    "shippingProviderNotEnabled": "No shipping provider is enabled for this location. Enable one under the location's fulfillment providers.",
+    "shippingOption": {
+      "unpricedType": "This shipping method has no price of its own; its price must be zero."
+    }
   },
   "authHero": {
     "login": {

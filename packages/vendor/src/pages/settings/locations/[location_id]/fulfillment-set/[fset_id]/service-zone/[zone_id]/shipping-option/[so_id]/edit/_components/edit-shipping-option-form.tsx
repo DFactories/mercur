@@ -10,13 +10,9 @@ import { Combobox } from "@components/inputs/combobox"
 import { RouteDrawer, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { useUpdateShippingOptions } from "@hooks/api/shipping-options"
-import { useComboboxData } from "@hooks/use-combobox-data"
-import { fetchQuery } from "@lib/client"
-import {
-  getShippingProfileName,
-  isOptionEnabledInStore,
-} from "@lib/shipping-options"
+import { isOptionEnabledInStore } from "@lib/shipping-options"
 import { ShippingProfileGoodsHint } from "@pages/settings/locations/_common/components"
+import { useShippingProfileCombobox } from "@pages/settings/locations/_common/hooks/use-shipping-profile-combobox"
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
@@ -54,24 +50,9 @@ export const EditShippingOptionForm = ({
     providerSupportsCalculatedPricing(shippingOption.provider_id) ||
     shippingOption.price_type === ShippingOptionPriceType.Calculated
 
-  const shippingProfiles = useComboboxData({
-    queryFn: async () => {
-      const { shipping_profiles } = await fetchQuery(
-        "/vendor/shipping-profiles",
-        {
-          method: "GET",
-        }
-      )
-      return shipping_profiles
-    },
-    queryKey: ["shipping_profiles_edit_shipping_option"],
-    getOptions: (data) =>
-      data?.map((profile: any) => ({
-        label: getShippingProfileName(profile.shipping_profile?.name ?? profile.name ?? ""),
-        value: profile.shipping_profile?.id ?? profile.id,
-      })),
-    defaultValue: shippingOption.shipping_profile_id,
-  })
+  const shippingProfiles = useShippingProfileCombobox(
+    shippingOption.shipping_profile_id
+  )
 
   const form = useForm<zod.infer<typeof EditShippingOptionSchema>>({
     defaultValues: {
@@ -93,6 +74,12 @@ export const EditShippingOptionForm = ({
         name: values.name,
         shipping_profile_id: values.shipping_profile_id,
         provider_id: shippingOption.provider_id,
+        // The radio was shown and never sent, so a change was dropped while
+        // the save reported success. Sent only when changed: resending a
+        // stored type re-runs Medusa's provider check for no reason.
+        ...(values.price_type !== shippingOption.price_type
+          ? { price_type: values.price_type }
+          : {}),
       },
       {
         onSuccess: ({ shipping_option }) => {

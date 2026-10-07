@@ -7079,6 +7079,18 @@
                 "typeHint": {
                   "type": "string"
                 },
+                "noPrice": {
+                  "type": "object",
+                  "properties": {
+                    "freightCollect": {
+                      "type": "string"
+                    },
+                    "freightQuote": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
                 "profileGoods": {
                   "type": "object",
                   "properties": {
@@ -13788,6 +13800,15 @@
         },
         "shippingProviderNotEnabled": {
           "type": "string"
+        },
+        "shippingOption": {
+          "type": "object",
+          "properties": {
+            "unpricedType": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

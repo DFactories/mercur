@@ -1,15 +1,21 @@
-import { Heading, Input, RadioGroup, Text } from "@medusajs/ui"
-import { UseFormReturn } from "react-hook-form"
+import { Heading, Hint, Input, RadioGroup, Text } from "@medusajs/ui"
+import { UseFormReturn, useWatch } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
 import { VendorExtendedAdminServiceZone } from "@custom-types/stock-location"
 
 import { Form } from "@components/common/form"
 import { Combobox } from "@components/inputs/combobox"
-import { shippingProfileQueryKeys } from "@hooks/api/shipping-profiles"
+import { useShippingOptionType } from "@hooks/api/shipping-option-types"
 import { useComboboxData } from "@hooks/use-combobox-data"
 import { fetchQuery } from "@lib/client"
+import {
+  FREIGHT_COLLECT_TYPE_CODE,
+  isSelectableShippingType,
+  isUnpricedShippingType,
+} from "@lib/shipping-options"
 import { ShippingProfileGoodsHint } from "@pages/settings/locations/_common/components"
+import { useShippingProfileCombobox } from "@pages/settings/locations/_common/hooks/use-shipping-profile-combobox"
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
@@ -40,42 +46,56 @@ export const CreateShippingOptionDetailsForm = ({
     form.watch("provider_id")
   )
 
-  const shippingProfiles = useComboboxData({
-    queryFn: () =>
-      fetchQuery(`/vendor/shipping-profiles`, {
-        method: "GET",
-      }),
-    queryKey: shippingProfileQueryKeys.lists(),
-    getOptions: (data) =>
-      (data.shipping_profiles || []).map((profile: any) => {
-        const name = profile.shipping_profile?.name ?? profile.name ?? ""
-        const id = profile.shipping_profile?.id ?? profile.id
-        return {
-          label: name.includes(":") ? name.split(":")[1] : name,
-          value: id,
-        }
-      }),
-  })
+  const shippingProfiles = useShippingProfileCombobox()
 
   // Admin-curated shipping method types. Each option shows the promised delivery
   // time (from the type's delivery link); the backend stamps that onto the
-  // option so the vendor never sets it directly.
+  // option so the vendor never sets it directly. The page params are forwarded
+  // so the list pages and searches on the server instead of repeating its
+  // first page.
   const shippingOptionTypes = useComboboxData({
-    queryFn: () =>
-      fetchQuery(`/vendor/shipping-option-types`, { method: "GET" }),
+    queryFn: (params: {
+      q?: string
+      limit?: number
+      offset?: number
+    }) =>
+      fetchQuery(`/vendor/shipping-option-types`, {
+        method: "GET",
+        query: params as Record<string, string | number>,
+      }),
     queryKey: ["vendor_shipping_option_types_combobox"],
     getOptions: (data) =>
-      (data.shipping_option_types || []).map((type: any) => {
-        const days = type.delivery?.estimated_delivery_days
-        return {
-          label:
-            days === null || days === undefined
-              ? type.label
-              : `${type.label} (${days}d)`,
-          value: type.id,
-        }
-      }),
+      (data.shipping_option_types || [])
+        // The type the backend mints for one cart's agreed carriage is not a
+        // store's own choice.
+        .filter((optionType: any) => isSelectableShippingType(optionType.code))
+        .map((optionType: any) => {
+          const days = optionType.delivery?.estimated_delivery_days
+          return {
+            label:
+              days === null || days === undefined
+                ? optionType.label
+                : `${optionType.label} (${days}d)`,
+            value: optionType.id,
+          }
+        }),
   })
+
+  const selectedTypeId = useWatch({
+    control: form.control,
+    name: "shipping_option_type_id",
+  })
+
+  const { shipping_option_type: selectedType } = useShippingOptionType(
+    selectedTypeId,
+    undefined,
+    { enabled: !!selectedTypeId }
+  )
+
+  const unpricedTypeCode =
+    selectedTypeId && isUnpricedShippingType(selectedType?.code)
+      ? selectedType?.code
+      : undefined
 
   // const fulfillmentProviders = useComboboxData({
   //   queryFn: (params) =>
@@ -227,6 +247,15 @@ export const CreateShippingOptionDetailsForm = ({
                     />
                   </Form.Control>
                   <Form.ErrorMessage />
+                  {unpricedTypeCode && (
+                    <Hint data-testid="shipping-option-type-no-price-hint">
+                      {t(
+                        unpricedTypeCode === FREIGHT_COLLECT_TYPE_CODE
+                          ? "stockLocations.shippingOptions.fields.noPrice.freightCollect"
+                          : "stockLocations.shippingOptions.fields.noPrice.freightQuote"
+                      )}
+                    </Hint>
+                  )}
                 </Form.Item>
               )
             }}

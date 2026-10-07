@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
 
 import { RouteDrawer } from "@components/modals"
-import { useShippingOptions } from "@hooks/api/shipping-options"
+import { useShippingOption } from "@hooks/api/shipping-options"
 import { EditShippingOptionForm } from "./_components/edit-shipping-option-form"
 import { FulfillmentSetType } from "@pages/settings/locations/_common/constants"
 
@@ -12,21 +12,16 @@ const LocationServiceZoneShippingOptionEdit = () => {
 
   const { location_id, so_id } = useParams()
 
-  const { shipping_options, isPending, isFetching, isError, error } =
-    useShippingOptions({
-      fields: "+service_zone.fulfillment_set.type",
-    })
-
-  const shippingOption = shipping_options?.find((so) => so?.id === so_id)
-
-  if (!isPending && !isFetching && !shippingOption) {
-    throw new Response(
-      JSON.stringify({
-        message: `Shipping option with ID ${so_id} was not found`,
-      }),
-      { status: 404, headers: { "Content-Type": "application/json" } }
-    )
-  }
+  // Retrieved by id. Picking it out of the list read only the list's first
+  // page (20 rows), so an option past it — easy once per-cart freight options
+  // accumulate — opened as "not found". The route answers 404 itself.
+  const {
+    shipping_option: shippingOption,
+    isError,
+    error,
+  } = useShippingOption(so_id!, {
+    fields: "+service_zone.fulfillment_set.type",
+  })
 
   if (isError) {
     throw error

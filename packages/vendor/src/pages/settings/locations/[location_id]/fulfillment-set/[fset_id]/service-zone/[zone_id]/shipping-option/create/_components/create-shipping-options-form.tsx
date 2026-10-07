@@ -4,14 +4,20 @@ import { Button, ProgressStatus, ProgressTabs, toast } from "@medusajs/ui"
 import { useForm, useWatch } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   RouteFocusModal,
   useRouteModal,
 } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
+import { useCurrentSeller } from "@hooks/api/sellers"
+import { useShippingOptionType } from "@hooks/api/shipping-option-types"
 import { useCreateShippingOptions } from "@hooks/api/shipping-options"
 import { castNumber } from "@lib/cast-number"
+import {
+  isUnpricedShippingType,
+  unpricedShippingPrices,
+} from "@lib/shipping-options"
 import {
   FulfillmentSetType,
   ShippingOptionPriceType,
@@ -78,6 +84,34 @@ export function CreateShippingOptionsForm({
   const isCalculatedPriceType =
     form.watch("price_type") === ShippingOptionPriceType.Calculated
 
+  const selectedTypeId = useWatch({
+    control: form.control,
+    name: "shipping_option_type_id",
+  })
+
+  const { shipping_option_type: selectedType } = useShippingOptionType(
+    selectedTypeId,
+    undefined,
+    { enabled: !!selectedTypeId }
+  )
+
+  // پس‌کرایه and freight on request carry no price of their own, so there is
+  // nothing for the pricing step to ask; the option is saved at zero.
+  const isUnpricedType =
+    !!selectedTypeId && isUnpricedShippingType(selectedType?.code)
+
+  const skipsPricing = isCalculatedPriceType || isUnpricedType
+
+  const { currency_code: sellerCurrencyCode } = useCurrentSeller()
+
+  // The type's code arrives after the pick; a producer quick enough to reach
+  // the pricing step first is sent back rather than left on a hidden tab.
+  useEffect(() => {
+    if (skipsPricing && activeTab === Tab.PRICING) {
+      setActiveTab(Tab.DETAILS)
+    }
+  }, [skipsPricing, activeTab])
+
   const { mutateAsync, isPending: isLoading } = useCreateShippingOptions()
 
   const handleSubmit = form.handleSubmit(async (data) => {
@@ -111,6 +145,12 @@ export function CreateShippingOptionsForm({
       (fo) => fo.id === data.fulfillment_option_id
     )
 
+    // Whatever the grid still holds from before the type was changed is
+    // discarded: an unpriced option is only ever stored at zero.
+    const prices = isUnpricedType
+      ? unpricedShippingPrices(sellerCurrencyCode as string)
+      : [...currencyPrices, ...regionPrices]
+
     await mutateAsync(
       {
         name: data.name,
@@ -118,7 +158,7 @@ export function CreateShippingOptionsForm({
         shipping_profile_id: data.shipping_profile_id,
         provider_id: data.provider_id,
         price_type: data.price_type,
-        prices: [...currencyPrices, ...regionPrices],
+        prices,
         data: fulfillmentOptionData as unknown as Record<string, unknown>,
         rules: [
           {
@@ -217,7 +257,7 @@ export function CreateShippingOptionsForm({
           const isEnterKey = e.key === "Enter"
           const isModifierPressed = e.metaKey || e.ctrlKey
           const shouldContinueToPricing =
-            activeTab !== Tab.PRICING && !isCalculatedPriceType
+            activeTab !== Tab.PRICING && !skipsPricing
 
           if (!isEnterKey) {
             return
@@ -253,7 +293,7 @@ export function CreateShippingOptionsForm({
                   {t("stockLocations.shippingOptions.create.tabs.details")}
                 </span>
               </ProgressTabs.Trigger>
-              {!isCalculatedPriceType && (
+              {!skipsPricing && (
                 <ProgressTabs.Trigger
                   value={Tab.PRICING}
                   status={pricesStatus}
@@ -290,11 +330,14 @@ export function CreateShippingOptionsForm({
                   {t("actions.cancel")}
                 </Button>
               </RouteFocusModal.Close>
-              {activeTab === Tab.PRICING || isCalculatedPriceType ? (
+              {activeTab === Tab.PRICING || skipsPricing ? (
                 <Button
                   size="small"
                   className="whitespace-nowrap"
                   isLoading={isLoading}
+                  // An unpriced option is saved at zero in the seller's
+                  // currency, which has to be known first.
+                  disabled={isUnpricedType && !sellerCurrencyCode}
                   key="submit-btn"
                   type="submit"
                 >

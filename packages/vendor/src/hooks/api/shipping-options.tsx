@@ -33,7 +33,10 @@ export const useShippingOption = (
 ) => {
   const { data, ...rest } = useQuery({
     queryFn: () => sdk.vendor.shippingOptions.$id.query({ $id: id, ...query }),
-    queryKey: shippingOptionsQueryKeys.detail(id),
+    // The query is part of the key: the edit and pricing pages ask for
+    // different fields, and sharing one cache entry handed one page the
+    // other's shape.
+    queryKey: shippingOptionsQueryKeys.detail(id, query),
     ...options,
   });
 

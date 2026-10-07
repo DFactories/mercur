@@ -46,6 +46,7 @@ import {
   getShippingProfileName,
   isCartScopedOption,
   isReturnOption,
+  isUnpricedShippingType,
 } from "@lib/shipping-options"
 import {
   FulfillmentSetType,
@@ -163,8 +164,11 @@ function ShippingOption({
               {
                 label: t("stockLocations.shippingOptions.pricing.action"),
                 icon: <CurrencyDollar />,
+                // پس‌کرایه and freight on request are stored at zero and
+                // the backend refuses any other price.
                 disabled:
-                  option.price_type === ShippingOptionPriceType.Calculated,
+                  option.price_type === ShippingOptionPriceType.Calculated ||
+                  isUnpricedShippingType(option.type?.code),
                 to: `/settings/locations/${locationId}/fulfillment-set/${fulfillmentSetId}/service-zone/${option.service_zone_id}/shipping-option/${option.id}/pricing`,
               },
             ],
