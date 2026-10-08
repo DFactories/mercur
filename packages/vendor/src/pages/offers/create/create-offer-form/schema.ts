@@ -7,6 +7,8 @@ const VariantRowSchema = z.object({
   variant_title: z.string(),
   product_thumbnail: z.string().nullish(),
   variant_sku: z.string().nullish(),
+  include: z.boolean().default(true),
+  already_offered: z.boolean().optional(),
   sku: z.string().max(64).default(""),
   shipping_profile_id: z.string().default(""),
   prices: z.record(z.string(), z.union([z.coerce.number().min(0), z.literal("")])).default({}),
@@ -38,28 +40,14 @@ const numericOrZero = (v: number | "" | undefined | null): number => {
   return Number(v) || 0
 }
 
-export const isVariantRowPublishable = (row: OfferVariantRow): boolean => {
-  const hasSku = !!row.sku && row.sku.trim().length > 0
-  const hasShipping =
-    !!row.shipping_profile_id && row.shipping_profile_id.length > 0
-  const hasEnabledLocation = Object.values(row.inventory ?? {}).some(
-    (v) => v.checked,
-  )
-  const hasNonZeroPrice = Object.values(row.prices ?? {}).some(
-    (v) => numericOrZero(v) > 0,
-  )
-  return hasSku || hasShipping || hasEnabledLocation || hasNonZeroPrice
-}
-
-export const variantRowRequiresSku = (row: OfferVariantRow): boolean => {
-  const hasEnabledLocation = Object.values(row.inventory ?? {}).some(
-    (v) => v.checked,
-  )
-  const hasNonZeroPrice = Object.values(row.prices ?? {}).some(
-    (v) => numericOrZero(v) > 0,
-  )
-  return hasEnabledLocation || hasNonZeroPrice
-}
+/**
+ * A master product lists every variant any producer makes, and one producer
+ * rarely makes them all. Only the rows a producer keeps ticked are validated
+ * and sent; a variant it already sells on starts unticked, so the form does
+ * not open a second offer on it.
+ */
+export const isRowOffered = (row: OfferVariantRow): boolean =>
+  row.include !== false && !row.already_offered
 
 /**
  * Does this row carry a real price in the store's currency?

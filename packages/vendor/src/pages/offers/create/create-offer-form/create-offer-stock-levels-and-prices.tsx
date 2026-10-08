@@ -18,7 +18,7 @@ import { usePricePreferences } from "../../../../hooks/api/price-preferences";
 import { useCurrentSeller } from "../../../../hooks/api/sellers";
 import { useShippingProfiles } from "../../../../hooks/api/shipping-profiles";
 import { useStockLocations } from "../../../../hooks/api/stock-locations";
-import { CreateOfferFormValues, OfferVariantRow } from "./schema";
+import { CreateOfferFormValues, isRowOffered, OfferVariantRow } from "./schema";
 import {
   needsStockLocation,
   STOCK_LOCATION_CREATE_PATH,
@@ -47,6 +47,8 @@ type GridRow = ProductGroupRow | VariantGridRow;
 const isGroup = (row: GridRow): row is ProductGroupRow =>
   (row as ProductGroupRow).__group === true;
 
+const isLocked = (row: GridRow) => isGroup(row) || !isRowOffered(row);
+
 /** See ./stock-location-notice — a store with no location has no stock column. */
 const NoStockLocationNotice = () => {
   const { t } = useTranslation();
@@ -72,6 +74,21 @@ const NoStockLocationNotice = () => {
         </Link>
       </div>
     </Alert>
+  );
+};
+
+const PickVariantsHint = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Text
+      size="small"
+      leading="compact"
+      className="text-ui-fg-subtle px-4 pt-4 text-pretty"
+      data-testid="offer-create-pick-variants-hint"
+    >
+      {t("offers.create.pickVariantsHint")}
+    </Text>
   );
 };
 
@@ -127,6 +144,7 @@ const Root = () => {
       {needsStockLocation(stock_locations, isLocationsPending) && (
         <NoStockLocationNotice />
       )}
+      <PickVariantsHint />
       <DataGrid
         columns={columns}
         data={gridData}
@@ -187,8 +205,35 @@ const useColumns = ({
                 <span className="truncate" title={title}>
                   {title}
                 </span>
+                {row.already_offered && (
+                  <span className="text-ui-fg-muted shrink-0 txt-compact-small">
+                    {t("offers.create.alreadyOffered")}
+                  </span>
+                )}
               </div>
             </DataGrid.ReadonlyCell>
+          );
+        },
+        disableHiding: true,
+      }),
+      columnHelper.column({
+        id: "include",
+        name: t("offers.fields.include"),
+        header: t("offers.fields.include"),
+        field: (context) => {
+          const row = context.row.original;
+          return isGroup(row) ? null : `variants.${row.__formIndex}.include`;
+        },
+        type: "boolean",
+        cell: (context) => {
+          const row = context.row.original;
+          return isGroup(row) ? (
+            <DataGrid.ReadonlyCell context={context} />
+          ) : (
+            <DataGrid.BooleanCell
+              context={context}
+              disabled={!!row.already_offered}
+            />
           );
         },
         disableHiding: true,
@@ -203,7 +248,7 @@ const useColumns = ({
         },
         type: "text",
         cell: (context) =>
-          isGroup(context.row.original) ? (
+          isLocked(context.row.original) ? (
             <DataGrid.ReadonlyCell context={context} />
           ) : (
             <DataGrid.TextCell context={context} />
@@ -221,7 +266,7 @@ const useColumns = ({
         },
         type: "select",
         cell: (context) =>
-          isGroup(context.row.original) ? (
+          isLocked(context.row.original) ? (
             <DataGrid.ReadonlyCell context={context} />
           ) : (
             <DataGrid.SelectCell
@@ -233,7 +278,7 @@ const useColumns = ({
       }),
       ...createDataGridLocationStockColumns<GridRow, CreateOfferFormValues>({
         stockLocations,
-        isReadyOnly: (context) => isGroup(context.row.original),
+        isReadyOnly: (context) => isLocked(context.row.original),
         getFieldName: (context, index) => {
           const row = context.row.original;
           if (isGroup(row)) return null;
@@ -246,7 +291,7 @@ const useColumns = ({
       ...createDataGridPriceColumns<GridRow, CreateOfferFormValues>({
         currencies,
         pricePreferences,
-        isReadyOnly: (context) => isGroup(context.row.original),
+        isReadyOnly: (context) => isLocked(context.row.original),
         getFieldName: (context, value) => {
           const row = context.row.original;
           if (isGroup(row)) return null;

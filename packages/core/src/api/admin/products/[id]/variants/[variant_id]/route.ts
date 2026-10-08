@@ -11,6 +11,7 @@ import { HttpTypes } from "@mercurjs/types"
 
 import { updateProductVariantsWorkflow } from "@medusajs/medusa/core-flows"
 import { deleteProductVariantsWorkflow } from "@medusajs/medusa/core-flows"
+import { resolveOfferedRemovals } from "../../../../../../workflows/product-edit/steps/check-offered-removals"
 import { AdminUpdateProductVariantType } from "../../../validators"
 
 export const GET = async (
@@ -74,6 +75,13 @@ export const DELETE = async (
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const productId = req.params.id
   const variantId = req.params.variant_id
+
+  await resolveOfferedRemovals(req.scope, {
+    variants: [
+      { variant_id: variantId, requested_by: req.auth_context.actor_id },
+    ],
+    products: [],
+  })
 
   await deleteProductVariantsWorkflow(req.scope).run({
     input: { ids: [variantId] },

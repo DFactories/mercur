@@ -13,6 +13,7 @@ import {
 } from "@mercurjs/types"
 
 import {
+  checkOfferedRemovalsStep,
   normalizeVariantOptionsStep,
   validateProductVariantsStep,
 } from "../steps"
@@ -123,6 +124,21 @@ export const productEditUpdateVariantsWorkflow: ReturnWorkflow<
       variant_ids: variantIdsToLoad,
       variants: currentVariants,
     })
+
+    checkOfferedRemovalsStep(
+      transform({ input }, ({ input }) => ({
+        variants: (input.operations ?? [])
+          .filter(
+            (op): op is ProductEditVariantRemoveOperation =>
+              op.type === "remove",
+          )
+          .map((op) => ({
+            variant_id: op.variant_id,
+            requested_by: input.created_by,
+          })),
+        products: [],
+      })),
+    ).config({ name: "pc-check-offered-variant-removals" })
 
     const operations = normalizeVariantOptionsStep({
       product_id: input.product_id,

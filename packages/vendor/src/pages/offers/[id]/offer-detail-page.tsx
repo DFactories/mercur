@@ -5,6 +5,7 @@ import { useLinkQuery, WidgetZone } from "@mercurjs/dashboard-shared"
 
 import { TwoColumnPageSkeleton } from "../../../components/common/skeleton"
 import { TwoColumnPage } from "../../../components/layout/pages"
+import { useOffers } from "../../../hooks/api/offers"
 import { useProduct } from "../../../hooks/api/products"
 import { ProductMediaSection } from "../../products/[id]/_components/product-media-section"
 import { OFFER_PRODUCT_DETAIL_FIELDS } from "../common/constants"
@@ -23,6 +24,14 @@ const Root = ({ children }: { children?: ReactNode }) => {
     initialData,
   })
 
+  // An offer whose variant was removed from the product is no longer wrapped
+  // under any variant, so the table above would never show it — yet it still
+  // holds its SKU and stays on the store. Listed so its seller can delete it.
+  const { offers: productOffers } = useOffers(
+    { product_id: id!, fields: "id,sku,variant_id,created_at,updated_at" },
+    { enabled: !!product },
+  )
+
   if (isError) {
     throw error
   }
@@ -32,6 +41,10 @@ const Root = ({ children }: { children?: ReactNode }) => {
   }
 
   const typed = product as OfferProduct
+  const liveVariantIds = new Set((typed.variants ?? []).map((v) => v.id))
+  const removedVariantOffers = (productOffers ?? []).filter(
+    (offer) => !liveVariantIds.has(offer.variant_id),
+  )
 
   return (
     <>
@@ -45,6 +58,7 @@ const Root = ({ children }: { children?: ReactNode }) => {
               <ProductMediaSection product={typed} readOnly />
               <OfferVariantsSection
                 variants={typed.variants}
+                removedVariantOffers={removedVariantOffers}
                 thumbnail={typed.thumbnail}
               />
             </WidgetZone>

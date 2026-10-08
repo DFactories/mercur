@@ -85,7 +85,7 @@ export const InventoryListDataTable = () => {
     ...searchParams,
     ...useLinkQuery(
       "inventory_item",
-      "+offers.product_variant.product.title,+seller.name"
+      "+offers.sku,+offers.product_variant.product.title,+seller.name"
     ),
   })
 

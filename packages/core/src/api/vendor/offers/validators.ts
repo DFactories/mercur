@@ -16,6 +16,7 @@ export const VendorGetOffersParamsFields = z
     q: z.string().optional(),
     id: z.union([z.string(), z.array(z.string())]).optional(),
     variant_id: z.union([z.string(), z.array(z.string())]).optional(),
+    product_id: z.union([z.string(), z.array(z.string())]).optional(),
     shipping_profile_id: z
       .union([z.string(), z.array(z.string())])
       .optional(),

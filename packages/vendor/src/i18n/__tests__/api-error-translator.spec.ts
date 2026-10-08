@@ -51,6 +51,32 @@ describe("localizeApiMessage", () => {
     ).toBe(fa.apiErrors.product.optionInUse)
   })
 
+  it("tells a store which variant clashes instead of «already used»", () => {
+    expect(
+      localizeApiMessage(
+        "Variant (ظرف سه پرس آلومینیومی) with provided options already exists.",
+      ),
+    ).toBe(
+      fa.apiErrors.product.variantOptionsTaken.replace(
+        "{{detail}}",
+        "ظرف سه پرس آلومینیومی",
+      ),
+    )
+  })
+
+  it("names the store whose offer keeps a variant or product in place", () => {
+    expect(
+      localizeApiMessage('Variant "45 میکرون" is on sale by آلومینیوم دلفان'),
+    ).toBe(
+      fa.apiErrors.product.variantOnSale
+        .replace("{{detail}}", "45 میکرون")
+        .replace("{{detail2}}", "آلومینیوم دلفان"),
+    )
+    expect(localizeApiMessage("Product is on sale by آلومینیوم دلفان")).toBe(
+      fa.apiErrors.product.productOnSale.replace("{{detail}}", "آلومینیوم دلفان"),
+    )
+  })
+
   it("translates a location with no fulfillment provider", () => {
     expect(
       localizeApiMessage(

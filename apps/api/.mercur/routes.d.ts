@@ -712,7 +712,11 @@ export type Routes = {
             };
         };
         featureFlags: typeof import("@mercurjs/core/api/vendor/feature-flags/route");
-        fulfillmentProviders: typeof import("@mercurjs/core/api/vendor/fulfillment-providers/route");
+        fulfillmentProviders: typeof import("@mercurjs/core/api/vendor/fulfillment-providers/route") & {
+            $id: {
+                options: typeof import("@mercurjs/core/api/vendor/fulfillment-providers/[id]/options/route");
+            };
+        };
         fulfillmentSets: {
             $id: typeof import("@mercurjs/core/api/vendor/fulfillment-sets/[id]/route") & {
                 serviceZones: typeof import("@mercurjs/core/api/vendor/fulfillment-sets/[id]/service-zones/route") & {

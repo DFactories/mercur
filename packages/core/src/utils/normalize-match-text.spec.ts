@@ -25,6 +25,14 @@ describe("normalizeMatchText", () => {
     expect(normalizeMatchText("سى سى")).toBe("سی سی")
   })
 
+  it("drops marks nobody sees, keeping the ZWNJ and the ezafe hamza", () => {
+    expect(normalizeMatchText("\u064E\u064E\u064E\u064E\u064EAL105-70-1000")).toBe("AL105-70-1000")
+    expect(normalizeMatchText("\u200FAL-105\u200E")).toBe("AL-105")
+    expect(normalizeMatchText("کـارتن")).toBe("کارتن")
+    expect(normalizeMatchText("نیم\u200Cپرس")).toBe("نیم\u200Cپرس")
+    expect(normalizeMatchText("بستهٔ ۱۰ عددی")).toBe("بستهٔ 10 عددی")
+  })
+
   it("puts a space between a number and the Persian unit after it", () => {
     expect(normalizeMatchText("50میکرون")).toBe("50 میکرون")
     expect(normalizeMatchText("۵۰میکرون")).toBe("50 میکرون")

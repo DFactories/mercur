@@ -1,7 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Button, Heading, Input, toast } from "@medusajs/ui"
+import { Alert, Button, Heading, Input, Text, toast } from "@medusajs/ui"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router-dom"
 import { z } from "zod"
 
 import { HttpTypes } from "@medusajs/types"
@@ -12,8 +13,15 @@ import { AttributeValueInput } from "@components/inputs/attribute-value-input"
 import { RouteFocusModal, useRouteModal } from "@components/modals"
 import { KeyboundForm } from "@components/utilities/keybound-form"
 import { isQueuedForReview } from "@lib/product-change"
-import { useCreateProductVariant } from "@hooks/api/products"
+import {
+  useCreateProductVariant,
+  useProductVariants,
+} from "@hooks/api/products"
 import { CreateProductVariantSchema } from "./constants"
+import {
+  allCombinationsTaken,
+  findVariantWithOptions,
+} from "./taken-combination"
 
 export type CreateProductVariantSchemaType = z.infer<
   typeof CreateProductVariantSchema
@@ -55,6 +63,16 @@ export const CreateProductVariantForm = ({
 
   const { mutateAsync, isPending } = useCreateProductVariant(product.id)
 
+  const { variants: existingVariants = [] } = useProductVariants(product.id, {
+    fields: "id,title,*options,*options.option",
+    limit: 1000,
+  })
+
+  const noFreeCombination = allCombinationsTaken(
+    variantAttributes,
+    existingVariants,
+  )
+
   const handleSubmit = form.handleSubmit(async (data) => {
     const { title, sku, options } = data
 
@@ -69,6 +87,18 @@ export const CreateProductVariantForm = ({
       },
       {}
     )
+
+    const taken = findVariantWithOptions(existingVariants, cleanedOptions)
+    if (taken) {
+      const firstAxis = variantAttributes[0]
+      form.setError(`options.${firstAxis.handle ?? firstAxis.id}`, {
+        type: "manual",
+        message: t("products.variant.create.optionsTaken", {
+          title: taken.title ?? "",
+        }),
+      })
+      return
+    }
 
     await mutateAsync(
       {
@@ -111,6 +141,30 @@ export const CreateProductVariantForm = ({
         <RouteFocusModal.Body className="flex flex-1 flex-col items-center overflow-y-auto">
           <div className="flex w-full max-w-[720px] flex-col gap-y-8 px-8 py-16">
             <Heading level="h1">{t("products.variant.create.header")}</Heading>
+
+            {noFreeCombination && (
+              <Alert
+                variant="warning"
+                data-testid="create-variant-no-free-combination"
+              >
+                <div className="flex flex-col gap-y-1">
+                  <Text size="small" leading="compact" className="text-pretty">
+                    {t("products.variant.create.allCombinationsTaken")}
+                  </Text>
+                  {variantAttributes.map((attribute) => (
+                    <Link
+                      key={attribute.id}
+                      to={`/products/${product.id}/attributes/${attribute.id}/edit`}
+                      className="txt-compact-small-plus text-ui-fg-interactive hover:text-ui-fg-interactive-hover w-fit"
+                    >
+                      {t("products.variant.create.addAxisValue", {
+                        attribute: attribute.name,
+                      })}
+                    </Link>
+                  ))}
+                </div>
+              </Alert>
+            )}
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Form.Field

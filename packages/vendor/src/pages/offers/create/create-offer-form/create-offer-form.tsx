@@ -13,7 +13,13 @@ import { useCurrentSeller } from "../../../../hooks/api/sellers";
 import { useStockLocations } from "../../../../hooks/api/stock-locations";
 import { CreateOfferCatalogueTab } from "./create-offer-catalogue";
 import { CreateOfferStockLevelsAndPricesTab } from "./create-offer-stock-levels-and-prices";
-import { CreateOfferFormValues, CreateOfferSchema, OfferVariantRow, variantRowHasPrice } from "./schema";
+import {
+  CreateOfferFormValues,
+  CreateOfferSchema,
+  isRowOffered,
+  OfferVariantRow,
+  variantRowHasPrice,
+} from "./schema";
 import { includesVariant, readOfferCreatePrefill } from "./prefill";
 
 const DEFAULTS: CreateOfferFormValues = {
@@ -87,7 +93,7 @@ export const CreateOfferForm = () => {
       id: selectedProductIds,
       limit: selectedProductIds.length || 1,
       fields:
-        "id,title,thumbnail,variants.id,variants.title,variants.sku",
+        "id,title,thumbnail,variants.id,variants.title,variants.sku,variants.offers.id",
     },
     { enabled: selectedProductIds.length > 0 },
   );
@@ -121,12 +127,15 @@ export const CreateOfferForm = () => {
         if (!includesVariant(prefill, product.id ?? "", variant.id)) {
           continue;
         }
+        const alreadyOffered =
+          ((variant as { offers?: unknown[] | null }).offers?.length ?? 0) > 0;
         const previous = existingByVariantId.get(variant.id);
         if (previous) {
           // Merge in any newly-arrived currencies / locations the row
           // didn't know about (e.g. store data arrived after build).
           next.push({
             ...previous,
+            already_offered: alreadyOffered,
             prices: { ...emptyPrices, ...(previous.prices ?? {}) },
             inventory: { ...emptyInventory, ...(previous.inventory ?? {}) },
           });
@@ -139,6 +148,8 @@ export const CreateOfferForm = () => {
           variant_title: variant.title ?? variant.id,
           product_thumbnail: product.thumbnail ?? null,
           variant_sku: variant.sku ?? null,
+          include: !alreadyOffered,
+          already_offered: alreadyOffered,
           sku: variant.sku ?? "",
           shipping_profile_id: "",
           prices: { ...emptyPrices },
@@ -167,9 +178,18 @@ export const CreateOfferForm = () => {
       return;
     }
 
+    const offeredIndexes = variants
+      .map((row, index) => (isRowOffered(row) ? index : -1))
+      .filter((index) => index >= 0);
+
+    if (!offeredIndexes.length) {
+      toast.error(t("offers.validation.selectAtLeastOneVariant"));
+      return;
+    }
+
     let hasValidationError = false;
     const skuSeen = new Map<string, number>();
-    for (let i = 0; i < variants.length; i++) {
+    for (const i of offeredIndexes) {
       const row = variants[i];
 
       const sku = (row.sku ?? "").trim();
@@ -211,10 +231,10 @@ export const CreateOfferForm = () => {
     setIsSubmitting(true);
 
     const rows: { row: OfferVariantRow; index: number; sku: string }[] =
-      variants.map((row, index) => ({
-        row,
+      offeredIndexes.map((index) => ({
+        row: variants[index],
         index,
-        sku: (row.sku ?? "").trim(),
+        sku: (variants[index].sku ?? "").trim(),
       }));
 
     const payloadOffers = rows.map(({ row, sku }) => {

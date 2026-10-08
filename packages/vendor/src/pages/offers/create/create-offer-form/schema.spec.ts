@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { variantRowHasPrice, type OfferVariantRow } from "./schema";
+import { isRowOffered, variantRowHasPrice, type OfferVariantRow } from "./schema";
 
 const row = (prices: OfferVariantRow["prices"]): OfferVariantRow =>
   ({
@@ -39,5 +39,26 @@ describe("variantRowHasPrice", () => {
 
   it("accepts a real amount", () => {
     expect(variantRowHasPrice(row({ irr: 55_000_000 }), "irr")).toBe(true);
+  });
+});
+
+/**
+ * A master product lists every variant any producer makes. Production,
+ * 2026-10-08: a producer making two of five variants could not create an offer
+ * because the form demanded a price, shipping and stock for all five.
+ */
+describe("isRowOffered", () => {
+  it("sends a ticked row", () => {
+    expect(isRowOffered({ ...row({}), include: true })).toBe(true);
+  });
+
+  it("skips a row the producer unticked", () => {
+    expect(isRowOffered({ ...row({}), include: false })).toBe(false);
+  });
+
+  it("never opens a second offer on a variant the store already sells", () => {
+    expect(
+      isRowOffered({ ...row({}), include: true, already_offered: true }),
+    ).toBe(false);
   });
 });

@@ -13698,6 +13698,15 @@
             },
             "requestJustReviewed": {
               "type": "string"
+            },
+            "variantOnSale": {
+              "type": "string"
+            },
+            "productOnSale": {
+              "type": "string"
+            },
+            "variantOptionsTaken": {
+              "type": "string"
             }
           },
           "additionalProperties": false

@@ -8,6 +8,8 @@ import { DisplayExtensionZone, DisplayField } from "@mercurjs/dashboard-shared"
 import { ActionMenu } from "@components/common/action-menu"
 import { SectionRow } from "@components/common/section"
 
+import { offerSkus } from "../../common/offer-skus"
+
 const GENERAL_FIELD_IDS = ["title", "sku", "in_stock", "reserved", "available"]
 
 type InventoryItemGeneralSectionProps = {
@@ -81,7 +83,10 @@ export const InventoryItemGeneralSection = ({
         id="sku"
         data={inventoryItem}
       >
-        <SectionRow title={t("fields.sku")} value={inventoryItem.sku ?? "-"} />
+        <SectionRow
+          title={t("fields.sku")}
+          value={inventoryItem.sku || offerSkus(inventoryItem) || "-"}
+        />
       </DisplayField>
       <DisplayField
         model="inventory_item"

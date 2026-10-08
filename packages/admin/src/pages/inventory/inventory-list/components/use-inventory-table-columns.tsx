@@ -6,6 +6,7 @@ import { createColumnHelper } from "@tanstack/react-table"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { PlaceholderCell } from "../../../../components/table/table-cells/common/placeholder-cell"
+import { offerSkus } from "../../common/offer-skus"
 import { InventoryActions } from "./inventory-actions"
 
 /**
@@ -88,7 +89,7 @@ export const useInventoryTableColumns = () => {
           </div>
         ),
         cell: ({ getValue, row }) => {
-          const sku = getValue() as string
+          const sku = (getValue() as string) || offerSkus(row.original)
 
           if (!sku) {
             return <PlaceholderCell />

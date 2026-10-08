@@ -431,6 +431,7 @@
   "/vendor/exchanges/:id/request": "typeof import(\"@mercurjs/core/api/vendor/exchanges/[id]/request/route\")",
   "/vendor/feature-flags": "typeof import(\"@mercurjs/core/api/vendor/feature-flags/route\")",
   "/vendor/fulfillment-providers": "typeof import(\"@mercurjs/core/api/vendor/fulfillment-providers/route\")",
+  "/vendor/fulfillment-providers/:id/options": "typeof import(\"@mercurjs/core/api/vendor/fulfillment-providers/[id]/options/route\")",
   "/vendor/fulfillment-sets/:id": "typeof import(\"@mercurjs/core/api/vendor/fulfillment-sets/[id]/route\")",
   "/vendor/fulfillment-sets/:id/service-zones": "typeof import(\"@mercurjs/core/api/vendor/fulfillment-sets/[id]/service-zones/route\")",
   "/vendor/fulfillment-sets/:id/service-zones/:zone_id": "typeof import(\"@mercurjs/core/api/vendor/fulfillment-sets/[id]/service-zones/[zone_id]/route\")",

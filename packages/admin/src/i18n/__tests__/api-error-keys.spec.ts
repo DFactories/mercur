@@ -23,6 +23,29 @@ describe("localizeApiErrorKey", () => {
     expect(localizeApiErrorKey("Product not found")).toBe("Product not found")
   })
 
+  it("names the store whose offer blocks a variant removal", () => {
+    expect(
+      localizeApiErrorKey('Variant "45 میکرون" is on sale by آلومینیوم دلفان'),
+    ).toBe(
+      fa.apiErrors.product.variantOnSale
+        .replace("{{detail}}", "45 میکرون")
+        .replace("{{detail2}}", "آلومینیوم دلفان"),
+    )
+  })
+
+  it("words Medusa's refusal to drop an option value a variant uses", () => {
+    expect(
+      localizeApiErrorKey(
+        "Cannot unassign option values from product because the following variant(s) are using it: 45 میکرون, 50 میکرون",
+      ),
+    ).toBe(
+      fa.apiErrors.product.optionValueInUse.replace(
+        "{{detail}}",
+        "45 میکرون, 50 میکرون",
+      ),
+    )
+  })
+
   it("keeps an unknown key rather than inventing words", () => {
     expect(localizeApiErrorKey("apiErrors.nope")).toBe("apiErrors.nope")
   })

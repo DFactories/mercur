@@ -884,7 +884,10 @@
       },
       "create": {
         "header": "Variant details",
-        "successToast": "Variant was successfully created."
+        "successToast": "Variant was successfully created.",
+        "optionsTaken": "Variant \"{{title}}\" already has this combination; choose a different value.",
+        "allCombinationsTaken": "Every possible combination already has a variant. To add a new one, first add the new value to the product's variant attribute.",
+        "addAxisValue": "Add a value to \"{{attribute}}\""
       },
       "deleteWarning": "Are you sure you want to delete this variant?",
       "tableItemAvailable": "{{availableCount}} available",
@@ -1254,7 +1257,9 @@
         "header": "No stock location yet",
         "description": "Stock is recorded per stock location, and this store has none, so there is nowhere to enter a quantity. Create a location, then come back to this offer.",
         "action": "Create a stock location"
-      }
+      },
+      "pickVariantsHint": "Tick only the variants you make; price, shipping and stock are required for those alone.",
+      "alreadyOffered": "You sell this"
     },
     "detail": {
       "offerLabel": "Offer",
@@ -1265,7 +1270,9 @@
       "inventoryItems": "Inventory items",
       "manageKit": "Manage inventory kit",
       "noInventoryItems": "No inventory items attached. Open the inventory drawer to attach one.",
-      "goToInventoryItem": "Go to inventory item"
+      "goToInventoryItem": "Go to inventory item",
+      "variantRemoved": "Variant removed",
+      "variantRemovedHint": "This variant was removed from the product, so this offer no longer sells. Delete it, and create an offer on a current variant if you need one."
     },
     "edit": {
       "header": "Edit offer",
@@ -1356,7 +1363,8 @@
       "variantsCount_other": "{{count}} variants",
       "manageInventory": "Manage inventory",
       "allowBackorders": "Allow backorders",
-      "store": "Store"
+      "store": "Store",
+      "include": "Offer"
     },
     "status": {
       "published": "Published",
@@ -4595,7 +4603,10 @@
       "variantOptionsMismatch": "Choose a value for every variant-defining attribute of this product.",
       "optionInUse": "This attribute is still used by the product's variants.",
       "optionValueInUse": "This value is used by variant \"{{detail}}\".",
-      "requestJustReviewed": "The previous request on this product was just reviewed. Save your change again."
+      "requestJustReviewed": "The previous request on this product was just reviewed. Save your change again.",
+      "variantOnSale": "Variant \"{{detail}}\" cannot be removed: {{detail2}} sells it.",
+      "productOnSale": "This product cannot be deleted: {{detail}} sells it.",
+      "variantOptionsTaken": "Variant \"{{detail}}\" already has these attribute values. To add a new variant, first add the new value to the product's variant attribute."
     },
     "shippingProviderNotEnabled": "No shipping provider is enabled for this location. Enable one under the location's fulfillment providers.",
     "shippingOption": {

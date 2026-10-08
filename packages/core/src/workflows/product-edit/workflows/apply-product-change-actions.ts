@@ -21,6 +21,7 @@ import {
 
 import {
   applyVariantImageLinksStep,
+  checkOfferedRemovalsStep,
   updateProductChangeActionsStep,
   type VariantImageLinks,
 } from "../steps"
@@ -41,6 +42,7 @@ type BucketedActions = {
   variantUpdates: Array<Record<string, unknown> & { id: string }>
   variantImageLinks: VariantImageLinks[]
   variantDeletes: string[]
+  variantRemovals: Array<{ variant_id: string; requested_by: string | null }>
   attributeBatch: {
     product_id: string
     add: ProductAttributeBatchAdd[]
@@ -48,6 +50,7 @@ type BucketedActions = {
     update: ProductAttributeBatchUpdate[]
   } | null
   productsToDelete: string[]
+  productRemovals: Array<{ product_id: string; requested_by: string | null }>
   pendingActionIds: string[]
 }
 
@@ -83,6 +86,7 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
         "applied",
         "ordering",
         "created_at",
+        "product_change_id",
       ],
       filters: {
         product_change_id: input.change_ids,
@@ -90,7 +94,21 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
       },
     }).config({ name: "pc-load-pending-actions" })
 
-    const buckets = transform({ actions }, ({ actions }): BucketedActions => {
+    const { data: changes } = useQueryGraphStep({
+      entity: "product_change",
+      fields: ["id", "created_by"],
+      filters: { id: input.change_ids },
+    }).config({ name: "pc-load-change-requesters" })
+
+    const buckets = transform(
+      { actions, changes },
+      ({ actions, changes }): BucketedActions => {
+      const requesterByChange = new Map<string, string | null>(
+        (changes ?? []).map((c) => [
+          c.id as string,
+          (c.created_by as string | null) ?? null,
+        ]),
+      )
       const productUpdatesById = new Map<
         string,
         Record<string, unknown> & { id: string }
@@ -217,6 +235,17 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
         }
       }
 
+      const requesterOf = (
+        matches: (action: CollapsibleProductChangeAction) => boolean,
+      ) => {
+        const source = unapplied.find(matches) as
+          | (CollapsibleProductChangeAction & { product_change_id?: string })
+          | undefined
+        return source?.product_change_id
+          ? (requesterByChange.get(source.product_change_id) ?? null)
+          : null
+      }
+
       return {
         productUpdates: Array.from(productUpdatesById.values()).filter(
           (u) => Object.keys(u).length > 1,
@@ -225,10 +254,46 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
         variantUpdates,
         variantImageLinks,
         variantDeletes,
+        variantRemovals: variantDeletes.map((variant_id) => ({
+          variant_id,
+          requested_by: requesterOf(
+            (a) =>
+              a.action === ProductChangeActionType.VARIANT_REMOVE &&
+              a.details?.variant_id === variant_id,
+          ),
+        })),
         attributeBatch,
         productsToDelete: Array.from(productsToDelete),
+        productRemovals: Array.from(productsToDelete).map((product_id) => ({
+          product_id,
+          requested_by: requesterOf(
+            (a) =>
+              a.action === ProductChangeActionType.PRODUCT_DELETE &&
+              a.product_id === product_id,
+          ),
+        })),
         pendingActionIds,
       }
+      },
+    )
+
+    const removals = checkOfferedRemovalsStep(
+      transform({ buckets }, ({ buckets }) => ({
+        variants: buckets.variantRemovals,
+        products: buckets.productRemovals,
+      })),
+    )
+
+    when(
+      "close-removed-offers-when",
+      { removals },
+      ({ removals }) => removals.offer_ids.length > 0,
+    ).then(() => {
+      deleteOffersWorkflow.runAsStep({
+        input: transform({ removals }, ({ removals }) => ({
+          ids: removals.offer_ids,
+        })),
+      })
     })
 
     when({ buckets }, ({ buckets }) => buckets.productUpdates.length > 0).then(
@@ -292,42 +357,15 @@ export const applyProductChangeActionsWorkflow: ReturnWorkflow<
       })),
     })
 
-    // Named: a `when` whose `.then` returns a value becomes a step, and an
-    // unnamed one is given a random id per process (Medusa warns on every
-    // boot), so a persisted execution could not find its step again.
-    const deletedProductOffers = when(
+    when(
       "delete-products-when",
       { buckets },
       ({ buckets }) => buckets.productsToDelete.length > 0,
     ).then(() => {
-      const { data: productOffers } = useQueryGraphStep({
-        entity: "offer",
-        fields: ["id"],
-        filters: transform({ buckets }, ({ buckets }) => ({
-          product_id: buckets.productsToDelete,
-        })),
-      }).config({ name: "load-deleted-products-offers" })
-
       deleteProductsWorkflow.runAsStep({
         input: transform({ buckets }, ({ buckets }) => ({
           ids: buckets.productsToDelete,
         })),
-      })
-
-      return productOffers
-    })
-
-    when(
-      { deletedProductOffers },
-      ({ deletedProductOffers }) => (deletedProductOffers?.length ?? 0) > 0,
-    ).then(() => {
-      deleteOffersWorkflow.runAsStep({
-        input: transform(
-          { deletedProductOffers },
-          ({ deletedProductOffers }) => ({
-            ids: (deletedProductOffers ?? []).map((o) => o.id),
-          }),
-        ),
       })
     })
 

@@ -7,6 +7,8 @@ export const toLatinDigits = (input: string): string =>
     return String(code - (code >= PERSIAN_ZERO ? PERSIAN_ZERO : ARABIC_ZERO))
   })
 
+const INVISIBLE_MARKS = /[\u064B-\u0653\u0656-\u065F\u0670\u0640\u200B\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g
+
 /**
  * One spelling for the text the platform MATCHES on — attribute and option
  * names and values, variant options, SKUs and barcodes.
@@ -23,9 +25,14 @@ export const toLatinDigits = (input: string): string =>
  *     → «50 میکرون»).
  * Titles and descriptions keep what was typed; the storefront shows them as
  * written.
+ *
+ * Marks nobody sees are dropped too: a Persian keyboard's Shift+A types a
+ * fatha, which reached production as «َََََAL105-70-1000» (2026-10-08), and
+ * copy-pasting adds direction marks. The ZWNJ (نیم‌فاصله) and the hamza of
+ * «بستهٔ» stay — they are spelling, not noise.
  */
 export function normalizeMatchText(input: string): string {
-  return toLatinDigits(input)
+  return toLatinDigits(input.replace(INVISIBLE_MARKS, ""))
     .replace(/٫/g, ".")
     .replace(/٬/g, ",")
     .replace(/[يى]/g, "ی")

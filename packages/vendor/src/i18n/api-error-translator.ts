@@ -108,6 +108,16 @@ const PATTERNS: { test: RegExp; key: string }[] = [
     test: /^Cannot unassign option values .* using it: (.+)$/i,
     key: "apiErrors.product.optionValueInUse",
   },
+  {
+    test: /^Variant \((.+)\) with provided options already exists\.?$/i,
+    key: "apiErrors.product.variantOptionsTaken",
+  },
+  // a master product's variant or the product itself, sold by another store
+  {
+    test: /^Variant "(.+)" is on sale by (.+)$/i,
+    key: "apiErrors.product.variantOnSale",
+  },
+  { test: /^Product is on sale by (.+)$/i, key: "apiErrors.product.productOnSale" },
   // shipping — a stock location with no fulfillment provider enabled
   {
     test: /^Providers \((.+)\) are not enabled for the service location$/i,

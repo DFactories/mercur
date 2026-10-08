@@ -738,7 +738,11 @@ export type Routes = {
             };
         };
         featureFlags: typeof import("../src/api/vendor/feature-flags/route");
-        fulfillmentProviders: typeof import("../src/api/vendor/fulfillment-providers/route");
+        fulfillmentProviders: typeof import("../src/api/vendor/fulfillment-providers/route") & {
+            $id: {
+                options: typeof import("../src/api/vendor/fulfillment-providers/[id]/options/route");
+            };
+        };
         fulfillmentSets: {
             $id: typeof import("../src/api/vendor/fulfillment-sets/[id]/route") & {
                 serviceZones: typeof import("../src/api/vendor/fulfillment-sets/[id]/service-zones/route") & {

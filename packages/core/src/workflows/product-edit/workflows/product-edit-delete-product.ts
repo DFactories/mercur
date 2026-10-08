@@ -10,6 +10,7 @@ import {
   ProductChangeDTO,
 } from "@mercurjs/types"
 
+import { checkOfferedRemovalsStep } from "../steps"
 import { prepareProductEditWorkflow } from "./prepare-product-edit"
 import { stageProductChangeWorkflow } from "./stage-product-change"
 
@@ -32,6 +33,15 @@ export const productEditDeleteProductWorkflow: ReturnWorkflow<
     // An unpublished product is deleted on the spot, whatever request is
     // still open on it: that request is canceled with it. Only a published
     // product's delete waits for an operator.
+    checkOfferedRemovalsStep(
+      transform({ input }, ({ input }) => ({
+        variants: [],
+        products: [
+          { product_id: input.product_id, requested_by: input.created_by },
+        ],
+      })),
+    ).config({ name: "pc-check-offered-product-removal" })
+
     const editMode = prepareProductEditWorkflow.runAsStep({
       input: transform({ input }, ({ input }) => ({
         product_id: input.product_id,

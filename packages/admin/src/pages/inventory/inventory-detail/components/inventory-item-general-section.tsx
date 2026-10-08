@@ -6,6 +6,8 @@ import { ActionMenu } from "@components/common/action-menu"
 import { SectionRow } from "@components/common/section"
 import type { ExtendedAdminInventoryItem } from "@custom-types/inventory"
 
+import { offerSkus } from "../../common/offer-skus"
+
 type InventoryItemGeneralSectionProps = {
   inventoryItem: ExtendedAdminInventoryItem
 }
@@ -60,7 +62,11 @@ export const InventoryItemGeneralSection = ({
         id="sku"
         data={inventoryItem}
       >
-        <SectionRow title={t("fields.sku")} value={inventoryItem.sku ?? "-"} data-testid="inventory-item-sku-row" />
+        <SectionRow
+          title={t("fields.sku")}
+          value={inventoryItem.sku || offerSkus(inventoryItem) || "-"}
+          data-testid="inventory-item-sku-row"
+        />
       </DisplayField>
       <DisplayField
         model="inventory_item"

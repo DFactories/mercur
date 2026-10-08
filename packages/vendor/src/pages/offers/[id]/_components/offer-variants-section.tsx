@@ -45,6 +45,7 @@ type OfferVariantRow = {
   id: string
   variant: OfferProductVariant
   offer: OfferWithInventory
+  variantRemoved?: boolean
 }
 
 const skuOf = (row: OfferVariantRow) => row.offer.sku ?? row.variant.sku ?? ""
@@ -121,12 +122,18 @@ const useColumns = ({
       columnHelper.accessor((row) => row.variant.title ?? "", {
         id: "title",
         header: t("fields.title"),
-        cell: ({ getValue }) => (
+        cell: ({ getValue, row }) => (
           <div className="flex h-full w-full max-w-[250px] items-center gap-x-3 overflow-hidden">
             <div className="w-fit flex-shrink-0">
               <Thumbnail src={thumbnail ?? null} />
             </div>
-            {getValue() ? (
+            {row.original.variantRemoved ? (
+              <Tooltip content={t("offers.detail.variantRemovedHint")}>
+                <Badge size="2xsmall" color="red">
+                  {t("offers.detail.variantRemoved")}
+                </Badge>
+              </Tooltip>
+            ) : getValue() ? (
               <span title={getValue()} className="truncate">
                 {getValue()}
               </span>
@@ -199,6 +206,24 @@ const useColumns = ({
         id: "actions",
         cell: ({ row }) => {
           const inventoryItemId = inventoryItemIdOf(row.original.offer)
+          if (row.original.variantRemoved) {
+            return (
+              <ActionMenu
+                groups={[
+                  {
+                    actions: [
+                      {
+                        icon: <Trash />,
+                        label: t("actions.delete"),
+                        onClick: () =>
+                          onDelete(row.original.id, skuOf(row.original)),
+                      },
+                    ],
+                  },
+                ]}
+              />
+            )
+          }
           return (
             <ActionMenu
               groups={[
@@ -246,9 +271,11 @@ const useColumns = ({
 
 export const OfferVariantsSection = ({
   variants,
+  removedVariantOffers,
   thumbnail,
 }: {
   variants?: OfferProductVariant[] | null
+  removedVariantOffers?: OfferDTO[] | null
   thumbnail?: string | null
 }) => {
   const { t } = useTranslation()
@@ -262,15 +289,22 @@ export const OfferVariantsSection = ({
   )
 
   const allRows: OfferVariantRow[] = useMemo(
-    () =>
-      (variants ?? []).flatMap((variant) =>
+    () => [
+      ...(variants ?? []).flatMap((variant) =>
         (variant.offers ?? []).map((offer) => ({
           id: offer.id,
           variant,
           offer: offer as OfferWithInventory,
         })),
       ),
-    [variants],
+      ...(removedVariantOffers ?? []).map((offer) => ({
+        id: offer.id,
+        variant: { id: offer.variant_id } as OfferProductVariant,
+        offer: offer as OfferWithInventory,
+        variantRemoved: true,
+      })),
+    ],
+    [variants, removedVariantOffers],
   )
 
   const optionTitles = useMemo(() => {
@@ -450,7 +484,9 @@ export const OfferVariantsSection = ({
         defaultOrderBy="title"
         filters={filters}
         queryObject={{ q, order, created_at, updated_at }}
-        navigateTo={(row) => `variants/${row.original.id}`}
+        navigateTo={(row) =>
+          row.original.variantRemoved ? "" : `variants/${row.original.id}`
+        }
         noRecords={{
           title: t("offers.empty.heading"),
           message: t("offers.empty.description"),

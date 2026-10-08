@@ -4563,7 +4563,10 @@
       "variantOptionsMismatch": "Choose a value for every variant-defining attribute of this product.",
       "optionInUse": "This attribute is still used by the product's variants.",
       "optionValueInUse": "This value is used by variant \"{{detail}}\".",
-      "requestJustReviewed": "The previous request on this product was just reviewed. Save your change again."
+      "requestJustReviewed": "The previous request on this product was just reviewed. Save your change again.",
+      "variantOnSale": "Variant \"{{detail}}\" cannot be removed: {{detail2}} sells it.",
+      "productOnSale": "This product cannot be deleted: {{detail}} sells it.",
+      "variantOptionsTaken": "Variant \"{{detail}}\" already has these attribute values. To add a new variant, first add the new value to the product's variant attribute."
     },
     "shippingProviderNotEnabled": "No shipping provider is enabled for this location. Enable one under the location's fulfillment providers."
   }

@@ -2659,6 +2659,15 @@
                 },
                 "successToast": {
                   "type": "string"
+                },
+                "optionsTaken": {
+                  "type": "string"
+                },
+                "allCombinationsTaken": {
+                  "type": "string"
+                },
+                "addAxisValue": {
+                  "type": "string"
                 }
               },
               "additionalProperties": false
@@ -3769,6 +3778,12 @@
                 }
               },
               "additionalProperties": false
+            },
+            "pickVariantsHint": {
+              "type": "string"
+            },
+            "alreadyOffered": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -3801,6 +3816,12 @@
               "type": "string"
             },
             "goToInventoryItem": {
+              "type": "string"
+            },
+            "variantRemoved": {
+              "type": "string"
+            },
+            "variantRemovedHint": {
               "type": "string"
             }
           },
@@ -4074,6 +4095,9 @@
               "type": "string"
             },
             "store": {
+              "type": "string"
+            },
+            "include": {
               "type": "string"
             }
           },
@@ -13793,6 +13817,15 @@
               "type": "string"
             },
             "requestJustReviewed": {
+              "type": "string"
+            },
+            "variantOnSale": {
+              "type": "string"
+            },
+            "productOnSale": {
+              "type": "string"
+            },
+            "variantOptionsTaken": {
               "type": "string"
             }
           },
