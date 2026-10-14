@@ -3752,6 +3752,9 @@
             "stockLevelsWarning": {
               "type": "string"
             },
+            "partiallySaved": {
+              "type": "string"
+            },
             "tabs": {
               "type": "object",
               "properties": {
@@ -13775,6 +13778,9 @@
           "type": "string"
         },
         "invalidField": {
+          "type": "string"
+        },
+        "tooBig": {
           "type": "string"
         },
         "mustBePositive": {

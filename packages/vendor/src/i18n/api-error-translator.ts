@@ -136,6 +136,13 @@ const PATTERNS: { test: RegExp; key: string }[] = [
     test: /^Uploaded image is too large to process \(maximum (\d+) megapixels\)$/i,
     key: "apiErrors.imageTooLarge",
   },
+  // a list, text or number over its maximum. Above the generic validation
+  // rule, which on 2026-10-14 showed a producer «داده‌ی ارسالی نامعتبر است:
+  // Value for field 'offers' too big, expected at most: '100'».
+  {
+    test: /Value for field '([^']+)' too big, expected at most: '([^']+)'/i,
+    key: "apiErrors.tooBig",
+  },
   // validation — zod/Medusa body validation, e.g.
   // "Invalid request body: amount: Number must be greater than 0"
   { test: /^Invalid request(?: body)?:?\s*(.+)$/i, key: "apiErrors.invalidField" },

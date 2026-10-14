@@ -1249,6 +1249,7 @@
       "addPrice": "Add price",
       "addInventoryItem": "Add inventory item",
       "stockLevelsWarning": "Offers created, but some stock levels could not be saved: {{message}}",
+      "partiallySaved": "{{saved}} of {{total}} offers were saved and are now locked in the list. The rest were not: {{message}} Fix it and publish again — the saved rows will not be sent twice.",
       "tabs": {
         "catalogue": "Products",
         "stockLevelsAndPrices": "Stock Levels & Prices"
@@ -4590,6 +4591,7 @@
     "priceNotOwned": "This price belongs to another offer and cannot be changed here.",
     "offerNeedsInventory": "An offer needs at least one inventory item.",
     "invalidField": "The submitted data is invalid: {{detail}}",
+    "tooBig": "“{{detail}}” is over the limit (at most {{detail2}}).",
     "mustBePositive": "The amount must be greater than zero.",
     "fieldRequired": "A required field is missing.",
     "duplicate": "This value is already in use. Choose another one.",

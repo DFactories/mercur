@@ -21,6 +21,7 @@ import {
   variantRowHasPrice,
 } from "./schema";
 import { includesVariant, readOfferCreatePrefill } from "./prefill";
+import { submitInChunks } from "./submit-in-chunks";
 
 const DEFAULTS: CreateOfferFormValues = {
   selected_product_ids: [],
@@ -135,7 +136,9 @@ export const CreateOfferForm = () => {
           // didn't know about (e.g. store data arrived after build).
           next.push({
             ...previous,
-            already_offered: alreadyOffered,
+            // A row this form already saved stays locked even if the refetch
+            // has not caught up, so a retry never sends it twice.
+            already_offered: alreadyOffered || previous.already_offered === true,
             prices: { ...emptyPrices, ...(previous.prices ?? {}) },
             inventory: { ...emptyInventory, ...(previous.inventory ?? {}) },
           });
@@ -237,7 +240,7 @@ export const CreateOfferForm = () => {
         sku: (variants[index].sku ?? "").trim(),
       }));
 
-    const payloadOffers = rows.map(({ row, sku }) => {
+    const items = rows.map(({ row, index, sku }) => {
       const prices: { amount: number; currency_code: string }[] = [];
       if (currency_code) {
         // Guaranteed positive by the validation loop above; the backend
@@ -258,29 +261,62 @@ export const CreateOfferForm = () => {
       }
 
       return {
-        sku,
-        variant_id: row.variant_id,
-        shipping_profile_id: row.shipping_profile_id,
-        prices,
-        inventory_items: [
-          {
-            title: row.variant_title,
-            stock_levels,
-          },
-        ],
+        index,
+        payload: {
+          sku,
+          variant_id: row.variant_id,
+          shipping_profile_id: row.shipping_profile_id,
+          prices,
+          inventory_items: [
+            {
+              title: row.variant_title,
+              stock_levels,
+            },
+          ],
+        },
       };
     });
 
     try {
-      await bulkCreateOffers({ offers: payloadOffers } as Parameters<
-        typeof bulkCreateOffers
-      >[0]);
-      toast.success(t("offers.create.successToast"));
-      handleSuccess("/offers");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t("general.unknownError");
-      const attributed = attachErrorToRow(message, rows, form);
-      if (!attributed) {
+      // In parts: one request for every ticked row was refused outright once
+      // a producer priced more than the backend's per-request cap.
+      const { sent, failed, error } = await submitInChunks(items, (part) =>
+        bulkCreateOffers({
+          offers: part.map((item) => item.payload),
+        } as Parameters<typeof bulkCreateOffers>[0]),
+      );
+
+      // A saved row is an offer now: show it the way the form shows a variant
+      // the store already sells (unticked, locked), so a retry never sends it
+      // twice.
+      for (const item of sent) {
+        form.setValue(`variants.${item.index}.already_offered`, true);
+        form.setValue(`variants.${item.index}.include`, false);
+      }
+
+      if (!failed) {
+        toast.success(t("offers.create.successToast"));
+        handleSuccess("/offers");
+        return;
+      }
+
+      const message =
+        error instanceof Error ? error.message : t("general.unknownError");
+      const failedIndexes = new Set(failed.map((item) => item.index));
+      const attributed = attachErrorToRow(
+        message,
+        rows.filter((r) => failedIndexes.has(r.index)),
+        form,
+      );
+      if (sent.length > 0) {
+        toast.error(
+          t("offers.create.partiallySaved", {
+            saved: sent.length,
+            total: items.length,
+            message,
+          }),
+        );
+      } else if (!attributed) {
         toast.error(message);
       }
     } finally {

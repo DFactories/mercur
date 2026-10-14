@@ -108,6 +108,20 @@ describe("localizeApiMessage", () => {
     expect(isPersian(message)).toBe(true)
   })
 
+  it("translates a value over its maximum without the English sentence", () => {
+    // Production 2026-10-14: a >100-row offer batch showed the producer
+    // «داده‌ی ارسالی نامعتبر است: Value for field 'offers' too big, …».
+    const message = localizeApiMessage(
+      "Invalid request: Value for field 'offers' too big, expected at most: '100'",
+      400
+    )
+    expect(message).toBe(
+      i18n.t("apiErrors.tooBig", { detail: "offers", detail2: "100" })
+    )
+    expect(message).toContain("100")
+    expect(message).not.toContain("too big")
+  })
+
   it("falls back to the status message for an unrecognised backend string", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {})
     const message = localizeApiMessage("Some brand new backend failure", 409)
