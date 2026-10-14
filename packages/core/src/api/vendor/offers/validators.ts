@@ -153,9 +153,20 @@ const VendorCreateOffersBatchItem = z
   })
   .strict()
 
+/**
+ * The create-offer form sends every ticked row in one request. A producer
+ * pricing a whole catalogue on a call ticks well over 100 rows, and the old
+ * cap of 100 refused the lot (prod, 2026-10-14) — after the prices were typed.
+ * Keep this in step with `VENDOR_OFFERS_BATCH_BODY_LIMIT` in the middlewares.
+ */
+export const VENDOR_OFFERS_BATCH_MAX = 500
+
 const CreateOffersBatch = z
   .object({
-    offers: z.array(VendorCreateOffersBatchItem).min(1).max(100),
+    offers: z
+      .array(VendorCreateOffersBatchItem)
+      .min(1)
+      .max(VENDOR_OFFERS_BATCH_MAX),
   })
   .strict()
 

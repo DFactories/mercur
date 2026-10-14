@@ -20,6 +20,9 @@ import {
   VendorUpdateOffer,
 } from "./validators"
 
+/** Room for `VENDOR_OFFERS_BATCH_MAX` rows of ~0.5 KB each, with headroom. */
+const VENDOR_OFFERS_BATCH_BODY_LIMIT = "2mb"
+
 /**
  * An offer may only be opened on a product the seller can reach — the same
  * rule `GET /vendor/products` lists by. See {@link ensureSellerCanOfferOnVariants}.
@@ -82,6 +85,8 @@ export const vendorOffersMiddlewares: MiddlewareRoute[] = [
   {
     method: ["POST"],
     matcher: "/vendor/offers/batch",
+    // A row is ~0.5 KB of JSON, so a full batch outgrows the 100 KB default.
+    bodyParser: { sizeLimit: VENDOR_OFFERS_BATCH_BODY_LIMIT },
     middlewares: [
       validateAndTransformBody(VendorCreateOffersBatch),
       ensureSellerCanOffer,
