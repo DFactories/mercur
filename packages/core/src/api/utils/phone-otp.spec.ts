@@ -7,6 +7,7 @@ vi.mock("../../providers/smsir/client", () => ({
 }))
 
 import { createRequestOtpHandler, createVerifyOtpHandler } from "./phone-otp"
+import { iranMobileVariants } from "./phone"
 
 /**
  * The undelivered-code boundary.
@@ -167,5 +168,198 @@ describe("a malformed OTP body", () => {
     await expect(
       invoke(createVerifyOtpHandler("member"), { phone: "x", code: "12" })
     ).rejects.toThrow("INVALID_PHONE")
+  })
+})
+
+/**
+ * A customer row a phone sign-in lands on is an account from then on.
+ *
+ * The verify route reuses whatever customer already holds the number, and that
+ * can be a guest row (`has_account: false`, from a checkout, an agent or an
+ * admin). Linking it without the flag left an account the rest of the backend
+ * reads as a guest. Owner decision 2026-11-02.
+ */
+describe("customer OTP sign-in and has_account", () => {
+  const PHONE = "09121234567"
+
+  type Row = { id: string; has_account: boolean; email?: string }
+
+  // `onPhone` are the rows holding PHONE; `others` only answer email lookups.
+  const setup = (onPhone: Row | Row[] = [], others: Row[] = []) => {
+    const phoneRows = ([] as Row[]).concat(onPhone)
+    const customers = {
+      listCustomers: vi.fn(
+        async (filters: {
+          phone?: string[]
+          email?: string
+          has_account?: boolean
+        }) =>
+          filters.phone
+            ? phoneRows
+            : [...phoneRows, ...others].filter(
+                (c) =>
+                  c.email === filters.email &&
+                  c.has_account === filters.has_account
+              )
+      ),
+      createCustomers: vi.fn(async () => [
+        { id: "cus_new", has_account: true },
+      ]),
+      updateCustomers: vi.fn(async () => ({})),
+    }
+    const authIdentity = {
+      id: "authid_1",
+      app_metadata: {} as Record<string, unknown>,
+    }
+    const auth = {
+      listProviderIdentities: vi.fn(async () => [
+        { auth_identity_id: authIdentity.id },
+      ]),
+      retrieveAuthIdentity: vi.fn(async () => authIdentity),
+      createAuthIdentities: vi.fn(),
+      updateAuthIdentities: vi.fn(
+        async (data: { app_metadata: Record<string, unknown> }) => {
+          authIdentity.app_metadata = data.app_metadata
+        }
+      ),
+    }
+    const services: Record<string, unknown> = {
+      otp: { verifyOtp: vi.fn(async () => undefined) },
+      customer: customers,
+      auth,
+      configModule: {
+        projectConfig: { http: { jwtSecret: "secret", jwtExpiresIn: "1d" } },
+      },
+    }
+    const scope = {
+      resolve: (key: string) => {
+        if (key in services) return services[key]
+        throw new Error(`unexpected resolve(${key})`)
+      },
+    }
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    }
+
+    return {
+      customers,
+      auth,
+      linkedCustomerId: () => authIdentity.app_metadata.customer_id,
+      run: () =>
+        createVerifyOtpHandler("customer")(
+          { body: { phone: PHONE, code: "12345" }, scope } as never,
+          res as never
+        ),
+    }
+  }
+
+  it("marks a reused guest row as an account, before the link, once", async () => {
+    const { run, customers, auth, linkedCustomerId } = setup({
+      id: "cus_guest",
+      has_account: false,
+    })
+    await run()
+    // A second sign-in finds the identity linked and writes nothing.
+    await run()
+
+    expect(customers.updateCustomers).toHaveBeenCalledTimes(1)
+    expect(customers.updateCustomers).toHaveBeenCalledWith("cus_guest", {
+      has_account: true,
+    })
+    expect(customers.updateCustomers.mock.invocationCallOrder[0]).toBeLessThan(
+      auth.updateAuthIdentities.mock.invocationCallOrder[0]
+    )
+    expect(auth.updateAuthIdentities).toHaveBeenCalledTimes(1)
+    expect(linkedCustomerId()).toBe("cus_guest")
+    expect(customers.createCustomers).not.toHaveBeenCalled()
+  })
+
+  it("does not update a reused row that is already an account", async () => {
+    const { run, customers, linkedCustomerId } = setup({
+      id: "cus_account",
+      has_account: true,
+    })
+    await run()
+
+    expect(customers.updateCustomers).not.toHaveBeenCalled()
+    expect(customers.createCustomers).not.toHaveBeenCalled()
+    expect(linkedCustomerId()).toBe("cus_account")
+  })
+
+  it("creates a phone-only account when no row holds the number", async () => {
+    const { run, customers, linkedCustomerId } = setup()
+    await run()
+
+    expect(customers.createCustomers).toHaveBeenCalledWith([
+      { phone: PHONE, has_account: true },
+    ])
+    expect(customers.updateCustomers).not.toHaveBeenCalled()
+    expect(linkedCustomerId()).toBe("cus_new")
+  })
+
+  it("looks the number up in every format, oldest row first", async () => {
+    const { run, customers } = setup()
+    await run()
+
+    expect(customers.listCustomers).toHaveBeenCalledWith(
+      { phone: iranMobileVariants(PHONE) },
+      { order: { created_at: "ASC" } }
+    )
+  })
+
+  it("links the account row when a guest row shares the number", async () => {
+    const { run, customers, linkedCustomerId } = setup([
+      { id: "cus_guest", has_account: false },
+      { id: "cus_account", has_account: true },
+    ])
+    await run()
+
+    expect(linkedCustomerId()).toBe("cus_account")
+    expect(customers.updateCustomers).not.toHaveBeenCalled()
+  })
+
+  it("links a guest row without the flag when its email already has an account", async () => {
+    // Medusa's unique (email, has_account) index would refuse the flip on
+    // every sign-in; the row is linked as it was before the flag existed.
+    const { run, customers, linkedCustomerId } = setup(
+      { id: "cus_guest", has_account: false, email: "a@example.com" },
+      [{ id: "cus_email", has_account: true, email: "a@example.com" }]
+    )
+    await run()
+
+    expect(customers.listCustomers).toHaveBeenCalledWith({
+      email: "a@example.com",
+      has_account: true,
+    })
+    expect(customers.updateCustomers).not.toHaveBeenCalled()
+    expect(linkedCustomerId()).toBe("cus_guest")
+  })
+
+  it("flips a guest row with an email no account uses", async () => {
+    const { run, customers, linkedCustomerId } = setup({
+      id: "cus_guest",
+      has_account: false,
+      email: "a@example.com",
+    })
+    await run()
+
+    expect(customers.updateCustomers).toHaveBeenCalledWith("cus_guest", {
+      has_account: true,
+    })
+    expect(linkedCustomerId()).toBe("cus_guest")
+  })
+
+  it("does not link the identity when the flag cannot be written", async () => {
+    // A failed write must leave the identity unlinked so the next sign-in
+    // retries it; the early return would otherwise skip it for good.
+    const { run, customers, auth } = setup({
+      id: "cus_guest",
+      has_account: false,
+    })
+    customers.updateCustomers.mockRejectedValueOnce(new Error("db down"))
+
+    await expect(run()).rejects.toThrow("db down")
+    expect(auth.updateAuthIdentities).not.toHaveBeenCalled()
   })
 })

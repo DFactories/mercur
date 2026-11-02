@@ -5,6 +5,8 @@ import {
 } from "@medusajs/framework/http"
 import {
   AuthIdentityDTO,
+  CustomerDTO,
+  CustomerUpdatableFields,
   IAuthModuleService,
   ICustomerModuleService,
 } from "@medusajs/framework/types"
@@ -223,16 +225,20 @@ async function isPhoneTaken(
 }
 
 /** Find an existing customer whose phone matches, in any common format. */
-async function findCustomerIdByPhone(
+async function findCustomerByPhone(
   customerService: ICustomerModuleService,
   phone: string
-): Promise<string | undefined> {
+): Promise<CustomerDTO | undefined> {
   // `phone` is a real customer column but isn't in the typed filter props.
   const filters = { phone: iranMobileVariants(phone) } as Parameters<
     ICustomerModuleService["listCustomers"]
   >[0]
-  const customers = await customerService.listCustomers(filters)
-  return customers[0]?.id
+  // Prefer an account row when a guest row shares the number; oldest first so
+  // the pick is stable across sign-ins.
+  const customers = await customerService.listCustomers(filters, {
+    order: { created_at: "ASC" },
+  })
+  return customers.find((c) => c.has_account) ?? customers[0]
 }
 
 type HttpConfig = {
@@ -297,6 +303,10 @@ async function mintSessionToken(
  * nullable) — but createCustomerAccountWorkflow requires an email, so we create
  * the customer directly via the module and link it ourselves. Idempotent: skips
  * when the auth identity already points at a customer.
+ *
+ * A reused row may be a guest's (`has_account: false`). Once a phone sign-in
+ * opens it, it is an account, and code that reads `has_account` (the agent's
+ * phone lookup, the phone-change check) must see that.
  */
 async function ensureCustomerForAuthIdentity(
   req: MedusaRequest,
@@ -313,12 +323,32 @@ async function ensureCustomerForAuthIdentity(
 
   // Reuse an existing customer with this phone (e.g. created earlier by email);
   // otherwise create a phone-only one.
-  let customerId = await findCustomerIdByPhone(customerService, phone)
-  if (!customerId) {
-    const [customer] = await customerService.createCustomers([
+  let customer = await findCustomerByPhone(customerService, phone)
+  if (!customer) {
+    const [created] = await customerService.createCustomers([
       { phone, has_account: true },
     ])
-    customerId = customer.id
+    customer = created
+  } else if (!customer.has_account) {
+    // Medusa allows one account row per email (unique on email+has_account):
+    // when one exists, flipping this guest row would fail every sign-in, so it
+    // stays a guest row and is linked as before.
+    const emailHasAccount =
+      !!customer.email &&
+      (
+        await customerService.listCustomers({
+          email: customer.email,
+          has_account: true,
+        })
+      ).length > 0
+    if (!emailHasAccount) {
+      // Before the link below: once the identity is linked, the early return
+      // above means a failed write here would never be retried. `has_account`
+      // is a real column the module writes; its typed update fields omit it.
+      await customerService.updateCustomers(customer.id, {
+        has_account: true,
+      } as unknown as CustomerUpdatableFields)
+    }
   }
 
   const authModule = req.scope.resolve<IAuthModuleService>(Modules.AUTH)
@@ -326,7 +356,7 @@ async function ensureCustomerForAuthIdentity(
     id: authIdentity.id,
     app_metadata: {
       ...(authIdentity.app_metadata ?? {}),
-      customer_id: customerId,
+      customer_id: customer.id,
     },
   })
 
@@ -414,7 +444,7 @@ export function createRequestOtpHandler(actorType: ActorType) {
             : // login: an account exists, OR a pending invite lets them join
               !!(await findMemberIdByPhone(req, phone)) ||
               (await findPendingInvitesByPhone(req, phone)).length > 0
-          : !!(await findCustomerIdByPhone(
+          : !!(await findCustomerByPhone(
               req.scope.resolve<ICustomerModuleService>(Modules.CUSTOMER),
               phone
             ))
