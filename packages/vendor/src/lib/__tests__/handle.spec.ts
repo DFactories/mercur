@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { isValidHandle } from "../handle"
+import { isValidHandle, isValidLatinProductHandle } from "../handle"
 
 describe("isValidHandle", () => {
   it("accepts the Persian handles the server generates from a Persian name", () => {
@@ -24,5 +24,26 @@ describe("isValidHandle", () => {
     expect(isValidHandle("store-")).toBe(false)
     expect(isValidHandle("my--store")).toBe(false)
     expect(isValidHandle("")).toBe(false)
+  })
+})
+
+describe("isValidLatinProductHandle", () => {
+  it("accepts a Latin keyword handle", () => {
+    expect(isValidLatinProductHandle("container-703")).toBe(true)
+    expect(isValidLatinProductHandle("compartment-containers-3-compartment-microwave-703")).toBe(true)
+    expect(isValidLatinProductHandle("a".repeat(60))).toBe(true)
+  })
+
+  it("rejects uppercase, Persian, stray hyphens and the wrong length", () => {
+    expect(isValidLatinProductHandle("Abc")).toBe(false)
+    expect(isValidLatinProductHandle("ظرف")).toBe(false)
+    expect(isValidLatinProductHandle("a")).toBe(false)
+    expect(isValidLatinProductHandle("-a")).toBe(false)
+    expect(isValidLatinProductHandle("a--b")).toBe(false)
+    expect(isValidLatinProductHandle("a".repeat(61))).toBe(false)
+  })
+
+  it("leaves store handles Persian-capable", () => {
+    expect(isValidHandle("ظرف-تست")).toBe(true)
   })
 })

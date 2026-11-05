@@ -282,3 +282,16 @@ describe("image upload errors say what to do instead", () => {
     )
   })
 })
+
+// dfactories-mp `lib/product-handle.ts` refuses a new product's handle with
+// these keys (tier 0), so the producer reads the reason, not «درخواست نامعتبر».
+describe("product handle refusals", () => {
+  it.each(["invalid", "reserved", "taken", "locked"] as const)(
+    "translates apiErrors.productHandle.%s",
+    (key) => {
+      const message = localizeApiMessage(`apiErrors.productHandle.${key}`, 400)
+      expect(message).toBe(fa.apiErrors.productHandle[key])
+      expect(isPersian(message)).toBe(true)
+    }
+  )
+})

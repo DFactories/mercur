@@ -32,7 +32,7 @@ const Root = () => {
 Root._tabMeta = defineTabMeta<ProductCreateSchemaType>({
   id: "details",
   labelKey: "products.create.tabs.details",
-  validationFields: ["title", "handle", "description", "media"],
+  validationFields: ["title", "description", "media"],
 })
 
 export const ProductCreateDetailsForm = Root

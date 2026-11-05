@@ -2287,6 +2287,9 @@
                 },
                 "required": {
                   "type": "string"
+                },
+                "templateHint": {
+                  "type": "string"
                 }
               },
               "additionalProperties": false
@@ -2313,6 +2316,18 @@
                   "type": "string"
                 },
                 "placeholder": {
+                  "type": "string"
+                },
+                "hint": {
+                  "type": "string"
+                },
+                "useSuggestion": {
+                  "type": "string"
+                },
+                "invalid": {
+                  "type": "string"
+                },
+                "lockedHint": {
                   "type": "string"
                 }
               },
@@ -13844,6 +13859,24 @@
           "type": "object",
           "properties": {
             "unpricedType": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "productHandle": {
+          "type": "object",
+          "properties": {
+            "invalid": {
+              "type": "string"
+            },
+            "reserved": {
+              "type": "string"
+            },
+            "taken": {
+              "type": "string"
+            },
+            "locked": {
               "type": "string"
             }
           },

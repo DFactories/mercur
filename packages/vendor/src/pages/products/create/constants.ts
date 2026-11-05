@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { i18n } from "../../../components/utilities/i18n/i18n"
+import { isValidLatinProductHandle } from "../../../lib/handle"
 import { optionalInt } from "../../../lib/validation"
 import { decorateVariantsWithDefaultValues } from "./utils"
 
@@ -40,7 +41,14 @@ export const ProductCreateSchema = z
       message: i18n.t("products.fields.title.required"),
     }),
     subtitle: z.string().optional(),
-    handle: z.string().optional(),
+    handle: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .refine((v) => v === "" || isValidLatinProductHandle(v), {
+        message: i18n.t("products.fields.handle.invalid"),
+      })
+      .optional(),
     description: z.string().optional(),
     discountable: z.boolean(),
     type_id: z.string().optional(),

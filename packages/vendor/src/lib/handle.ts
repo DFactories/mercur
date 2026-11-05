@@ -21,3 +21,15 @@ export const isValidHandle = (value: string): boolean => {
   }
   return HANDLE_PATTERN.test(value)
 }
+
+/*
+ * A NEW product's handle is Latin only: lowercase a-z, digits and single
+ * hyphens, 3 to 60 characters (owner decisions 165, 196). The backend
+ * (dfactories-mp `lib/product-handle.ts`) is the authority and also refuses a
+ * reserved word; this mirror only gives the producer an inline error early.
+ * Store handles keep `isValidHandle` above, which accepts Persian.
+ */
+const LATIN_PRODUCT_HANDLE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+export const isValidLatinProductHandle = (value: string): boolean =>
+  value.length >= 3 && value.length <= 60 && LATIN_PRODUCT_HANDLE.test(value)

@@ -1,8 +1,7 @@
-import { Input, Textarea } from "@medusajs/ui"
+import { Hint, Input, Textarea } from "@medusajs/ui"
 import { useTranslation } from "react-i18next"
 
 import { Form } from "@components/common/form"
-import { HandleInput } from "@components/inputs/handle-input"
 import { useTabbedForm } from "@components/tabbed-form/tabbed-form"
 import { ProductCreateSchemaType } from "../../../../types"
 
@@ -13,7 +12,7 @@ export const ProductCreateGeneralSection = () => {
   return (
     <div id="general" className="flex flex-col gap-y-6" data-testid="product-create-general-section">
       <div className="flex flex-col gap-y-2" data-testid="product-create-general-section-fields">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-testid="product-create-general-section-title-fields">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-testid="product-create-general-section-title-fields">
           <Form.Field
             control={form.control}
             name="title"
@@ -45,27 +44,10 @@ export const ProductCreateGeneralSection = () => {
               )
             }}
           />
-          <Form.Field
-            control={form.control}
-            name="handle"
-            render={({ field }) => {
-              return (
-                <Form.Item data-testid="product-create-general-section-handle-item">
-                  <Form.Label
-                    tooltip={t("products.fields.handle.tooltip")}
-                    optional
-                    data-testid="product-create-general-section-handle-label"
-                  >
-                    {t("fields.handle")}
-                  </Form.Label>
-                  <Form.Control data-testid="product-create-general-section-handle-control">
-                    <HandleInput {...field} placeholder={t("products.fields.handle.placeholder")} data-testid="product-create-general-section-handle-input" />
-                  </Form.Control>
-                </Form.Item>
-              )
-            }}
-          />
         </div>
+        <Hint data-testid="product-create-general-section-title-template-hint">
+          {t("products.fields.title.templateHint")}
+        </Hint>
       </div>
       <Form.Field
         control={form.control}

@@ -1,15 +1,26 @@
-import { Heading } from "@medusajs/ui"
+import { Button, Heading } from "@medusajs/ui"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Form } from "@components/common/form"
 import { SwitchBox } from "@components/common/switch-box"
 import { Combobox } from "@components/inputs/combobox"
+import { HandleInput } from "@components/inputs/handle-input"
 import { useTabbedForm } from "@components/tabbed-form/tabbed-form"
 import { useComboboxData } from "@hooks/use-combobox-data"
-import { sdk } from "@lib/client"
+import { fetchQuery, sdk } from "@lib/client"
 
 import { SingleCategoryCombobox } from "../../../../../common/components/category-combobox"
 import { ProductCreateSchemaType } from "../../../../types"
+import { applyHandleSuggestion, restoreHandleSuggestion } from "./handle-suggestion"
+
+const fetchHandleSuggestion = async (title: string, category_id: string) =>
+  (
+    (await fetchQuery("/vendor/product-handle-suggestion", {
+      method: "GET",
+      query: { title, category_id },
+    })) as { handle?: unknown }
+  ).handle
 
 export const ProductCreateOrganizationSection = () => {
   const form = useTabbedForm<ProductCreateSchemaType>()
@@ -44,6 +55,25 @@ export const ProductCreateOrganizationSection = () => {
         value: tag.id,
       })),
   })
+
+  // The handle is suggested from the category and the title, so it sits under
+  // the category; the title was entered on the previous tab.
+  const categoryId = form.watch("category_id")
+  const handle = form.watch("handle")
+  const [suggestion, setSuggestion] = useState<string>()
+
+  useEffect(() => {
+    let current = true
+    void applyHandleSuggestion(form, fetchHandleSuggestion, () => current).then(
+      (next) => {
+        if (current && next) setSuggestion(next)
+      }
+    )
+    return () => {
+      current = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId])
 
   return (
     <div id="organize" className="flex flex-col gap-y-8" data-testid="product-create-organize-section">
@@ -100,6 +130,48 @@ export const ProductCreateOrganizationSection = () => {
           }}
         />
       </div>
+      <Form.Field
+        control={form.control}
+        name="handle"
+        render={({ field }) => {
+          return (
+            <Form.Item data-testid="product-create-organize-section-handle-item">
+              <Form.Label
+                tooltip={t("products.fields.handle.tooltip")}
+                optional
+                data-testid="product-create-organize-section-handle-label"
+              >
+                {t("products.fields.handle.label")}
+              </Form.Label>
+              {/* LTR box AROUND the control: the Slot puts id/aria-* on its first child. */}
+              <div dir="ltr">
+                <Form.Control data-testid="product-create-organize-section-handle-control">
+                  <HandleInput
+                    {...field}
+                    placeholder={t("products.fields.handle.placeholder")}
+                    data-testid="product-create-organize-section-handle-input"
+                  />
+                </Form.Control>
+              </div>
+              <Form.Hint>{t("products.fields.handle.hint")}</Form.Hint>
+              {suggestion && handle !== suggestion && (
+                <div>
+                  <Button
+                    type="button"
+                    variant="transparent"
+                    size="small"
+                    onClick={() => restoreHandleSuggestion(form, suggestion)}
+                    data-testid="product-create-organize-section-handle-use-suggestion"
+                  >
+                    {t("products.fields.handle.useSuggestion")}
+                  </Button>
+                </div>
+              )}
+              <Form.ErrorMessage />
+            </Form.Item>
+          )
+        }}
+      />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-testid="product-create-organize-section-type-tags">
         <Form.Field
           control={form.control}

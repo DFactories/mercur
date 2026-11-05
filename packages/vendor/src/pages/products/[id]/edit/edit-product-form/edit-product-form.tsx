@@ -1,4 +1,4 @@
-import { Button, Input, Text, Textarea, toast } from "@medusajs/ui";
+import { Button, Input, Textarea, toast } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 import * as zod from "zod";
 
@@ -48,13 +48,14 @@ export const EditProductForm = ({ product }: EditProductFormProps) => {
   const { mutateAsync, isPending } = useUpdateProduct(product.id);
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    const { description, discountable, handle, subtitle, title } = data;
+    // No handle: it is fixed once the product exists (owner decision 194), and
+    // the backend refuses a change; the operator corrects it in admin.
+    const { description, discountable, subtitle, title } = data;
     const additional_data = data.additional_data;
 
     const payload = {
       description,
       discountable,
-      handle,
       subtitle: subtitle || null,
       title,
       ...(additional_data && Object.keys(additional_data).length
@@ -164,23 +165,15 @@ export const EditProductForm = ({ product }: EditProductFormProps) => {
                 render={({ field }) => {
                   return (
                     <Form.Item>
-                      <Form.Label>{t("fields.handle")}</Form.Label>
-                      <Form.Control>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 z-10 flex w-8 items-center justify-center border-r">
-                            <Text
-                              className="text-ui-fg-muted"
-                              size="small"
-                              leading="compact"
-                              weight="plus"
-                            >
-                              /
-                            </Text>
-                          </div>
-                          <Input {...field} className="pl-10" />
-                        </div>
-                      </Form.Control>
-                      <Form.ErrorMessage />
+                      <Form.Label>{t("products.fields.handle.label")}</Form.Label>
+                      <div dir="ltr">
+                        <Form.Control>
+                          <Input {...field} disabled readOnly />
+                        </Form.Control>
+                      </div>
+                      <Form.Hint>
+                        {t("products.fields.handle.lockedHint")}
+                      </Form.Hint>
                     </Form.Item>
                   );
                 }}

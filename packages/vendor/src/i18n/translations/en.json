@@ -759,17 +759,22 @@
       "title": {
         "label": "Title",
         "hint": "Give your product a short and clear title.<0/>50-60 characters is the recommended length for search engines.",
-        "placeholder": "Winter jacket",
-        "required": "Please enter a title"
+        "placeholder": "Disposable 3-compartment microwave container 703",
+        "required": "Please enter a title",
+        "templateHint": "Suggested: the product type, then fixed features such as material, shape, compartments or use, then the model code. Leave out brand and producer names, pack counts, with/without lid and anything that differs between variants, and words like \"new\" or \"cheap\". A short title, about 35 characters, shows in full on Google."
       },
       "subtitle": {
         "label": "Subtitle",
         "placeholder": "Warm and cosy"
       },
       "handle": {
-        "label": "Handle",
-        "tooltip": "The handle is used to reference the product in your storefront. If not specified, the handle will be generated from the product title.",
-        "placeholder": "winter-jacket"
+        "label": "Product URL",
+        "tooltip": "The last part of the product page address. If left empty, it is made from the category and the title.",
+        "placeholder": "compartment-containers-3-compartment-microwave-703",
+        "hint": "Suggested from the category and title once you pick a category; you can edit it. Lowercase English letters, digits and hyphens only. It cannot change after the product is created.",
+        "useSuggestion": "Use suggestion",
+        "invalid": "Lowercase English letters, digits and hyphens only (3–60 characters).",
+        "lockedHint": "The product URL stays fixed so existing links keep working. Contact support to change it."
       },
       "description": {
         "label": "Description",
@@ -4613,6 +4618,12 @@
     "shippingProviderNotEnabled": "No shipping provider is enabled for this location. Enable one under the location's fulfillment providers.",
     "shippingOption": {
       "unpricedType": "This shipping method has no price of its own; its price must be zero."
+    },
+    "productHandle": {
+      "invalid": "Lowercase English letters, digits and hyphens only (3–60 characters).",
+      "reserved": "This URL is reserved; choose another.",
+      "taken": "Another product already uses this URL; choose another or use the suggestion.",
+      "locked": "The product URL stays fixed so existing links keep working. Contact support to change it."
     }
   },
   "authHero": {
