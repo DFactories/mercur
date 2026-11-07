@@ -78,14 +78,15 @@ export const useSelectSeller = (
   >,
 ) => {
   return useMutation({
+    ...options,
     mutationFn: (payload) => sdk.vendor.sellers.select.mutate(payload),
     onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: membersQueryKeys.me(),
-      });
+      // Everything cached so far belongs to the previous store, and query keys
+      // carry no store id: without a reset its orders, products and customers
+      // stay on screen under the new store for the 90 s staleTime.
+      void queryClient.resetQueries();
       options?.onSuccess?.(data, variables, context);
     },
-    ...options,
   });
 };
 
