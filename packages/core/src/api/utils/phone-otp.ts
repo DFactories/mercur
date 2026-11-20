@@ -421,6 +421,22 @@ async function deliverOtp(
 
 
 /**
+ * The address a code is being requested from, for the hourly send cap.
+ *
+ * The left-most `X-Forwarded-For` entry is the original client when the proxy
+ * in front discards what the client sent, which Traefik does by default. Behind
+ * a proxy that passes the header through it is whatever the client claims, and
+ * then only the platform-wide cap holds.
+ */
+function clientAddress(req: MedusaRequest): string | null {
+  const forwarded = req.headers["x-forwarded-for"]
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)
+    ?.split(",")[0]
+    ?.trim()
+  return first || req.ip || null
+}
+
+/**
  * Read a request body, or refuse it with a CODE the clients already understand.
  *
  * `Schema.parse()` throws a raw `ZodError`, which Medusa's error handler does
@@ -492,6 +508,7 @@ export function createRequestOtpHandler(actorType: ActorType) {
     const { id, code } = await otp.requestOtp({
       identifier: phone,
       actor_type: actorType,
+      ip: clientAddress(req),
     })
 
     await deliverOtp(otp, id, phone, code)
@@ -680,6 +697,7 @@ export function createSellerPhoneRequestOtpHandler() {
     const { id, code } = await otp.requestOtp({
       identifier: phone,
       actor_type: SELLER_PHONE_ACTOR,
+      ip: clientAddress(req),
     })
 
     await deliverOtp(otp, id, phone, code)

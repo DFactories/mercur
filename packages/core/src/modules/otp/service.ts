@@ -13,6 +13,11 @@ import { OtpCode } from "./models"
 export type RequestOtpInput = {
   identifier: string
   actor_type: string
+  /**
+   * The address asking. Counted against the per-address hourly cap; a caller
+   * that leaves it out is held only by the platform-wide cap.
+   */
+  ip?: string | null
 }
 
 export type RequestOtpResult = {
@@ -62,6 +67,24 @@ const OTP_RESEND_COOLDOWN_SECONDS = Number(
 )
 const OTP_SECRET =
   process.env.OTP_SECRET ?? process.env.JWT_SECRET ?? "mercur-otp-secret"
+
+const OTP_SEND_WINDOW_SECONDS = 60 * 60
+
+/**
+ * How many codes may be SENT per hour: by one address, and by everyone.
+ *
+ * The cooldown limits one number to one code at a time and says nothing about
+ * how many numbers are asked for, so a single client could have the platform
+ * text any list of strangers. The per-address cap stops that client; the
+ * platform-wide one bounds the bill when the address is forged or spread out.
+ *
+ * Read on every call rather than once at load, so an operator's change (and a
+ * test's) applies without a restart.
+ */
+const otpSendCaps = () => ({
+  perAddress: Number(process.env.OTP_MAX_SENDS_PER_IP_PER_HOUR ?? 10),
+  platform: Number(process.env.OTP_MAX_SENDS_PER_HOUR ?? 500),
+})
 
 function hashCode(identifier: string, code: string): string {
   return crypto
@@ -173,12 +196,43 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
       }
     }
 
+    // Counted then written, not atomically: a burst can overshoot a cap by the
+    // few requests in flight, which a spending limit can live with.
+    const caps = otpSendCaps()
+    const since = new Date(Date.now() - OTP_SEND_WINDOW_SECONDS * 1000)
+    const sentBy = async (filters: Record<string, unknown>) =>
+      (
+        await this.listAndCountOtpCodes(
+          { ...filters, created_at: { $gte: since } },
+          { select: ["id"], take: 1 }
+        )
+      )[1]
+
+    if ((await sentBy({})) >= caps.platform) {
+      // The one refusal that locks out people who did nothing: say so where an
+      // operator will see it.
+      console.error(
+        `[otp] platform-wide cap of ${caps.platform} codes per hour reached; refusing new codes`
+      )
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `Please wait before requesting another code.`
+      )
+    }
+    if (input.ip && (await sentBy({ ip: input.ip })) >= caps.perAddress) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `Please wait before requesting another code.`
+      )
+    }
+
     const code = generateNumericCode(OTP_CODE_LENGTH)
     const expires_at = new Date(Date.now() + OTP_TTL_SECONDS * 1000)
 
     const record = await this.createOtpCodes({
       identifier,
       actor_type,
+      ip: input.ip ?? null,
       code_hash: hashCode(identifier, code),
       expires_at,
       attempts: 0,

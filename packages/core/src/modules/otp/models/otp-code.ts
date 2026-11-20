@@ -19,11 +19,21 @@ const OtpCode = model
     expires_at: model.dateTime(),
     consumed_at: model.dateTime().nullable(),
     attempts: model.number().default(0),
+    /**
+     * Where the request for this code came from. Read only to count how many
+     * codes one address has had sent; null for a caller that did not say.
+     */
+    ip: model.text().nullable(),
   })
   .indexes([
     {
       on: ["identifier", "actor_type"],
       name: "IDX_otp_code_identifier_actor_type",
+    },
+    {
+      // The hourly send caps count by creation time.
+      on: ["created_at"],
+      name: "IDX_otp_code_created_at",
     },
   ])
 

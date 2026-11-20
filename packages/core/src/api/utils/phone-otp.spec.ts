@@ -31,6 +31,7 @@ describe("createRequestOtpHandler", () => {
     }
     const req = {
       body: { phone: "09121234567" },
+      headers: {},
       scope: { resolve: () => otp },
     }
     return {
@@ -97,6 +98,7 @@ describe("the request response carries both clocks", () => {
     }
     const req = {
       body: { phone: "09120000000" },
+      headers: {},
       scope: { resolve: () => otp },
     }
 
