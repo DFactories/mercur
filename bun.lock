@@ -326,7 +326,7 @@
       "devDependencies": {
         "@medusajs/types": "2.18.0",
         "@medusajs/ui-preset": "2.18.0",
-        "@mercurjs/core": "2.3.1-dfactories.40",
+        "@mercurjs/core": "2.3.1-dfactories.41",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/types": "2.3.1-dfactories.3",
         "@types/react": "^18.3.2",
@@ -398,7 +398,7 @@
     },
     "packages/core": {
       "name": "@mercurjs/core",
-      "version": "2.3.1-dfactories.40",
+      "version": "2.3.1-dfactories.41",
       "dependencies": {
         "@orama/orama": "^3.1.18",
         "pkg-dir": "4",
@@ -540,7 +540,7 @@
         "zod": "4.4.3",
       },
       "devDependencies": {
-        "@mercurjs/core": "2.3.1-dfactories.40",
+        "@mercurjs/core": "2.3.1-dfactories.41",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/types": "2.3.1-dfactories.3",
         "@types/lodash.debounce": "^4.0.8",
@@ -581,7 +581,7 @@
         "@medusajs/medusa": "2.18.0",
         "@medusajs/ui": "4.1.19",
         "@mercurjs/client": "2.3.1-dfactories.0",
-        "@mercurjs/core": "2.3.1-dfactories.40",
+        "@mercurjs/core": "2.3.1-dfactories.41",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/dashboard-shared": "2.3.1-dfactories.2",
         "@mercurjs/vendor": "2.3.1-dfactories.30",
@@ -671,7 +671,7 @@
       "devDependencies": {
         "@medusajs/types": "2.18.0",
         "@medusajs/ui-preset": "2.18.0",
-        "@mercurjs/core": "2.3.1-dfactories.40",
+        "@mercurjs/core": "2.3.1-dfactories.41",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/types": "2.3.1-dfactories.3",
         "@types/react": "^18.3.2",
