@@ -1,7 +1,12 @@
 import crypto from "crypto"
 
-import { InferEntityType } from "@medusajs/framework/types"
-import { MedusaError, MedusaService } from "@medusajs/framework/utils"
+import { Context, InferEntityType } from "@medusajs/framework/types"
+import {
+  InjectTransactionManager,
+  MedusaContext,
+  MedusaError,
+  MedusaService,
+} from "@medusajs/framework/utils"
 
 import { OtpCode } from "./models"
 
@@ -27,6 +32,20 @@ export type VerifyOtpInput = {
 const OTP_TTL_SECONDS = Number(process.env.OTP_TTL_SECONDS ?? 120)
 const OTP_CODE_LENGTH = Number(process.env.OTP_CODE_LENGTH ?? 5)
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS ?? 5)
+/**
+ * Wrong guesses one number may collect, across ALL its codes, before it is
+ * locked until the oldest of them leaves the window.
+ *
+ * The per-code limit alone was a rate, not a limit: every 120 seconds a new
+ * code brought five new guesses, so a five-digit code fell to patience. The
+ * price is that ten wrong guesses lock the real owner out for up to an hour.
+ */
+const OTP_MAX_FAILURES_PER_WINDOW = Number(
+  process.env.OTP_MAX_FAILURES_PER_WINDOW ?? 10
+)
+const OTP_FAILURE_WINDOW_SECONDS = Number(
+  process.env.OTP_FAILURE_WINDOW_SECONDS ?? 3600
+)
 /**
  * How long before another code may be requested.
  *
@@ -106,8 +125,35 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
     return otpTiming()
   }
 
+  /** Wrong guesses this number has collected inside the failure window. */
+  protected async recentFailures_(
+    identifier: string,
+    actor_type: string,
+    sharedContext: Context = {}
+  ): Promise<number> {
+    const since = new Date(Date.now() - OTP_FAILURE_WINDOW_SECONDS * 1000)
+    const codes = await this.listOtpCodes(
+      { identifier, actor_type, created_at: { $gte: since } },
+      { select: ["attempts"] },
+      sharedContext
+    )
+    return codes.reduce((sum, code) => sum + (code.attempts ?? 0), 0)
+  }
+
   async requestOtp(input: RequestOtpInput): Promise<RequestOtpResult> {
     const { identifier, actor_type } = input
+
+    // A locked number gets no new code: it could not be used, and each one
+    // would cost an SMS.
+    if (
+      (await this.recentFailures_(identifier, actor_type)) >=
+      OTP_MAX_FAILURES_PER_WINDOW
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `Please wait before requesting another code.`
+      )
+    }
 
     // Enforce a resend cooldown to limit abuse.
     const [latest] = await this.listOtpCodes(
@@ -156,32 +202,83 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
   }
 
   async verifyOtp(input: VerifyOtpInput): Promise<boolean> {
-    const { identifier, actor_type, code } = input
+    const outcome = await this.checkOtp_(input)
 
-    const [record] = await this.listOtpCodes(
-      { identifier, actor_type, consumed_at: null },
-      { order: { created_at: "DESC" }, take: 1 }
-    )
-
-    if (!record) {
+    if (outcome === "none") {
       throw new MedusaError(
         MedusaError.Types.UNAUTHORIZED,
         "No active verification code. Please request a new one."
       )
     }
-
-    if (new Date(record.expires_at as unknown as string).getTime() < Date.now()) {
+    if (outcome === "expired") {
       throw new MedusaError(
         MedusaError.Types.UNAUTHORIZED,
         "Verification code has expired. Please request a new one."
       )
     }
-
-    if ((record.attempts ?? 0) >= OTP_MAX_ATTEMPTS) {
+    if (outcome === "locked") {
       throw new MedusaError(
         MedusaError.Types.NOT_ALLOWED,
         "Too many incorrect attempts. Please request a new code."
       )
+    }
+    if (outcome === "invalid") {
+      throw new MedusaError(
+        MedusaError.Types.UNAUTHORIZED,
+        "Invalid verification code."
+      )
+    }
+    return true
+  }
+
+  /**
+   * Judge one guess, with every guess at the same number in a queue.
+   *
+   * The attempt counter used to be read, compared and written back in three
+   * separate statements, so fifty parallel guesses all read `attempts = 0` and
+   * all were compared. The advisory lock makes read-compare-count one unit per
+   * number.
+   *
+   * RETURNS the outcome instead of throwing: a throw would roll back the
+   * transaction, and the count of a wrong guess with it.
+   */
+  @InjectTransactionManager()
+  protected async checkOtp_(
+    input: VerifyOtpInput,
+    @MedusaContext() sharedContext: Context = {}
+  ): Promise<"ok" | "none" | "expired" | "locked" | "invalid"> {
+    const { identifier, actor_type, code } = input
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = sharedContext as any
+    await (ctx.transactionManager ?? ctx.manager).execute(
+      "SELECT pg_advisory_xact_lock(hashtext(?))",
+      [`otp:${actor_type}:${identifier}`]
+    )
+
+    if (
+      (await this.recentFailures_(identifier, actor_type, sharedContext)) >=
+      OTP_MAX_FAILURES_PER_WINDOW
+    ) {
+      return "locked"
+    }
+
+    const [record] = await this.listOtpCodes(
+      { identifier, actor_type, consumed_at: null },
+      { order: { created_at: "DESC" }, take: 1 },
+      sharedContext
+    )
+
+    if (!record) {
+      return "none"
+    }
+
+    if (new Date(record.expires_at as unknown as string).getTime() < Date.now()) {
+      return "expired"
+    }
+
+    if ((record.attempts ?? 0) >= OTP_MAX_ATTEMPTS) {
+      return "locked"
     }
 
     const matches = crypto.timingSafeEqual(
@@ -190,18 +287,18 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
     )
 
     if (!matches) {
-      await this.updateOtpCodes({
-        id: record.id,
-        attempts: (record.attempts ?? 0) + 1,
-      })
-      throw new MedusaError(
-        MedusaError.Types.UNAUTHORIZED,
-        "Invalid verification code."
+      await this.updateOtpCodes(
+        { id: record.id, attempts: (record.attempts ?? 0) + 1 },
+        sharedContext
       )
+      return "invalid"
     }
 
-    await this.updateOtpCodes({ id: record.id, consumed_at: new Date() })
-    return true
+    await this.updateOtpCodes(
+      { id: record.id, consumed_at: new Date() },
+      sharedContext
+    )
+    return "ok"
   }
 }
 

@@ -25,6 +25,7 @@ import {
   assertIranMobile,
   iranMobileVariants,
   normalizeIranPhone,
+  PHONE_OTP_PROVIDER,
 } from "./phone"
 
 /**
@@ -42,7 +43,6 @@ import {
 
 type ActorType = "member" | "customer"
 
-const PHONE_OTP_PROVIDER = "phone-otp"
 /** Distinct OTP namespace so store-phone codes never collide with login codes. */
 const SELLER_PHONE_ACTOR = "seller_phone"
 const OTP_TEMPLATE_ID = Number(process.env.SMSIR_OTP_TEMPLATE_ID ?? 0)
@@ -224,21 +224,31 @@ async function isPhoneTaken(
   return sellers.some((s) => !!s.phone_verified_at)
 }
 
+/** Every customer whose phone matches, in any common format; oldest first. */
+async function listCustomersByPhone(
+  customerService: ICustomerModuleService,
+  phone: string
+): Promise<CustomerDTO[]> {
+  // `phone` is a real customer column but isn't in the typed filter props.
+  const filters = { phone: iranMobileVariants(phone) } as Parameters<
+    ICustomerModuleService["listCustomers"]
+  >[0]
+  // Oldest first so the pick is stable across sign-ins.
+  return await customerService.listCustomers(filters, {
+    order: { created_at: "ASC" },
+  })
+}
+
+/** Prefer an account row when a guest row shares the number. */
+const pickCustomer = (customers: CustomerDTO[]): CustomerDTO | undefined =>
+  customers.find((c) => c.has_account) ?? customers[0]
+
 /** Find an existing customer whose phone matches, in any common format. */
 async function findCustomerByPhone(
   customerService: ICustomerModuleService,
   phone: string
 ): Promise<CustomerDTO | undefined> {
-  // `phone` is a real customer column but isn't in the typed filter props.
-  const filters = { phone: iranMobileVariants(phone) } as Parameters<
-    ICustomerModuleService["listCustomers"]
-  >[0]
-  // Prefer an account row when a guest row shares the number; oldest first so
-  // the pick is stable across sign-ins.
-  const customers = await customerService.listCustomers(filters, {
-    order: { created_at: "ASC" },
-  })
-  return customers.find((c) => c.has_account) ?? customers[0]
+  return pickCustomer(await listCustomersByPhone(customerService, phone))
 }
 
 type HttpConfig = {
@@ -321,9 +331,26 @@ async function ensureCustomerForAuthIdentity(
     Modules.CUSTOMER
   )
 
-  // Reuse an existing customer with this phone (e.g. created earlier by email);
-  // otherwise create a phone-only one.
-  let customer = await findCustomerByPhone(customerService, phone)
+  const authModule = req.scope.resolve<IAuthModuleService>(Modules.AUTH)
+
+  // Reuse an existing customer with this phone (a guest's, or one an operator
+  // or a sales partner entered); otherwise create a phone-only one.
+  //
+  // NEVER a row somebody else already signs in to. A row's phone is free text
+  // until an OTP proves it, so whoever registered with this number first would
+  // otherwise share the account of the person who really holds it, from that
+  // person's first sign-in on.
+  const unclaimed: CustomerDTO[] = []
+  for (const candidate of await listCustomersByPhone(customerService, phone)) {
+    const holders = await authModule.listAuthIdentities({
+      app_metadata: { customer_id: candidate.id },
+    })
+    if (!holders.some((holder) => holder.id !== authIdentity.id)) {
+      unclaimed.push(candidate)
+    }
+  }
+
+  let customer = pickCustomer(unclaimed)
   if (!customer) {
     const [created] = await customerService.createCustomers([
       { phone, has_account: true },
@@ -351,7 +378,6 @@ async function ensureCustomerForAuthIdentity(
     }
   }
 
-  const authModule = req.scope.resolve<IAuthModuleService>(Modules.AUTH)
   await authModule.updateAuthIdentities({
     id: authIdentity.id,
     app_metadata: {

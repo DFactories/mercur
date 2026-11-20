@@ -11,6 +11,7 @@ import {
 
 import {
   validateMemberInviteTokenStep,
+  validateInvitedMemberStep,
   upsertMembersStep,
   createSellerMembersStep,
   deleteMemberInviteStep,
@@ -65,6 +66,15 @@ export const acceptMemberInviteWorkflow = createWorkflow(
     createSellerDefaultRolesStep()
 
     const invite = validateMemberInviteTokenStep(input.invite_token)
+
+    validateInvitedMemberStep(
+      transform({ invite, input }, ({ invite, input }) => ({
+        email: invite.email,
+        phone: invite.phone,
+        member_id: input.member_id || undefined,
+        auth_identity_id: input.auth_identity_id,
+      }))
+    )
 
     const members = upsertMembersStep(
       transform({ invite, input }, ({ invite, input }) => [

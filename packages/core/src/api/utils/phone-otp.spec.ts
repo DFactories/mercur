@@ -216,6 +216,9 @@ describe("customer OTP sign-in and has_account", () => {
         { auth_identity_id: authIdentity.id },
       ]),
       retrieveAuthIdentity: vi.fn(async () => authIdentity),
+      // Nobody else signs in to these rows; the row somebody does is covered
+      // against real rows in account-takeover-guards.spec.ts.
+      listAuthIdentities: vi.fn(async () => []),
       createAuthIdentities: vi.fn(),
       updateAuthIdentities: vi.fn(
         async (data: { app_metadata: Record<string, unknown> }) => {

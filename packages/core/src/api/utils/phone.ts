@@ -29,6 +29,9 @@ export function toLatinDigits(input: string): string {
 }
 
 /** Iranian mobile in canonical local form: 09 + 9 digits = 11 digits. */
+/** The provider label on an auth identity created by phone (OTP) sign-in. */
+export const PHONE_OTP_PROVIDER = "phone-otp"
+
 export const IRAN_MOBILE_RE = /^09\d{9}$/
 
 /**

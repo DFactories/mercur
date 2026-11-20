@@ -24,6 +24,7 @@ import {
   upsertMembersStep,
   createSellerMembersStep,
   createSellerDefaultRolesStep,
+  validateInvitedMemberStep,
 } from "../steps"
 import { SellerWorkflowEvents } from "../../events"
 import { updateSellerAddressWorkflow } from "./update-seller-address"
@@ -58,6 +59,14 @@ export const createSellerAccountWorkflow = createWorkflow(
     const seller = transform({ sellers }, ({ sellers }) => sellers[0])
 
     const newMember = when('no-existing-member', input, ({ member_id }) => !member_id).then(() => {
+      validateInvitedMemberStep(
+        transform(input, ({ member_email, member_phone, auth_identity_id }) => ({
+          email: member_email,
+          phone: member_phone,
+          auth_identity_id,
+        }))
+      )
+
       const members = upsertMembersStep(
         transform(
           input,
