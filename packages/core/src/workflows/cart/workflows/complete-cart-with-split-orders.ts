@@ -60,9 +60,13 @@ type CompleteCartWithSplitOrdersWorkflowInput = {
     cart_id: string
 }
 
-export const THREE_DAYS = 3 * 24 * 60 * 60 * 1000
-export const THIRTY_SECONDS = 30 * 1000
-export const TWO_MINUTES = 2 * 60 * 1000
+// All three are read as SECONDS: `retentionTime` by the workflow engine,
+// `timeout` and `ttl` by `acquireLockStep`. In milliseconds a stored execution
+// was kept for 8 years, a second completion waited 8 hours for the lock, and
+// a lock left by a crashed completion held the cart for 33 hours.
+export const THREE_DAYS = 3 * 24 * 60 * 60
+export const THIRTY_SECONDS = 30
+export const TWO_MINUTES = 2 * 60
 
 export const completeCartWithSplitOrdersWorkflow = createWorkflow(
     {
