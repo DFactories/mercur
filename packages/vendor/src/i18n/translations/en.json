@@ -4600,6 +4600,7 @@
     "mustBePositive": "The amount must be greater than zero.",
     "fieldRequired": "A required field is missing.",
     "duplicate": "This value is already in use. Choose another one.",
+    "sellerSuspended": "Your store is suspended. Until it is reinstated you can only correct the store's details and documents, ask for a review and finish existing orders.",
     "inviteOtherMember": "This invite was issued to a different member.",
     "memberPhoneMismatch": "A member's phone must be the number you signed in with.",
     "priceLadderRises": "A larger quantity cannot cost more per unit than a smaller one.",

@@ -336,3 +336,17 @@ describe("refusals added by the ownership and price ladder checks", () => {
     ).toBe(fa.apiErrors.memberPhoneMismatch)
   })
 })
+
+/**
+ * A suspended store's refused write (the host's vendor middleware) names its
+ * sentence by key. Without the key the panel showed the bare 403 text, which
+ * says nothing about why or what is still open.
+ */
+describe("a suspended store's refused write", () => {
+  it("says what the store may still do", () => {
+    expect(localizeApiMessage("apiErrors.sellerSuspended", 403)).toBe(
+      fa.apiErrors.sellerSuspended,
+    )
+    expect(isPersian(fa.apiErrors.sellerSuspended)).toBe(true)
+  })
+})
