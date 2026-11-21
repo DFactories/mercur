@@ -47,6 +47,48 @@ export const validateSellerFulfillmentSet = async (
   }
 }
 
+/**
+ * A service zone is the seller's when the warehouse its fulfillment set hangs
+ * on is the seller's. Anything else (unknown zone, another seller's) reads as
+ * not found.
+ */
+export const validateSellerServiceZone = async (
+  scope: MedusaContainer,
+  sellerId: string,
+  serviceZoneId: string
+) => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const {
+    data: [serviceZone],
+  } = await query.graph({
+    entity: "service_zone",
+    filters: { id: serviceZoneId },
+    fields: ["fulfillment_set.location.id"],
+  })
+
+  const stockLocationId = (
+    serviceZone as { fulfillment_set?: { location?: { id?: string } } }
+  )?.fulfillment_set?.location?.id
+
+  const sellerStockLocations = stockLocationId
+    ? (
+        await query.graph({
+          entity: "stock_location_seller",
+          filters: { stock_location_id: stockLocationId, seller_id: sellerId },
+          fields: ["seller_id"],
+        })
+      ).data
+    : []
+
+  if (!sellerStockLocations.length) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
+      `Service zone with id: ${serviceZoneId} was not found`
+    )
+  }
+}
+
 export const refetchFulfillmentSet = async (
   scope: MedusaContainer,
   fulfillmentSetId: string,

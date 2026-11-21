@@ -6,6 +6,8 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { HttpTypes } from "@mercurjs/types"
 
 import { createSellerShippingOptionsWorkflow } from "../../../workflows/shipping-option"
+import { validateSellerServiceZone } from "../fulfillment-sets/helpers"
+import { validateSellerOrGlobalShippingProfile } from "../shipping-profiles/helpers"
 import {
   buildShippingProfileGoodsWarning,
   getTypeDeliveryDays,
@@ -39,6 +41,19 @@ export const POST = async (
   res: MedusaResponse<HttpTypes.VendorShippingOptionResponse>
 ) => {
   const sellerId = req.seller_context!.seller_id
+
+  // The option is linked to the caller below; what it stands on must be the
+  // caller's too (a global profile, owned by no seller, is open to everyone).
+  await validateSellerServiceZone(
+    req.scope,
+    sellerId,
+    req.validatedBody.service_zone_id
+  )
+  await validateSellerOrGlobalShippingProfile(
+    req.scope,
+    sellerId,
+    req.validatedBody.shipping_profile_id
+  )
 
   // Stamp the chosen type's admin-curated delivery time onto the option metadata
   // (usable in date math downstream — the settlement hold floor). The type's

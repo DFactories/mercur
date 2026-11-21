@@ -39,6 +39,35 @@ export const validateSellerShippingOption = async (
   }
 }
 
+/** Every rule id must be a rule of this shipping option. */
+export const validateShippingOptionRules = async (
+  scope: MedusaContainer,
+  shippingOptionId: string,
+  ruleIds: string[]
+) => {
+  if (!ruleIds.length) {
+    return
+  }
+
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const { data: rules } = await query.graph({
+    entity: "shipping_option_rule",
+    filters: { id: ruleIds, shipping_option_id: shippingOptionId },
+    fields: ["id"],
+  })
+
+  const found = new Set(rules.map((rule) => rule.id))
+  const missing = ruleIds.filter((ruleId) => !found.has(ruleId))
+
+  if (missing.length) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
+      `Shipping option rule with id: ${missing.join(", ")} was not found`
+    )
+  }
+}
+
 /**
  * Resolve the admin-curated delivery time (days) for a shipping option type, or
  * null when none is set. Used to stamp the type's delivery onto a shipping

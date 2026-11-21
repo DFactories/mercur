@@ -16,6 +16,7 @@ import {
   refetchShippingOption,
   validateSellerShippingOption,
 } from "../helpers"
+import { validateSellerOrGlobalShippingProfile } from "../../shipping-profiles/helpers"
 import { VendorUpdateShippingOptionType } from "../validators"
 
 export const GET = async (
@@ -51,6 +52,14 @@ export const POST = async (
   await validateSellerShippingOption(req.scope, sellerId, req.params.id)
 
   const { metadata: bodyMetadata, ...shippingOptionPayload } = req.validatedBody
+
+  if (shippingOptionPayload.shipping_profile_id) {
+    await validateSellerOrGlobalShippingProfile(
+      req.scope,
+      sellerId,
+      shippingOptionPayload.shipping_profile_id
+    )
+  }
 
   // When the option's type changes, re-stamp the new type's admin-curated
   // delivery time onto the metadata. Medusa's update replaces the metadata
