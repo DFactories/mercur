@@ -326,7 +326,7 @@
       "devDependencies": {
         "@medusajs/types": "2.18.0",
         "@medusajs/ui-preset": "2.18.0",
-        "@mercurjs/core": "2.3.1-dfactories.43",
+        "@mercurjs/core": "2.3.1-dfactories.44",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/types": "2.3.1-dfactories.3",
         "@types/react": "^18.3.2",
@@ -398,7 +398,7 @@
     },
     "packages/core": {
       "name": "@mercurjs/core",
-      "version": "2.3.1-dfactories.43",
+      "version": "2.3.1-dfactories.44",
       "dependencies": {
         "@orama/orama": "^3.1.18",
         "http-proxy-middleware": "^3.0.3",
@@ -540,7 +540,7 @@
         "zod": "4.4.3",
       },
       "devDependencies": {
-        "@mercurjs/core": "2.3.1-dfactories.43",
+        "@mercurjs/core": "2.3.1-dfactories.44",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/types": "2.3.1-dfactories.3",
         "@types/lodash.debounce": "^4.0.8",
@@ -581,10 +581,10 @@
         "@medusajs/medusa": "2.18.0",
         "@medusajs/ui": "4.1.19",
         "@mercurjs/client": "2.3.1-dfactories.0",
-        "@mercurjs/core": "2.3.1-dfactories.43",
+        "@mercurjs/core": "2.3.1-dfactories.44",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/dashboard-shared": "2.3.1-dfactories.2",
-        "@mercurjs/vendor": "2.3.1-dfactories.30",
+        "@mercurjs/vendor": "2.3.1-dfactories.31",
         "@talkjs/react": "^0.1.11",
         "@tanstack/react-query": "5.64.2",
         "@tanstack/react-table": "8.21.3",
@@ -625,7 +625,7 @@
     },
     "packages/vendor": {
       "name": "@mercurjs/vendor",
-      "version": "2.3.1-dfactories.30",
+      "version": "2.3.1-dfactories.31",
       "dependencies": {
         "@ariakit/react": "^0.4.15",
         "@babel/runtime": "^8.0.0",
@@ -671,7 +671,7 @@
       "devDependencies": {
         "@medusajs/types": "2.18.0",
         "@medusajs/ui-preset": "2.18.0",
-        "@mercurjs/core": "2.3.1-dfactories.43",
+        "@mercurjs/core": "2.3.1-dfactories.44",
         "@mercurjs/dashboard-sdk": "2.3.1-dfactories.2",
         "@mercurjs/types": "2.3.1-dfactories.3",
         "@types/react": "^18.3.2",
