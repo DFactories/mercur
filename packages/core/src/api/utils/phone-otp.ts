@@ -423,17 +423,19 @@ async function deliverOtp(
 /**
  * The address a code is being requested from, for the hourly send cap.
  *
- * The left-most `X-Forwarded-For` entry is the original client when the proxy
- * in front discards what the client sent, which Traefik does by default. Behind
- * a proxy that passes the header through it is whatever the client claims, and
- * then only the platform-wide cap holds.
+ * The last `X-Forwarded-For` entry is the one the proxy in front wrote. The
+ * entries before it are what the client sent, and a proxy that passes the header
+ * through keeps them, so the first entry is whatever the client claims. A
+ * server-side caller on the private network sends its visitor's address as the
+ * only entry. One proxy hop is assumed.
  */
 function clientAddress(req: MedusaRequest): string | null {
   const forwarded = req.headers["x-forwarded-for"]
-  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)
-    ?.split(",")[0]
+  const last = (Array.isArray(forwarded) ? forwarded.join(",") : forwarded)
+    ?.split(",")
+    .pop()
     ?.trim()
-  return first || req.ip || null
+  return last || req.ip || null
 }
 
 /**

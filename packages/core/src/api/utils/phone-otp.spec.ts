@@ -24,14 +24,14 @@ describe("createRequestOtpHandler", () => {
     discardOtp: vi.fn(),
   }
 
-  const invoke = () => {
+  const invoke = (headers: Record<string, string> = {}) => {
     const res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
     }
     const req = {
       body: { phone: "09121234567" },
-      headers: {},
+      headers,
       scope: { resolve: () => otp },
     }
     return {
@@ -58,6 +58,19 @@ describe("createRequestOtpHandler", () => {
 
     expect(otp.discardOtp).not.toHaveBeenCalled()
     expect(res.status).toHaveBeenCalledWith(200)
+  })
+
+  it("counts a code against the address the proxy wrote, not the one the client claimed", async () => {
+    sendVerify.mockResolvedValue({ status: "sent" })
+
+    // A proxy that passes the header through appends the real peer. Reading the
+    // first entry let one client ask under a new address every time, so only
+    // the platform-wide cap held.
+    await invoke({ "x-forwarded-for": "9.9.9.9, 5.6.7.8" }).run()
+
+    expect(otp.requestOtp).toHaveBeenCalledWith(
+      expect.objectContaining({ ip: "5.6.7.8" })
+    )
   })
 
   it("discards the code when delivery fails, so the retry is not blocked", async () => {
