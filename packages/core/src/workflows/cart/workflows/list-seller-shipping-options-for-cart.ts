@@ -290,14 +290,16 @@ export const listSellerShippingOptionsForCartWorkflow = createWorkflow(
         })
 
         const sellerShippingOptionsMap = transform(
-            { translatedShippingOptions },
-            ({ translatedShippingOptions }) => {
+            { translatedShippingOptions, cartSellers },
+            ({ translatedShippingOptions, cartSellers }) => {
                 const result: Record<string, ShippingOptionDTO[]> = {}
 
                 translatedShippingOptions.forEach((option_) => {
                     const option = option_ as ShippingOptionDTO & { seller: SellerDTO }
                     const sellerId = option.seller?.id
-                    if (!sellerId) return
+                    // An option on a cart seller's zone may belong to another
+                    // seller (rows from before the routes checked the owner).
+                    if (!sellerId || !cartSellers.includes(sellerId)) return
 
                     if (!result[sellerId]) {
                         result[sellerId] = []
