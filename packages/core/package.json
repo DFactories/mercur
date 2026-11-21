@@ -82,7 +82,6 @@
     "yalc": "^1.0.0-pre.53",
     "@medusajs/types": "2.18.0",
     "multer": "^2.0.2",
-    "http-proxy-middleware": "^3.0.3",
     "jsonwebtoken": "^9.0.2",
     "@mercurjs/cli": "2.3.1-dfactories.0",
     "vitest": "4.1.10"
@@ -100,6 +99,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "http-proxy-middleware": "^3.0.3",
     "@orama/orama": "^3.1.18",
     "pkg-dir": "4",
     "resolve-cwd": "^3.0.0",
