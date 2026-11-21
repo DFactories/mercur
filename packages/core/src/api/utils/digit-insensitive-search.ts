@@ -12,15 +12,24 @@ const PERSIAN_ZERO = 0x06f0
 const toPersianDigits = (input: string) =>
   input.replace(/[0-9]/g, (d) => String.fromCharCode(PERSIAN_ZERO + Number(d)))
 
+const toPersianLetters = (input: string) =>
+  input.replace(/[يى]/g, "ی").replace(/ك/g, "ک")
+
+const toArabicLetters = (input: string) =>
+  input.replace(/ی/g, "ي").replace(/ک/g, "ك")
+
 /**
- * A product search finds the same products whichever keyboard typed the
- * number (decided 2026-10-07: digits must not change a result).
+ * A product search finds the same products whichever keyboard typed it
+ * (decided 2026-10-07: digits must not change a result).
  *
- * Titles keep the digits they were written with — «ظرف تک پرس کد ۱۰۵» — while
- * SKUs are stored in Latin, so neither spelling of `q` alone is right. When `q`
- * carries a digit it is searched in both spellings with Medusa's own `q`
- * (title, subtitle, description, variant SKU and barcodes), and the list is
- * narrowed to the union. Without a digit nothing changes.
+ * Titles keep what was typed — «ظرف تک پرس کد ۱۰۵», or «كيسه» from an Arabic
+ * keyboard — while SKUs are stored in Latin, and Postgres `ILIKE` folds neither
+ * digits nor ي/ی and ك/ک. So no single spelling of `q` is right. When `q`
+ * carries a digit or one of those letters it is searched in each spelling with
+ * Medusa's own `q` (title, subtitle, description, variant SKU and barcodes),
+ * and the list is narrowed to the union. Otherwise nothing changes.
+ *
+ * A title that mixes the two alphabets in one word is found by neither.
  */
 export const applyDigitInsensitiveSearch = async (
   req: AuthenticatedMedusaRequest,
@@ -28,12 +37,19 @@ export const applyDigitInsensitiveSearch = async (
   next: MedusaNextFunction
 ) => {
   const q = req.filterableFields?.q
-  if (typeof q !== "string" || !/[0-9۰-۹٠-٩]/.test(q)) {
+  if (typeof q !== "string" || !/[0-9۰-۹٠-٩يىكیک]/.test(q)) {
     return next()
   }
 
   const latin = toLatinDigits(q)
-  const forms = Array.from(new Set([latin, toPersianDigits(latin)]))
+  const forms = Array.from(
+    new Set(
+      [latin, toPersianDigits(latin)].flatMap((form) => [
+        toPersianLetters(form),
+        toArabicLetters(form),
+      ])
+    )
+  )
 
   delete req.filterableFields.q
 
