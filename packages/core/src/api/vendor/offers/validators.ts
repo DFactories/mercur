@@ -76,13 +76,46 @@ const VendorOfferUpsertPrice = z
   })
   .strict()
 
+type LadderPrice = {
+  amount: number
+  currency_code: string
+  min_quantity?: number | null
+  max_quantity?: number | null
+  rules?: Record<string, string>
+}
+
+/**
+ * The pricing module charges the CHEAPEST price a quantity is eligible for.
+ * A price dearer than one that is still eligible at its own minimum quantity
+ * is shown in every price table and never charged, so it is refused here.
+ */
+const neverRises = (prices: LadderPrice[]) => {
+  const scope = (p: LadderPrice) =>
+    JSON.stringify([
+      p.currency_code.toLowerCase(),
+      Object.entries(p.rules ?? {}).sort(),
+    ])
+  return !prices.some((dear) =>
+    prices.some(
+      (cheap) =>
+        cheap.amount < dear.amount &&
+        (cheap.min_quantity ?? 1) <= (dear.min_quantity ?? 1) &&
+        (cheap.max_quantity ?? Infinity) >= (dear.min_quantity ?? 1) &&
+        scope(cheap) === scope(dear)
+    )
+  )
+}
+
+const RISING_LADDER =
+  "A larger quantity cannot cost more per unit than a smaller one: the cart charges the cheapest price the quantity reaches, so the dearer one would never apply"
+
 const CreateOffer = z
   .object({
     sku: z.string().min(1).transform(normalizeMatchText),
     variant_id: z.string(),
     shipping_profile_id: z.string().min(1),
     inventory_items: z.array(VendorOfferInventoryItem).min(1),
-    prices: z.array(VendorOfferPrice).min(1),
+    prices: z.array(VendorOfferPrice).min(1).refine(neverRises, RISING_LADDER),
     ean: z.string().min(1).transform(normalizeMatchText).nullish(),
     upc: z.string().min(1).transform(normalizeMatchText).nullish(),
     manage_inventory: z.boolean().optional(),
@@ -101,7 +134,10 @@ const UpdateOffer = z
     manage_inventory: z.boolean().optional(),
     allow_backorder: z.boolean().optional(),
     metadata: z.record(z.string(), z.unknown()).nullish(),
-    prices: z.array(VendorOfferUpsertPrice).optional(),
+    prices: z
+      .array(VendorOfferUpsertPrice)
+      .refine(neverRises, RISING_LADDER)
+      .optional(),
   })
   .strict()
 
@@ -143,7 +179,7 @@ const VendorCreateOffersBatchItem = z
     sku: z.string().min(1).transform(normalizeMatchText),
     variant_id: z.string(),
     shipping_profile_id: z.string().min(1),
-    prices: z.array(VendorOfferPrice).min(1),
+    prices: z.array(VendorOfferPrice).min(1).refine(neverRises, RISING_LADDER),
     inventory_items: z.array(VendorOfferInventoryItem).min(1),
     ean: z.string().min(1).transform(normalizeMatchText).nullish(),
     upc: z.string().min(1).transform(normalizeMatchText).nullish(),
