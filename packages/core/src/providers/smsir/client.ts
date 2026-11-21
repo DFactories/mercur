@@ -173,11 +173,15 @@ export class SmsIrClient {
     parameters: SmsIrParam[]
   ): Promise<SmsIrSendResult> {
     if (!this.isConfigured) {
+      // The parameters carry login codes: a developer's convenience, and in a
+      // production log a working credential for whoever can read it.
+      const shown =
+        process.env.NODE_ENV === "production"
+          ? ""
+          : `; parameters=${JSON.stringify(parameters)}`
       // eslint-disable-next-line no-console
       console.warn(
-        `[smsir] SMSIR_API_KEY not set — skipping SMS to ${mobile} (template ${templateId}); parameters=${JSON.stringify(
-          parameters
-        )}`
+        `[smsir] SMSIR_API_KEY not set — skipping SMS to ${mobile} (template ${templateId})${shown}`
       )
       return { status: "skipped" }
     }
