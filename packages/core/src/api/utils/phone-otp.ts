@@ -421,7 +421,8 @@ async function deliverOtp(
 
 
 /**
- * The address a code is being requested from, for the hourly send cap.
+ * The address a code is being requested from or guessed at, for the hourly
+ * caps.
  *
  * The last `X-Forwarded-For` entry is the one the proxy in front wrote. The
  * entries before it are what the client sent, and a proxy that passes the header
@@ -532,7 +533,12 @@ export function createVerifyOtpHandler(actorType: ActorType) {
     assertIranMobile(phone)
 
     const otp = req.scope.resolve<OtpModuleService>(MercurModules.OTP)
-    await otp.verifyOtp({ identifier: phone, actor_type: actorType, code })
+    await otp.verifyOtp({
+      identifier: phone,
+      actor_type: actorType,
+      code,
+      ip: clientAddress(req),
+    })
 
     const authModule = req.scope.resolve<IAuthModuleService>(Modules.AUTH)
 
@@ -726,6 +732,7 @@ export function createSellerPhoneVerifyOtpHandler() {
       identifier: phone,
       actor_type: SELLER_PHONE_ACTOR,
       code,
+      ip: clientAddress(req),
     })
 
     if (await isPhoneTaken(req, phone)) {

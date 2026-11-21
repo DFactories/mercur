@@ -8,7 +8,7 @@ import {
   MedusaService,
 } from "@medusajs/framework/utils"
 
-import { OtpCode } from "./models"
+import { OtpCode, OtpVerifyFailure } from "./models"
 
 export type RequestOtpInput = {
   identifier: string
@@ -32,6 +32,11 @@ export type VerifyOtpInput = {
   identifier: string
   actor_type: string
   code: string
+  /**
+   * The address guessing. Its wrong guesses are counted across every number; a
+   * caller that leaves it out is held only by the per-number limits.
+   */
+  ip?: string | null
 }
 
 const OTP_TTL_SECONDS = Number(process.env.OTP_TTL_SECONDS ?? 120)
@@ -51,6 +56,16 @@ const OTP_MAX_FAILURES_PER_WINDOW = Number(
 const OTP_FAILURE_WINDOW_SECONDS = Number(
   process.env.OTP_FAILURE_WINDOW_SECONDS ?? 3600
 )
+/**
+ * Wrong guesses one ADDRESS may collect in the failure window, across every
+ * number it guesses at.
+ *
+ * The limits above are per number, so one client could spend ten guesses on
+ * each of any list of numbers and never meet one. Read on every call, like the
+ * send caps.
+ */
+const otpMaxFailuresPerAddress = () =>
+  Number(process.env.OTP_MAX_FAILURES_PER_IP_PER_WINDOW ?? 30)
 /**
  * How long before another code may be requested.
  *
@@ -137,7 +152,7 @@ export const otpTiming = (): OtpTiming => ({
  * client. This keeps the OTP store independent of the transport and of the
  * notification settings.
  */
-class OtpModuleService extends MedusaService({ OtpCode }) {
+class OtpModuleService extends MedusaService({ OtpCode, OtpVerifyFailure }) {
   /**
    * {@link otpTiming}, reachable through the resolved module.
    *
@@ -301,7 +316,7 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
     input: VerifyOtpInput,
     @MedusaContext() sharedContext: Context = {}
   ): Promise<"ok" | "none" | "expired" | "locked" | "invalid"> {
-    const { identifier, actor_type, code } = input
+    const { identifier, actor_type, code, ip } = input
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ctx = sharedContext as any
@@ -309,6 +324,24 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
       "SELECT pg_advisory_xact_lock(hashtext(?))",
       [`otp:${actor_type}:${identifier}`]
     )
+
+    if (ip) {
+      // The address's guesses queue too, or parallel guesses at different
+      // numbers would all read the same count. Always taken second.
+      await (ctx.transactionManager ?? ctx.manager).execute(
+        "SELECT pg_advisory_xact_lock(hashtext(?))",
+        [`otp-ip:${ip}`]
+      )
+      const since = new Date(Date.now() - OTP_FAILURE_WINDOW_SECONDS * 1000)
+      const [, failures] = await this.listAndCountOtpVerifyFailures(
+        { ip, created_at: { $gte: since } },
+        { select: ["id"], take: 1 },
+        sharedContext
+      )
+      if (failures >= otpMaxFailuresPerAddress()) {
+        return "locked"
+      }
+    }
 
     if (
       (await this.recentFailures_(identifier, actor_type, sharedContext)) >=
@@ -345,6 +378,9 @@ class OtpModuleService extends MedusaService({ OtpCode }) {
         { id: record.id, attempts: (record.attempts ?? 0) + 1 },
         sharedContext
       )
+      if (ip) {
+        await this.createOtpVerifyFailures({ ip }, sharedContext)
+      }
       return "invalid"
     }
 
