@@ -111,7 +111,7 @@ const setup = (opts: {
     run: () =>
       createVerifyOtpHandler("member")(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { body: { phone: PHONE, code: "12345" }, scope } as any,
+        { body: { phone: PHONE, code: "12345" }, headers: {}, scope } as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         res as any
       ),

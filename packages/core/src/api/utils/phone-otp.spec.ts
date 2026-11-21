@@ -266,7 +266,7 @@ describe("customer OTP sign-in and has_account", () => {
       linkedCustomerId: () => authIdentity.app_metadata.customer_id,
       run: () =>
         createVerifyOtpHandler("customer")(
-          { body: { phone: PHONE, code: "12345" }, scope } as never,
+          { body: { phone: PHONE, code: "12345" }, headers: {}, scope } as never,
           res as never
         ),
     }
