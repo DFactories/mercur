@@ -13807,6 +13807,36 @@
         "duplicate": {
           "type": "string"
         },
+        "inviteOtherMember": {
+          "type": "string"
+        },
+        "memberPhoneMismatch": {
+          "type": "string"
+        },
+        "priceLadderRises": {
+          "type": "string"
+        },
+        "shipping": {
+          "type": "object",
+          "properties": {
+            "zoneNotFound": {
+              "type": "string"
+            },
+            "ruleNotFound": {
+              "type": "string"
+            },
+            "optionNotFound": {
+              "type": "string"
+            },
+            "profileNotFound": {
+              "type": "string"
+            },
+            "fulfillmentSetNotFound": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
         "entityNotFound": {
           "type": "string"
         },

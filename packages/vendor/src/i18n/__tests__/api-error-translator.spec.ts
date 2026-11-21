@@ -295,3 +295,44 @@ describe("product handle refusals", () => {
     }
   )
 })
+
+/**
+ * Refusals the backend gained in core .40 to .43. Each reached the panel
+ * through a generic rule: «یافت نشد: Service zone with id: serzo_…» for an id
+ * that was not the caller's own, and the English sentence quoted after
+ * «داده‌ی ارسالی نامعتبر است» for a rising price ladder.
+ */
+describe("refusals added by the ownership and price ladder checks", () => {
+  it.each([
+    ["Service zone with id: serzo_01 was not found", "zoneNotFound"],
+    ["Service zone with id: serzo_01 not found on fulfillment set", "zoneNotFound"],
+    ["Shipping option rule with id: sorul_01, sorul_02 was not found", "ruleNotFound"],
+    ["Shipping Option with id: so_01 not found", "optionNotFound"],
+    ["Shipping option with id: so_01 was not found", "optionNotFound"],
+    ["Shipping profile with id: sp_01 was not found", "profileNotFound"],
+    ["Fulfillment set with id: fuset_01 was not found", "fulfillmentSetNotFound"],
+  ] as const)("says whose it must be for «%s»", (message, key) => {
+    expect(localizeApiMessage(message, 404)).toBe(fa.apiErrors.shipping[key])
+  })
+
+  it("names the rule for a price ladder that rises with quantity", () => {
+    expect(
+      localizeApiMessage(
+        "Invalid request: A larger quantity cannot cost more per unit than a smaller one: the cart charges the cheapest price the quantity reaches, so the dearer one would never apply",
+        400,
+      ),
+    ).toBe(fa.apiErrors.priceLadderRises)
+  })
+
+  it("translates the two member refusals", () => {
+    expect(
+      localizeApiMessage("This invite was issued to a different member", 400),
+    ).toBe(fa.apiErrors.inviteOtherMember)
+    expect(
+      localizeApiMessage(
+        "A member's phone must be the number this session signed in with",
+        400,
+      ),
+    ).toBe(fa.apiErrors.memberPhoneMismatch)
+  })
+})

@@ -58,6 +58,11 @@ const EXACT: Record<string, string> = {
   "Too many incorrect attempts. Please request a new code.":
     "login.phone.errors.tooManyAttempts",
   "Please wait before requesting another code.": "login.phone.errors.tooSoon",
+  // team: an invite used by someone it was not issued to, and a member row
+  // asked for with a phone the session did not prove.
+  "This invite was issued to a different member": "apiErrors.inviteOtherMember",
+  "A member's phone must be the number this session signed in with":
+    "apiErrors.memberPhoneMismatch",
   // products: a published product with a request still awaiting review. It
   // used to fall through to the generic 400 text, which told the producer
   // nothing about why every edit and the delete kept failing.
@@ -123,6 +128,28 @@ const PATTERNS: { test: RegExp; key: string }[] = [
     test: /^Providers \((.+)\) are not enabled for the service location$/i,
     key: "apiErrors.shippingProviderNotEnabled",
   },
+  // shipping: an id that is not the caller's own. The generic "not found"
+  // rule below would show the English sentence with its id as the detail.
+  {
+    test: /^Service zone with id: .+ not found/i,
+    key: "apiErrors.shipping.zoneNotFound",
+  },
+  {
+    test: /^Shipping option rule with id: .+ was not found$/i,
+    key: "apiErrors.shipping.ruleNotFound",
+  },
+  {
+    test: /^Shipping option with id: .+ (?:was )?not found$/i,
+    key: "apiErrors.shipping.optionNotFound",
+  },
+  {
+    test: /^Shipping profile with id: .+ was not found$/i,
+    key: "apiErrors.shipping.profileNotFound",
+  },
+  {
+    test: /^Fulfillment set with id: .+ was not found$/i,
+    key: "apiErrors.shipping.fulfillmentSetNotFound",
+  },
   // offers
   { test: /^Offer (.+) was not found$/i, key: "apiErrors.offerNotFound" },
   { test: /^Variant (.+) has no PriceSet$/i, key: "apiErrors.variantNoPriceSet" },
@@ -142,6 +169,12 @@ const PATTERNS: { test: RegExp; key: string }[] = [
   {
     test: /Value for field '([^']+)' too big, expected at most: '([^']+)'/i,
     key: "apiErrors.tooBig",
+  },
+  // a price ladder that rises with quantity, refused by the offer routes.
+  // Above the generic validation rule, which would quote it in English.
+  {
+    test: /A larger quantity cannot cost more per unit than a smaller one/i,
+    key: "apiErrors.priceLadderRises",
   },
   // validation — zod/Medusa body validation, e.g.
   // "Invalid request body: amount: Number must be greater than 0"
