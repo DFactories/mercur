@@ -14,6 +14,7 @@ import {
   AdminGetOfferParams,
   AdminGetOffersParams,
 } from "./validators"
+import { applySpellingInsensitiveSearch } from "../../utils/digit-insensitive-search"
 
 export const adminOffersMiddlewares: MiddlewareRoute[] = [
   {
@@ -25,6 +26,7 @@ export const adminOffersMiddlewares: MiddlewareRoute[] = [
         adminOfferQueryConfig.list
       ),
       applyGroupedOfferProductFilter,
+      applySpellingInsensitiveSearch("offer"),
       applyOfferDraftVisibility,
     ],
   },

@@ -17,6 +17,7 @@ import type {
   TaxCalculationContext,
 } from "@medusajs/framework/types"
 import { hasPermission } from "@medusajs/framework"
+import { searchIdsInEverySpelling } from "./digit-insensitive-search"
 import { resolveVisibleSellerIds } from "./sellers"
 import { rbacEnabled } from "./hide-seller-payment-details"
 
@@ -268,6 +269,16 @@ export const applyGroupedOfferProductFilter = async (
 
   if (fields.product_id !== undefined && fields.product_id !== null) {
     productFilters.id = fields.product_id
+  }
+
+  const spelled = await searchIdsInEverySpelling(
+    req.scope,
+    "product",
+    productFilters.q
+  )
+  if (spelled) {
+    delete productFilters.q
+    productFilters.$and = [{ id: spelled.length ? spelled : ["__none__"] }]
   }
 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)

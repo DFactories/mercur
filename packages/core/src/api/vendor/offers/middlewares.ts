@@ -19,6 +19,7 @@ import {
   VendorGetOffersParams,
   VendorUpdateOffer,
 } from "./validators"
+import { applySpellingInsensitiveSearch } from "../../utils/digit-insensitive-search"
 
 /** Room for `VENDOR_OFFERS_BATCH_MAX` rows of ~0.5 KB each, with headroom. */
 const VENDOR_OFFERS_BATCH_BODY_LIMIT = "2mb"
@@ -68,6 +69,7 @@ export const vendorOffersMiddlewares: MiddlewareRoute[] = [
         vendorOfferQueryConfig.list
       ),
       applySellerOfferFilter,
+      applySpellingInsensitiveSearch("offer"),
     ],
   },
   {

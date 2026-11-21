@@ -22,6 +22,7 @@ import {
   VendorGetOrderParams,
   VendorGetOrdersParams,
 } from "./validators"
+import { applySpellingInsensitiveSearch } from "../../utils/digit-insensitive-search"
 
 const applySellerLinkFilter = (
   req: AuthenticatedMedusaRequest,
@@ -47,6 +48,7 @@ export const vendorOrdersMiddlewares: MiddlewareRoute[] = [
         vendorOrderQueryConfig.list
       ),
       applySellerLinkFilter,
+      applySpellingInsensitiveSearch("order"),
     ],
   },
   {

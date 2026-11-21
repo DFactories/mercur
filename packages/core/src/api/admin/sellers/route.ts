@@ -7,10 +7,11 @@ import { HttpTypes } from "@mercurjs/types"
 
 import { AdminCreateSellerType } from "./validators"
 import { createSellersWorkflow } from "../../../workflows/seller"
+import { searchIdsInEverySpelling } from "../../utils/digit-insensitive-search"
 import { resolveSellerIdsByPhone } from "../../utils/sellers"
 
-/** Matches nothing, so a phone with no store returns an empty page rather than every store. */
-const NO_MATCH = "__no_seller_matches_this_phone__"
+/** Matches nothing, so a search with no store returns an empty page rather than every store. */
+const NO_MATCH = "__no_seller_matches_this_search__"
 
 export const GET = async (
   req: AuthenticatedMedusaRequest,
@@ -29,8 +30,12 @@ export const GET = async (
 
   let filters = req.filterableFields
   if (typeof q === "string" && q.trim()) {
-    const phoneMatches = await resolveSellerIdsByPhone(req.scope, q)
-    if (phoneMatches) {
+    // A phone resolves through the team's numbers; any other text is searched
+    // in every spelling (ي/ی, ك/ک, Persian and Latin digits).
+    const matches =
+      (await resolveSellerIdsByPhone(req.scope, q)) ??
+      (await searchIdsInEverySpelling(req.scope, "seller", q))
+    if (matches) {
       // Respect an id filter the caller already set rather than widening it.
       const existing = restFilters.id
         ? Array.isArray(restFilters.id)
@@ -38,8 +43,8 @@ export const GET = async (
           : [restFilters.id]
         : null
       const ids = existing
-        ? phoneMatches.filter((id) => existing.includes(id))
-        : phoneMatches
+        ? matches.filter((id) => existing.includes(id))
+        : matches
 
       filters = { ...restFilters, id: ids.length ? ids : [NO_MATCH] }
     }

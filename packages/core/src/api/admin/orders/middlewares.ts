@@ -10,6 +10,7 @@ import { listTransformQueryConfig } from "@medusajs/medusa/api/admin/orders/quer
 
 import { ORIGINAL_MIDDLEWARES } from "../../../utils/disable-medusa-middlewares"
 import { AdminGetOrdersParams } from "./validators"
+import { applySpellingInsensitiveSearch } from "../../utils/digit-insensitive-search"
 
 const LIST_MATCHER = "/admin/orders"
 
@@ -51,6 +52,7 @@ export const adminOrdersMiddlewares: MiddlewareRoute[] = [
     middlewares: [
       validateAndTransformQuery(AdminGetOrdersParams, listTransformQueryConfig),
       maybeApplySellerOrderFilter,
+      applySpellingInsensitiveSearch("order"),
     ],
   },
 ]

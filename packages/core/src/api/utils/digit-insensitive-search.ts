@@ -3,6 +3,7 @@ import {
   MedusaNextFunction,
   MedusaResponse,
 } from "@medusajs/framework/http"
+import { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { toLatinDigits } from "../../utils/normalize-match-text"
@@ -19,26 +20,24 @@ const toArabicLetters = (input: string) =>
   input.replace(/ی/g, "ي").replace(/ک/g, "ك")
 
 /**
- * A product search finds the same products whichever keyboard typed it
- * (decided 2026-10-07: digits must not change a result).
+ * The ids of the `entity` rows `q` finds in any spelling, or `null` when `q`
+ * has nothing to fold (the caller then leaves Medusa's own `q` alone).
  *
- * Titles keep what was typed — «ظرف تک پرس کد ۱۰۵», or «كيسه» from an Arabic
- * keyboard — while SKUs are stored in Latin, and Postgres `ILIKE` folds neither
- * digits nor ي/ی and ك/ک. So no single spelling of `q` is right. When `q`
- * carries a digit or one of those letters it is searched in each spelling with
- * Medusa's own `q` (title, subtitle, description, variant SKU and barcodes),
- * and the list is narrowed to the union. Otherwise nothing changes.
+ * Text keeps what was typed — «ظرف تک پرس کد ۱۰۵», or «كيسه» from an Arabic
+ * keyboard — while SKUs and phone numbers are stored in Latin, and Postgres
+ * `ILIKE` folds neither digits nor ي/ی and ك/ک. So no single spelling of `q`
+ * is right: it is run in each one with Medusa's own `q` (the entity's
+ * searchable columns) and the answer is the union.
  *
- * A title that mixes the two alphabets in one word is found by neither.
+ * A word that mixes the two alphabets is found by neither.
  */
-export const applyDigitInsensitiveSearch = async (
-  req: AuthenticatedMedusaRequest,
-  _res: MedusaResponse,
-  next: MedusaNextFunction
-) => {
-  const q = req.filterableFields?.q
+export const searchIdsInEverySpelling = async (
+  scope: MedusaContainer,
+  entity: string,
+  q: unknown
+): Promise<string[] | null> => {
   if (typeof q !== "string" || !/[0-9۰-۹٠-٩يىكیک]/.test(q)) {
-    return next()
+    return null
   }
 
   const latin = toLatinDigits(q)
@@ -51,23 +50,48 @@ export const applyDigitInsensitiveSearch = async (
     )
   )
 
-  delete req.filterableFields.q
-
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
   const results = await Promise.all(
     forms.map((form) =>
-      query.graph({ entity: "product", fields: ["id"], filters: { q: form } })
+      query.graph({ entity, fields: ["id"], filters: { q: form } })
     )
   )
-  const ids = Array.from(
-    new Set(results.flatMap(({ data }) => (data as { id: string }[]).map((p) => p.id)))
+
+  return Array.from(
+    new Set(results.flatMap(({ data }) => (data as { id: string }[]).map((row) => row.id)))
   )
-
-  const existingAnd = (req.filterableFields.$and as object[] | undefined) ?? []
-  req.filterableFields.$and = [
-    ...existingAnd,
-    { id: ids.length ? ids : ["__none__"] },
-  ]
-
-  return next()
 }
+
+/**
+ * A list search finds the same rows whichever keyboard typed it (decided
+ * 2026-10-07: digits must not change a result). Replaces `q` with the ids it
+ * finds in every spelling; the route's other filters still apply.
+ */
+export const applySpellingInsensitiveSearch =
+  (entity: string) =>
+  async (
+    req: AuthenticatedMedusaRequest,
+    _res: MedusaResponse,
+    next: MedusaNextFunction
+  ) => {
+    const ids = await searchIdsInEverySpelling(
+      req.scope,
+      entity,
+      req.filterableFields?.q
+    )
+    if (!ids) {
+      return next()
+    }
+
+    delete req.filterableFields.q
+
+    const existingAnd = (req.filterableFields.$and as object[] | undefined) ?? []
+    req.filterableFields.$and = [
+      ...existingAnd,
+      { id: ids.length ? ids : ["__none__"] },
+    ]
+
+    return next()
+  }
+
+export const applyDigitInsensitiveSearch = applySpellingInsensitiveSearch("product")

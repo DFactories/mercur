@@ -16,6 +16,7 @@ import {
   VendorGetCustomersParams,
   VendorManageCustomerCustomerGroups,
 } from "./validators"
+import { applySpellingInsensitiveSearch } from "../../utils/digit-insensitive-search"
 
 const applySellerCustomerLinkFilter = (
   req: AuthenticatedMedusaRequest,
@@ -41,6 +42,7 @@ export const vendorCustomersMiddlewares: MiddlewareRoute[] = [
         vendorCustomerQueryConfig.list
       ),
       applySellerCustomerLinkFilter,
+      applySpellingInsensitiveSearch("customer"),
     ],
   },
   {
